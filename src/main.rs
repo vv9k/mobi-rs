@@ -1,7 +1,7 @@
+use byteorder::{BigEndian, ReadBytesExt};
 use std::fs;
 use std::io::Cursor;
 use std::path::Path;
-use byteorder::{BigEndian, ReadBytesExt};
 
 #[derive(Debug)]
 struct Mobi {
@@ -72,7 +72,7 @@ struct Header {
     num_of_records: u16,
 }
 impl Header {
-    fn parse(content: &Vec<u8>) -> Header {
+    fn parse(content: &[u8]) -> Header {
         Header {
             name: Header::get_headers_string(content, HeaderData::Name),
             attributes: Header::get_headers_i16(content, HeaderData::Attributes),
@@ -90,7 +90,7 @@ impl Header {
             num_of_records: Header::get_headers_u16(content, HeaderData::NumOfRecords),
         }
     }
-    fn get_headers_i16(content: &Vec<u8>, header: HeaderData) -> i16 {
+    fn get_headers_i16(content: &[u8], header: HeaderData) -> i16 {
         let mut reader = Cursor::new(content);
         let position = match header {
             HeaderData::Attributes => 32,
@@ -100,7 +100,7 @@ impl Header {
         reader.set_position(position);
         reader.read_i16::<BigEndian>().unwrap()
     }
-    fn get_headers_u16(content: &Vec<u8>, header: HeaderData) -> u16 {
+    fn get_headers_u16(content: &[u8], header: HeaderData) -> u16 {
         let mut reader = Cursor::new(content);
         let position = match header {
             HeaderData::NumOfRecords => 76,
@@ -108,8 +108,8 @@ impl Header {
         };
         reader.set_position(position);
         reader.read_u16::<BigEndian>().unwrap()
-    }    
-    fn get_headers_u32(content: &Vec<u8>, header: HeaderData) -> u32 {
+    }
+    fn get_headers_u32(content: &[u8], header: HeaderData) -> u32 {
         let mut reader = Cursor::new(content);
         let position = match header {
             HeaderData::Created => 36,
@@ -125,7 +125,7 @@ impl Header {
         reader.set_position(position);
         reader.read_u32::<BigEndian>().unwrap()
     }
-    fn get_headers_string(content: &Vec<u8>, header: HeaderData) -> String {
+    fn get_headers_string(content: &[u8], header: HeaderData) -> String {
         match header {
             HeaderData::Name => u8_as_string(&content[0..32]),
             HeaderData::TypE => u8_as_string(&content[60..64]),
@@ -143,36 +143,56 @@ struct PalmDocHeader {
     encryption_type: u16,
 }
 impl PalmDocHeader {
-    fn parse(content: &Vec<u8>, num_of_records: u16) -> PalmDocHeader {
+    fn parse(content: &[u8], num_of_records: u16) -> PalmDocHeader {
         PalmDocHeader {
-            compression: PalmDocHeader::get_headers_u16(content, PalmDocHeaderData::Compression, num_of_records),
-            text_length: PalmDocHeader::get_headers_u32(content, PalmDocHeaderData::TextLength, num_of_records),
-            record_count: PalmDocHeader::get_headers_u16(content, PalmDocHeaderData::RecordCount, num_of_records),
-            record_size: PalmDocHeader::get_headers_u16(content, PalmDocHeaderData::RecordSize, num_of_records),
-            encryption_type: PalmDocHeader::get_headers_u16(content, PalmDocHeaderData::EncryptionType, num_of_records),
+            compression: PalmDocHeader::get_headers_u16(
+                content,
+                PalmDocHeaderData::Compression,
+                num_of_records,
+            ),
+            text_length: PalmDocHeader::get_headers_u32(
+                content,
+                PalmDocHeaderData::TextLength,
+                num_of_records,
+            ),
+            record_count: PalmDocHeader::get_headers_u16(
+                content,
+                PalmDocHeaderData::RecordCount,
+                num_of_records,
+            ),
+            record_size: PalmDocHeader::get_headers_u16(
+                content,
+                PalmDocHeaderData::RecordSize,
+                num_of_records,
+            ),
+            encryption_type: PalmDocHeader::get_headers_u16(
+                content,
+                PalmDocHeaderData::EncryptionType,
+                num_of_records,
+            ),
         }
     }
-    fn get_headers_u16(content: &Vec<u8>, pdheader: PalmDocHeaderData, num_of_records: u16) -> u16 {
+    fn get_headers_u16(content: &[u8], pdheader: PalmDocHeaderData, num_of_records: u16) -> u16 {
         let mut reader = Cursor::new(content);
         let position = match pdheader {
             PalmDocHeaderData::Compression => 80,
             PalmDocHeaderData::RecordCount => 88,
             PalmDocHeaderData::RecordSize => 90,
-            PalmDocHeaderData::EncryptionType => 92 ,
+            PalmDocHeaderData::EncryptionType => 92,
             _ => 0,
         };
-        reader.set_position(position + (num_of_records*8) as u64);
+        reader.set_position(position + u64::from(num_of_records * 8));
         reader.read_u16::<BigEndian>().unwrap()
-    }    
-    fn get_headers_u32(content: &Vec<u8>, pdheader: PalmDocHeaderData, num_of_records: u16) -> u32 {
+    }
+    fn get_headers_u32(content: &[u8], pdheader: PalmDocHeaderData, num_of_records: u16) -> u32 {
         let mut reader = Cursor::new(content);
         let position = match pdheader {
             PalmDocHeaderData::TextLength => 84,
             _ => 0,
         };
-        reader.set_position(position + (num_of_records*8) as u64);
+        reader.set_position(position + u64::from(num_of_records * 8));
         reader.read_u32::<BigEndian>().unwrap()
-    }    
+    }
 }
 fn u8_as_string(byte_arr: &[u8]) -> String {
     let mut out_str = String::new();
@@ -242,41 +262,141 @@ enum MobiHeaderData {
     FlisRecord,
 }
 impl MobiHeader {
-    fn parse(content: &Vec<u8>, num_of_records: u16) -> MobiHeader{
+    fn parse(content: &[u8], num_of_records: u16) -> MobiHeader {
         let mut m = MobiHeader {
-            identifier: MobiHeader::get_headers_u32(&content, MobiHeaderData::Identifier, num_of_records),
-            header_length: MobiHeader::get_headers_u32(&content, MobiHeaderData::HeaderLength, num_of_records),
-            mobi_type: MobiHeader::get_headers_u32(&content, MobiHeaderData::MobiType, num_of_records),
-            text_encoding: MobiHeader::get_headers_u32(&content, MobiHeaderData::TextEncoding, num_of_records),
+            identifier: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::Identifier,
+                num_of_records,
+            ),
+            header_length: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::HeaderLength,
+                num_of_records,
+            ),
+            mobi_type: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::MobiType,
+                num_of_records,
+            ),
+            text_encoding: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::TextEncoding,
+                num_of_records,
+            ),
             id: MobiHeader::get_headers_u32(&content, MobiHeaderData::Id, num_of_records),
-            gen_version: MobiHeader::get_headers_u32(&content, MobiHeaderData::GenVersion, num_of_records),
-            first_non_book_index: MobiHeader::get_headers_u32(&content, MobiHeaderData::FirstNonBookIndex, num_of_records),
+            gen_version: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::GenVersion,
+                num_of_records,
+            ),
+            first_non_book_index: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::FirstNonBookIndex,
+                num_of_records,
+            ),
             name: MobiHeader::name(&content, num_of_records),
-            name_offset: MobiHeader::get_headers_u32(&content, MobiHeaderData::NameOffset, num_of_records),
-            name_length: MobiHeader::get_headers_u32(&content, MobiHeaderData::NameLength, num_of_records),
-            language: MobiHeader::get_headers_u32(&content, MobiHeaderData::Language, num_of_records),
-            input_language: MobiHeader::get_headers_u32(&content, MobiHeaderData::InputLanguage, num_of_records),
-            output_language: MobiHeader::get_headers_u32(&content, MobiHeaderData::OutputLanguage, num_of_records),
-            format_version: MobiHeader::get_headers_u32(&content, MobiHeaderData::FormatVersion, num_of_records),
-            first_image_index: MobiHeader::get_headers_u32(&content, MobiHeaderData::FirstImageIndex, num_of_records),
-            first_huff_record: MobiHeader::get_headers_u32(&content, MobiHeaderData::FirstHuffRecord, num_of_records),
-            huff_record_count: MobiHeader::get_headers_u32(&content, MobiHeaderData::HuffRecordCount, num_of_records),
-            first_data_record: MobiHeader::get_headers_u32(&content, MobiHeaderData::FirstDataRecord, num_of_records),
-            data_record_count: MobiHeader::get_headers_u32(&content, MobiHeaderData::DataRecordCount, num_of_records),
-            exth_flags: MobiHeader::get_headers_u32(&content, MobiHeaderData::ExthFlags, num_of_records),
+            name_offset: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::NameOffset,
+                num_of_records,
+            ),
+            name_length: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::NameLength,
+                num_of_records,
+            ),
+            language: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::Language,
+                num_of_records,
+            ),
+            input_language: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::InputLanguage,
+                num_of_records,
+            ),
+            output_language: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::OutputLanguage,
+                num_of_records,
+            ),
+            format_version: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::FormatVersion,
+                num_of_records,
+            ),
+            first_image_index: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::FirstImageIndex,
+                num_of_records,
+            ),
+            first_huff_record: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::FirstHuffRecord,
+                num_of_records,
+            ),
+            huff_record_count: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::HuffRecordCount,
+                num_of_records,
+            ),
+            first_data_record: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::FirstDataRecord,
+                num_of_records,
+            ),
+            data_record_count: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::DataRecordCount,
+                num_of_records,
+            ),
+            exth_flags: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::ExthFlags,
+                num_of_records,
+            ),
             has_exth_header: false,
-            drm_offset: MobiHeader::get_headers_u32(&content, MobiHeaderData::DrmOffset, num_of_records),
-            drm_count: MobiHeader::get_headers_u32(&content, MobiHeaderData::DrmCount, num_of_records),
-            drm_size: MobiHeader::get_headers_u32(&content, MobiHeaderData::DrmSize, num_of_records),
-            drm_flags: MobiHeader::get_headers_u32(&content, MobiHeaderData::DrmFlags, num_of_records),
-            last_image_record: MobiHeader::get_headers_u16(&content, MobiHeaderData::LastImageRecord, num_of_records),
-            fcis_record: MobiHeader::get_headers_u32(&content, MobiHeaderData::FcisRecord, num_of_records),
-            flis_record: MobiHeader::get_headers_u32(&content, MobiHeaderData::FlisRecord, num_of_records),
+            drm_offset: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::DrmOffset,
+                num_of_records,
+            ),
+            drm_count: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::DrmCount,
+                num_of_records,
+            ),
+            drm_size: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::DrmSize,
+                num_of_records,
+            ),
+            drm_flags: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::DrmFlags,
+                num_of_records,
+            ),
+            last_image_record: MobiHeader::get_headers_u16(
+                &content,
+                MobiHeaderData::LastImageRecord,
+                num_of_records,
+            ),
+            fcis_record: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::FcisRecord,
+                num_of_records,
+            ),
+            flis_record: MobiHeader::get_headers_u32(
+                &content,
+                MobiHeaderData::FlisRecord,
+                num_of_records,
+            ),
         };
         m.exth_header();
         m
     }
-    fn get_headers_u32(content: &Vec<u8>, mheader: MobiHeaderData, num_of_records: u16) -> u32 {
+    fn get_headers_u32(content: &[u8], mheader: MobiHeaderData, num_of_records: u16) -> u32 {
         let mut reader = Cursor::new(content);
         let position = match mheader {
             MobiHeaderData::Identifier => 100,
@@ -306,24 +426,26 @@ impl MobiHeader {
             MobiHeaderData::FlisRecord => 288,
             _ => 0,
         };
-        reader.set_position(position + (num_of_records*8) as u64);
+        reader.set_position(position + u64::from(num_of_records * 8));
         reader.read_u32::<BigEndian>().unwrap()
-    }            
-    fn get_headers_u16(content: &Vec<u8>, mheader: MobiHeaderData, num_of_records: u16) -> u16 {
+    }
+    fn get_headers_u16(content: &[u8], mheader: MobiHeaderData, num_of_records: u16) -> u16 {
         let mut reader = Cursor::new(content);
         let position = match mheader {
             MobiHeaderData::LastImageRecord => 274,
             _ => 0,
         };
-        reader.set_position(position + (num_of_records*8) as u64);
+        reader.set_position(position + u64::from(num_of_records * 8));
         reader.read_u16::<BigEndian>().unwrap()
-    }    
-    fn name(content: &Vec<u8>, num_of_records: u16) -> String {
-        let name_offset = MobiHeader::get_headers_u32(&content, MobiHeaderData::NameOffset, num_of_records);
-        let name_length = MobiHeader::get_headers_u32(&content, MobiHeaderData::NameLength, num_of_records);
+    }
+    fn name(content: &[u8], num_of_records: u16) -> String {
+        let name_offset =
+            MobiHeader::get_headers_u32(content, MobiHeaderData::NameOffset, num_of_records);
+        let name_length =
+            MobiHeader::get_headers_u32(content, MobiHeaderData::NameLength, num_of_records);
         let mut name = String::new();
         let mut count = 0;
-        for byte in &content[name_offset as usize + (num_of_records*8) as usize + 80..] {
+        for byte in &content[name_offset as usize + (num_of_records * 8) as usize + 80..] {
             if count == name_length {
                 break;
             }
@@ -333,7 +455,7 @@ impl MobiHeader {
         name
     }
     fn exth_header(&mut self) {
-        self.has_exth_header = (self.exth_flags & 0x40)!=0;
+        self.has_exth_header = (self.exth_flags & 0x40) != 0;
     }
 }
 enum ExtHeaderData {
@@ -349,37 +471,48 @@ struct ExtHeader {
     records: Vec<(u32, u32, String)>,
 }
 impl ExtHeader {
-    fn parse(content: &Vec<u8>, num_of_records: u16) -> ExtHeader {
+    fn parse(content: &[u8], num_of_records: u16) -> ExtHeader {
         let mut extheader = ExtHeader {
-            identifier: ExtHeader::get_headers_u32(content, ExtHeaderData::Identifier, num_of_records),
-            header_length: ExtHeader::get_headers_u32(content, ExtHeaderData::HeaderLength, num_of_records),
-            record_count: ExtHeader::get_headers_u32(content, ExtHeaderData::RecordCount, num_of_records),
+            identifier: ExtHeader::get_headers_u32(
+                content,
+                ExtHeaderData::Identifier,
+                num_of_records,
+            ),
+            header_length: ExtHeader::get_headers_u32(
+                content,
+                ExtHeaderData::HeaderLength,
+                num_of_records,
+            ),
+            record_count: ExtHeader::get_headers_u32(
+                content,
+                ExtHeaderData::RecordCount,
+                num_of_records,
+            ),
             records: vec![],
-
         };
         extheader.get_records(content, num_of_records);
         extheader
     }
-    fn get_headers_u32(content: &Vec<u8>, extheader: ExtHeaderData, num_of_records: u16) -> u32 {
+    fn get_headers_u32(content: &[u8], extheader: ExtHeaderData, num_of_records: u16) -> u32 {
         let mut reader = Cursor::new(content);
         let position = match extheader {
             ExtHeaderData::Identifier => 328,
             ExtHeaderData::HeaderLength => 332,
             ExtHeaderData::RecordCount => 336,
         };
-        reader.set_position(position + (num_of_records*8) as u64);
-        reader.read_u32::<BigEndian>().unwrap()        
+        reader.set_position(position + u64::from(num_of_records * 8));
+        reader.read_u32::<BigEndian>().unwrap()
     }
-    fn get_records(&mut self, content: &Vec<u8>, num_of_records: u16) {
+    fn get_records(&mut self, content: &[u8], num_of_records: u16) {
         let mut records = vec![];
         let mut reader = Cursor::new(content);
-        let position: u64 = 340 + (num_of_records*8) as u64;
+        let position: u64 = 340 + u64::from(num_of_records * 8);
         reader.set_position(position);
         for _i in 0..self.record_count {
             let mut record_data = vec![];
             let record_type = reader.read_u32::<BigEndian>().unwrap_or(0);
             let record_len = reader.read_u32::<BigEndian>().unwrap_or(0);
-            for _j in 0..record_len-8 {
+            for _j in 0..record_len - 8 {
                 record_data.push(reader.read_u8().unwrap_or(0));
             }
             records.push((record_len, record_type, u8_as_string(&record_data[..])));
@@ -388,7 +521,6 @@ impl ExtHeader {
     }
 }
 
-
 #[derive(Debug)]
 struct Record {
     record_data_offset: u32,
@@ -396,32 +528,33 @@ struct Record {
     record_data: String,
 }
 impl Record {
+    #[allow(dead_code)]
     fn new() -> Record {
-        let r = Record {
+        Record {
             record_data_offset: 0,
             id: 0,
             record_data: String::new(),
-        };
-        r
+        }
     }
-    fn record_data(&mut self, content: &Vec<u8>) {
+    fn record_data(&mut self, content: &[u8]) {
         if self.record_data_offset + 8 < content.len() as u32 {
-            let string = &content[self.record_data_offset as usize..(self.record_data_offset+8) as usize];
+            let string =
+                &content[self.record_data_offset as usize..(self.record_data_offset + 8) as usize];
             self.record_data = u8_as_string(string);
         }
     }
-    fn parse_record(reader: &mut Cursor<&Vec<u8>>) -> Record {
+    fn parse_record(reader: &mut Cursor<&[u8]>) -> Record {
         let record_data_offset = reader.read_u32::<BigEndian>().unwrap();
         let id = reader.read_u32::<BigEndian>().unwrap();
         let mut record = Record {
             record_data_offset,
             id,
-            record_data: String::new(), 
+            record_data: String::new(),
         };
-        record.record_data(reader.get_ref());
+        record.record_data(*reader.get_ref());
         record
     }
-    fn parse_records(content: &Vec<u8>, num_of_records: u16) -> Vec<Record> {
+    fn parse_records(content: &[u8], num_of_records: u16) -> Vec<Record> {
         let mut reader = Cursor::new(content);
         let mut records = vec![];
         for _i in 0..num_of_records {
@@ -430,20 +563,23 @@ impl Record {
         }
         records
     }
-    fn read(&self, content: &Vec<u8>, record_num: usize, records: &Vec<Record>) -> String {
+    #[allow(dead_code)]
+    fn read(&self, content: &[u8], record_num: usize, records: &[Record]) -> String {
         let next_record = &records[record_num + 1];
         println!("{}", self.record_data_offset);
         println!("{}", next_record.record_data_offset);
-        u8_as_string(&content[self.record_data_offset as usize..next_record.record_data_offset as usize])
+        u8_as_string(
+            &content[self.record_data_offset as usize..next_record.record_data_offset as usize],
+        )
     }
     // TODO
     // lz77 decompression
 }
 
 fn main() {
-    let m = Mobi::init(Path::new("/home/wojtek/Downloads/baxter.mobi"));
-    println!("{:#?} {:#?} {:#?} {:?}", m.header, m.palmdoc, m.mobi, m.exth);
+    let m = Mobi::init(Path::new("/home/user/file"));
+    println!(
+        "{:#?} {:#?} {:#?} {:?}",
+        m.header, m.palmdoc, m.mobi, m.exth
+    );
 }
-
-// https://docs.python.org/2/library/struct.html
-// https://github.com/crabhit/mobi-python/blob/master/mobi/__init__.py
