@@ -1,16 +1,34 @@
 use std::fs;
 use std::io::Cursor;
+use std::path::Path;
 use byteorder::{BigEndian, ReadBytesExt};
 
+#[derive(Debug)]
 struct Mobi {
     contents: Vec<u8>,
     header: Header,
-    records: Record,
+    records: Vec<Record>,
     palmdoc: PalmDocHeader,
     mobi: MobiHeader,
     exth: ExtHeader,
 }
 impl Mobi {
+    fn init(file_path: &Path) -> Mobi {
+        let contents = fs::read(file_path).unwrap();
+        let header = Header::parse(&contents);
+        let records = Record::parse_records(&contents, header.num_of_records);
+        let palmdoc = PalmDocHeader::parse(&contents, header.num_of_records);
+        let mobi = MobiHeader::parse(&contents, header.num_of_records);
+        let exth = ExtHeader::parse(&contents, header.num_of_records);
+        Mobi {
+            contents,
+            header,
+            records,
+            palmdoc,
+            mobi,
+            exth,
+        }
+    }
 }
 enum HeaderData {
     Name,
@@ -22,7 +40,7 @@ enum HeaderData {
     Modnum,
     AppInfoId,
     SortInfoId,
-    Typ_e,
+    TypE,
     Creator,
     UniqueIdSeed,
     NextRecordListId,
@@ -65,7 +83,7 @@ impl Header {
             modnum: Header::get_headers_u32(content, HeaderData::Modnum),
             app_info_id: Header::get_headers_u32(content, HeaderData::AppInfoId),
             sort_info_id: Header::get_headers_u32(content, HeaderData::SortInfoId),
-            typ_e: Header::get_headers_string(content, HeaderData::Typ_e),
+            typ_e: Header::get_headers_string(content, HeaderData::TypE),
             creator: Header::get_headers_string(content, HeaderData::Creator),
             unique_id_seed: Header::get_headers_u32(content, HeaderData::UniqueIdSeed),
             next_record_list_id: Header::get_headers_u32(content, HeaderData::NextRecordListId),
@@ -110,7 +128,7 @@ impl Header {
     fn get_headers_string(content: &Vec<u8>, header: HeaderData) -> String {
         match header {
             HeaderData::Name => u8_as_string(&content[0..32]),
-            HeaderData::Typ_e => u8_as_string(&content[60..64]),
+            HeaderData::TypE => u8_as_string(&content[60..64]),
             HeaderData::Creator => u8_as_string(&content[64..68]),
             _ => String::new(),
         }
@@ -328,17 +346,18 @@ struct ExtHeader {
     identifier: u32,
     header_length: u32,
     record_count: u32,
-    records: Vec<Record>,
+    records: Vec<(u32, u32, String)>,
 }
 impl ExtHeader {
     fn parse(content: &Vec<u8>, num_of_records: u16) -> ExtHeader {
-        let extheader = ExtHeader {
+        let mut extheader = ExtHeader {
             identifier: ExtHeader::get_headers_u32(content, ExtHeaderData::Identifier, num_of_records),
             header_length: ExtHeader::get_headers_u32(content, ExtHeaderData::HeaderLength, num_of_records),
             record_count: ExtHeader::get_headers_u32(content, ExtHeaderData::RecordCount, num_of_records),
             records: vec![],
 
         };
+        extheader.get_records(content, num_of_records);
         extheader
     }
     fn get_headers_u32(content: &Vec<u8>, extheader: ExtHeaderData, num_of_records: u16) -> u32 {
@@ -354,14 +373,21 @@ impl ExtHeader {
     fn get_records(&mut self, content: &Vec<u8>, num_of_records: u16) {
         let mut records = vec![];
         let mut reader = Cursor::new(content);
-        for i in 0..num_of_records {
-            reader.set_position(340+(i*4) as u64);
-            let record = Record::parse_record(&mut reader);
-            records.push(record)
+        let position: u64 = 340 + (num_of_records*8) as u64;
+        reader.set_position(position);
+        for _i in 0..self.record_count {
+            let mut record_data = vec![];
+            let record_type = reader.read_u32::<BigEndian>().unwrap_or(0);
+            let record_len = reader.read_u32::<BigEndian>().unwrap_or(0);
+            for _j in 0..record_len-8 {
+                record_data.push(reader.read_u8().unwrap_or(0));
+            }
+            records.push((record_len, record_type, u8_as_string(&record_data[..])));
         }
         self.records = records;
     }
 }
+
 
 #[derive(Debug)]
 struct Record {
@@ -379,8 +405,10 @@ impl Record {
         r
     }
     fn record_data(&mut self, content: &Vec<u8>) {
-        let mut string = &content[self.record_data_offset as usize..(self.record_data_offset+8) as usize];
-        self.record_data = u8_as_string(string);
+        if self.record_data_offset + 8 < content.len() as u32 {
+            let string = &content[self.record_data_offset as usize..(self.record_data_offset+8) as usize];
+            self.record_data = u8_as_string(string);
+        }
     }
     fn parse_record(reader: &mut Cursor<&Vec<u8>>) -> Record {
         let record_data_offset = reader.read_u32::<BigEndian>().unwrap();
@@ -395,10 +423,8 @@ impl Record {
     }
     fn parse_records(content: &Vec<u8>, num_of_records: u16) -> Vec<Record> {
         let mut reader = Cursor::new(content);
-        // 78);
-
         let mut records = vec![];
-        for i in 0..num_of_records {
+        for _i in 0..num_of_records {
             let record = Record::parse_record(&mut reader);
             records.push(record);
         }
@@ -406,6 +432,8 @@ impl Record {
     }
     fn read(&self, content: &Vec<u8>, record_num: usize, records: &Vec<Record>) -> String {
         let next_record = &records[record_num + 1];
+        println!("{}", self.record_data_offset);
+        println!("{}", next_record.record_data_offset);
         u8_as_string(&content[self.record_data_offset as usize..next_record.record_data_offset as usize])
     }
     // TODO
@@ -413,24 +441,8 @@ impl Record {
 }
 
 fn main() {
-    let content = fs::read("/home/wojtek/Downloads/ania.mobi").unwrap();
-    let x = Header::parse(&content);
-    let p = PalmDocHeader::parse(&content, x.num_of_records);
-    let r = Record::parse_records(&content, x.num_of_records);
-    let m = MobiHeader::parse(&content, x.num_of_records);
-    let ex = ExtHeader::parse(&content, x.num_of_records);
-    println!("{:#?}", x);
-    println!("{:#?}", p);
-    println!("{:#?}", m);
-    println!("{:#?}", ex);
-    // let mut record_num = 0;
-    // for record in &r {
-    //     println!("{}", record.read(&content, record_num, &r));
-    //     record_num += 1;
-    //     if record_num == 1{
-    //         break;
-    //     }
-    // }
+    let m = Mobi::init(Path::new("/home/wojtek/Downloads/baxter.mobi"));
+    println!("{:#?} {:#?} {:#?} {:?}", m.header, m.palmdoc, m.mobi, m.exth);
 }
 
 // https://docs.python.org/2/library/struct.html
