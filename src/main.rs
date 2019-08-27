@@ -1,19 +1,16 @@
 use std::fs;
-use std::str;
 use std::io::Cursor;
 use byteorder::{BigEndian, ReadBytesExt};
-use std::{thread, time};
 
 struct Mobi {
     contents: Vec<u8>,
     header: Header,
-    records: Records,
+    records: Record,
     palmdoc: PalmDocHeader,
     mobi: MobiHeader,
     exth: ExtHeader,
 }
 impl Mobi {
-
 }
 enum HeaderData {
     Name,
@@ -116,13 +113,6 @@ impl Header {
         }
     }
 }
-fn u8_as_string(byte_vec: &[u8]) -> String {
-    let mut out_str = String::new();
-    for byte in byte_vec {
-        out_str.push(*byte as char);
-    }
-    out_str
-}
 #[derive(Debug)]
 struct PalmDocHeader {
     compression: u16,
@@ -161,16 +151,69 @@ impl PalmDocHeader {
         reader.read_u32::<BigEndian>().unwrap()
     }    
 }
+fn u8_as_string(byte_vec: &[u8]) -> String {
+    let mut out_str = String::new();
+    for byte in byte_vec {
+        out_str.push(*byte as char);
+    }
+    out_str
+}
+
 struct MobiHeader;
 struct ExtHeader;
-struct Records;
+
+#[derive(Debug)]
+struct Record {
+    record_data_offset: u32,
+    id: u32,
+}
+impl Record {
+    fn new() -> Record {
+        Record {
+            record_data_offset: 0,
+            id: 0,
+        }
+    }
+    fn parse_record(reader: &mut Cursor<&Vec<u8>>) -> Record {
+        let mut record = Record::new();
+        let record_data_offset = reader.read_u32::<BigEndian>().unwrap();
+        let id = reader.read_u32::<BigEndian>().unwrap();
+        Record {
+            record_data_offset,
+            id,
+        }
+    }
+    fn parse_records(content: &Vec<u8>, num_of_records: u16) -> Vec<Record> {
+        let mut reader = Cursor::new(content);
+        reader.set_position(78);
+
+        let mut records = vec![];
+        for i in 0..num_of_records {
+            let record = Record::parse_record(&mut reader);
+            records.push(record);
+        }
+        records
+    }
+    fn read(&self, content: &Vec<u8>, record_num: usize, records: &Vec<Record>) -> String {
+        let next_record = &records[record_num + 1];
+        u8_as_string(&content[self.record_data_offset as usize..next_record.record_data_offset as usize])
+    }
+    // TODO
+    // lz77 decompression
+}
+
 fn main() {
-    let mut content = fs::read(".mobi").unwrap();
-    let mut display_str = String::new();
+    let content = fs::read("/home/wojtek/Downloads/ania.mobi").unwrap();
     let x = Header::parse(&content);
     let p = PalmDocHeader::parse(&content, x.num_of_records);
+    let r = Record::parse_records(&content, x.num_of_records);
     println!("{:#?}", x);
     println!("{:#?}", p);
+    let mut record_num = 0;
+    for record in &r {
+        println!("{}", record.read(&content, record_num, &r));
+        record_num += 1;
+    }
 }
 
 // https://docs.python.org/2/library/struct.html
