@@ -31,6 +31,14 @@ enum HeaderData {
     NextRecordListId,
     NumOfRecords,
 }
+enum PalmDocHeaderData {
+    Compression,
+    TextLength,
+    RecordCount,
+    RecordSize,
+    EncryptionType,
+}
+
 #[derive(Debug)]
 struct Header {
     name: String,
@@ -115,15 +123,54 @@ fn u8_as_string(byte_vec: &[u8]) -> String {
     }
     out_str
 }
-struct PalmDocHeader;
+#[derive(Debug)]
+struct PalmDocHeader {
+    compression: u16,
+    text_length: u32,
+    record_count: u16,
+    record_size: u16,
+    encryption_type: u16,
+}
+impl PalmDocHeader {
+    fn parse(content: &Vec<u8>, num_of_records: u16) -> PalmDocHeader {
+        PalmDocHeader {
+            compression: PalmDocHeader::get_headers_u16(content, PalmDocHeaderData::Compression, num_of_records),
+            text_length: PalmDocHeader::get_headers_u32(content, PalmDocHeaderData::TextLength, num_of_records),
+            record_count: PalmDocHeader::get_headers_u16(content, PalmDocHeaderData::RecordCount, num_of_records),
+            record_size: PalmDocHeader::get_headers_u16(content, PalmDocHeaderData::RecordSize, num_of_records),
+            encryption_type: PalmDocHeader::get_headers_u16(content, PalmDocHeaderData::EncryptionType, num_of_records),
+        }
+    }
+    fn get_headers_u16(content: &Vec<u8>, pdheader: PalmDocHeaderData, num_of_records: u16) -> u16 {
+        let mut reader = Cursor::new(content);
+        match pdheader {
+            PalmDocHeaderData::Compression => reader.set_position(80 + (num_of_records*8) as u64),
+            PalmDocHeaderData::RecordCount => reader.set_position(88 + (num_of_records*8) as u64),
+            PalmDocHeaderData::RecordSize => reader.set_position(90 + (num_of_records*8) as u64),
+            PalmDocHeaderData::EncryptionType => reader.set_position(92 + (num_of_records*8) as u64),
+            _ => {}
+        }
+        reader.read_u16::<BigEndian>().unwrap()
+    }    
+    fn get_headers_u32(content: &Vec<u8>, pdheader: PalmDocHeaderData, num_of_records: u16) -> u32 {
+        let mut reader = Cursor::new(content);
+        match pdheader {
+            PalmDocHeaderData::TextLength => reader.set_position(84 + (num_of_records*8) as u64),
+            _ => {}
+        }
+        reader.read_u32::<BigEndian>().unwrap()
+    }    
+}
 struct MobiHeader;
 struct ExtHeader;
 struct Records;
 fn main() {
-    let mut content = fs::read("/home/wojtek/Downloads/ania.mobi").unwrap();
+    let mut content = fs::read(".mobi").unwrap();
     let mut display_str = String::new();
     let x = Header::parse(&content);
+    let p = PalmDocHeader::parse(&content, x.num_of_records);
     println!("{:#?}", x);
+    println!("{:#?}", p);
 }
 
 // https://docs.python.org/2/library/struct.html
