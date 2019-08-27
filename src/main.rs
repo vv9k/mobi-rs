@@ -156,9 +156,9 @@ impl PalmDocHeader {
         reader.read_u32::<BigEndian>().unwrap()
     }    
 }
-fn u8_as_string(byte_vec: &[u8]) -> String {
+fn u8_as_string(byte_arr: &[u8]) -> String {
     let mut out_str = String::new();
-    for byte in byte_vec {
+    for byte in byte_arr {
         out_str.push(*byte as char);
     }
     out_str
@@ -186,6 +186,7 @@ struct MobiHeader {
     first_data_record: u32,
     data_record_count: u32,
     exth_flags: u32,
+    has_exth_header: bool,
     drm_offset: u32,
     drm_count: u32,
     drm_size: u32,
@@ -224,7 +225,7 @@ enum MobiHeaderData {
 }
 impl MobiHeader {
     fn parse(content: &Vec<u8>, num_of_records: u16) -> MobiHeader{
-        MobiHeader {
+        let mut m = MobiHeader {
             identifier: MobiHeader::get_headers_u32(&content, MobiHeaderData::Identifier, num_of_records),
             header_length: MobiHeader::get_headers_u32(&content, MobiHeaderData::HeaderLength, num_of_records),
             mobi_type: MobiHeader::get_headers_u32(&content, MobiHeaderData::MobiType, num_of_records),
@@ -245,6 +246,7 @@ impl MobiHeader {
             first_data_record: MobiHeader::get_headers_u32(&content, MobiHeaderData::FirstDataRecord, num_of_records),
             data_record_count: MobiHeader::get_headers_u32(&content, MobiHeaderData::DataRecordCount, num_of_records),
             exth_flags: MobiHeader::get_headers_u32(&content, MobiHeaderData::ExthFlags, num_of_records),
+            has_exth_header: false,
             drm_offset: MobiHeader::get_headers_u32(&content, MobiHeaderData::DrmOffset, num_of_records),
             drm_count: MobiHeader::get_headers_u32(&content, MobiHeaderData::DrmCount, num_of_records),
             drm_size: MobiHeader::get_headers_u32(&content, MobiHeaderData::DrmSize, num_of_records),
@@ -252,7 +254,9 @@ impl MobiHeader {
             last_image_record: MobiHeader::get_headers_u16(&content, MobiHeaderData::LastImageRecord, num_of_records),
             fcis_record: MobiHeader::get_headers_u32(&content, MobiHeaderData::FcisRecord, num_of_records),
             flis_record: MobiHeader::get_headers_u32(&content, MobiHeaderData::FlisRecord, num_of_records),
-        }
+        };
+        m.exth_header();
+        m
     }
     fn get_headers_u32(content: &Vec<u8>, mheader: MobiHeaderData, num_of_records: u16) -> u32 {
         let mut reader = Cursor::new(content);
@@ -310,29 +314,84 @@ impl MobiHeader {
         }
         name
     }
+    fn exth_header(&mut self) {
+        self.has_exth_header = (self.exth_flags & 0x40)!=0;
+    }
 }
-struct ExtHeader;
+enum ExtHeaderData {
+    Identifier,
+    HeaderLength,
+    RecordCount,
+}
+#[derive(Debug, Default)]
+struct ExtHeader {
+    identifier: u32,
+    header_length: u32,
+    record_count: u32,
+    records: Vec<Record>,
+}
+impl ExtHeader {
+    fn parse(content: &Vec<u8>, num_of_records: u16) -> ExtHeader {
+        let extheader = ExtHeader {
+            identifier: ExtHeader::get_headers_u32(content, ExtHeaderData::Identifier, num_of_records),
+            header_length: ExtHeader::get_headers_u32(content, ExtHeaderData::HeaderLength, num_of_records),
+            record_count: ExtHeader::get_headers_u32(content, ExtHeaderData::RecordCount, num_of_records),
+            records: vec![],
+
+        };
+        extheader
+    }
+    fn get_headers_u32(content: &Vec<u8>, extheader: ExtHeaderData, num_of_records: u16) -> u32 {
+        let mut reader = Cursor::new(content);
+        let position = match extheader {
+            ExtHeaderData::Identifier => 328,
+            ExtHeaderData::HeaderLength => 332,
+            ExtHeaderData::RecordCount => 336,
+        };
+        reader.set_position(position + (num_of_records*8) as u64);
+        reader.read_u32::<BigEndian>().unwrap()        
+    }
+    fn get_records(&mut self, content: &Vec<u8>, num_of_records: u16) {
+        let mut records = vec![];
+        let mut reader = Cursor::new(content);
+        for i in 0..num_of_records {
+            reader.set_position(340+(i*4) as u64);
+            let record = Record::parse_record(&mut reader);
+            records.push(record)
+        }
+        self.records = records;
+    }
+}
 
 #[derive(Debug)]
 struct Record {
     record_data_offset: u32,
     id: u32,
+    record_data: String,
 }
 impl Record {
     fn new() -> Record {
-        Record {
+        let r = Record {
             record_data_offset: 0,
             id: 0,
-        }
+            record_data: String::new(),
+        };
+        r
+    }
+    fn record_data(&mut self, content: &Vec<u8>) {
+        let mut string = &content[self.record_data_offset as usize..(self.record_data_offset+8) as usize];
+        self.record_data = u8_as_string(string);
     }
     fn parse_record(reader: &mut Cursor<&Vec<u8>>) -> Record {
-        let mut record = Record::new();
         let record_data_offset = reader.read_u32::<BigEndian>().unwrap();
         let id = reader.read_u32::<BigEndian>().unwrap();
-        Record {
+        let mut record = Record {
             record_data_offset,
             id,
-        }
+            record_data: String::new(), 
+        };
+        record.record_data(reader.get_ref());
+        record
     }
     fn parse_records(content: &Vec<u8>, num_of_records: u16) -> Vec<Record> {
         let mut reader = Cursor::new(content);
@@ -359,9 +418,11 @@ fn main() {
     let p = PalmDocHeader::parse(&content, x.num_of_records);
     let r = Record::parse_records(&content, x.num_of_records);
     let m = MobiHeader::parse(&content, x.num_of_records);
+    let ex = ExtHeader::parse(&content, x.num_of_records);
     println!("{:#?}", x);
     println!("{:#?}", p);
     println!("{:#?}", m);
+    println!("{:#?}", ex);
     // let mut record_num = 0;
     // for record in &r {
     //     println!("{}", record.read(&content, record_num, &r));
