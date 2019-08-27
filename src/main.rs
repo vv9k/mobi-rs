@@ -74,34 +74,37 @@ impl Header {
     }
     fn get_headers_i16(content: &Vec<u8>, header: HeaderData) -> i16 {
         let mut reader = Cursor::new(content);
-        match header {
-            HeaderData::Attributes => reader.set_position(32),
-            HeaderData::Version => reader.set_position(34),
-            _ => {}
-        }
+        let position = match header {
+            HeaderData::Attributes => 32,
+            HeaderData::Version => 34,
+            _ => 0,
+        };
+        reader.set_position(position);
         reader.read_i16::<BigEndian>().unwrap()
     }
     fn get_headers_u16(content: &Vec<u8>, header: HeaderData) -> u16 {
         let mut reader = Cursor::new(content);
-        match header {
-            HeaderData::NumOfRecords => reader.set_position(76),
-            _ => {}
-        }
+        let position = match header {
+            HeaderData::NumOfRecords => 76,
+            _ => 0,
+        };
+        reader.set_position(position);
         reader.read_u16::<BigEndian>().unwrap()
     }    
     fn get_headers_u32(content: &Vec<u8>, header: HeaderData) -> u32 {
         let mut reader = Cursor::new(content);
-        match header {
-            HeaderData::Created => reader.set_position(36),
-            HeaderData::Modified => reader.set_position(40),
-            HeaderData::Backup => reader.set_position(44),
-            HeaderData::Modnum => reader.set_position(48),
-            HeaderData::AppInfoId => reader.set_position(52),
-            HeaderData::SortInfoId => reader.set_position(56),
-            HeaderData::UniqueIdSeed => reader.set_position(68),
-            HeaderData::NextRecordListId => reader.set_position(72),
-            _ => {}
-        }
+        let position = match header {
+            HeaderData::Created => 36,
+            HeaderData::Modified => 40,
+            HeaderData::Backup => 44,
+            HeaderData::Modnum => 48,
+            HeaderData::AppInfoId => 52,
+            HeaderData::SortInfoId => 56,
+            HeaderData::UniqueIdSeed => 68,
+            HeaderData::NextRecordListId => 72,
+            _ => 0,
+        };
+        reader.set_position(position);
         reader.read_u32::<BigEndian>().unwrap()
     }
     fn get_headers_string(content: &Vec<u8>, header: HeaderData) -> String {
@@ -133,21 +136,23 @@ impl PalmDocHeader {
     }
     fn get_headers_u16(content: &Vec<u8>, pdheader: PalmDocHeaderData, num_of_records: u16) -> u16 {
         let mut reader = Cursor::new(content);
-        match pdheader {
-            PalmDocHeaderData::Compression => reader.set_position(80 + (num_of_records*8) as u64),
-            PalmDocHeaderData::RecordCount => reader.set_position(88 + (num_of_records*8) as u64),
-            PalmDocHeaderData::RecordSize => reader.set_position(90 + (num_of_records*8) as u64),
-            PalmDocHeaderData::EncryptionType => reader.set_position(92 + (num_of_records*8) as u64),
-            _ => {}
-        }
+        let position = match pdheader {
+            PalmDocHeaderData::Compression => 80,
+            PalmDocHeaderData::RecordCount => 88,
+            PalmDocHeaderData::RecordSize => 90,
+            PalmDocHeaderData::EncryptionType => 92 ,
+            _ => 0,
+        };
+        reader.set_position(position + (num_of_records*8) as u64);
         reader.read_u16::<BigEndian>().unwrap()
     }    
     fn get_headers_u32(content: &Vec<u8>, pdheader: PalmDocHeaderData, num_of_records: u16) -> u32 {
         let mut reader = Cursor::new(content);
-        match pdheader {
-            PalmDocHeaderData::TextLength => reader.set_position(84 + (num_of_records*8) as u64),
-            _ => {}
-        }
+        let position = match pdheader {
+            PalmDocHeaderData::TextLength => 84,
+            _ => 0,
+        };
+        reader.set_position(position + (num_of_records*8) as u64);
         reader.read_u32::<BigEndian>().unwrap()
     }    
 }
@@ -251,42 +256,44 @@ impl MobiHeader {
     }
     fn get_headers_u32(content: &Vec<u8>, mheader: MobiHeaderData, num_of_records: u16) -> u32 {
         let mut reader = Cursor::new(content);
-        match mheader {
-            MobiHeaderData::Identifier => reader.set_position(100 + (num_of_records * 8) as u64),
-            MobiHeaderData::HeaderLength => reader.set_position(104 + (num_of_records * 8) as u64),
-            MobiHeaderData::MobiType => reader.set_position(108 + (num_of_records * 8) as u64),
-            MobiHeaderData::TextEncoding => reader.set_position(112 + (num_of_records * 8) as u64),
-            MobiHeaderData::Id => reader.set_position(116 + (num_of_records * 8) as u64),
-            MobiHeaderData::GenVersion => reader.set_position(120 + (num_of_records * 8) as u64),
-            MobiHeaderData::FirstNonBookIndex => reader.set_position(160 + (num_of_records * 8) as u64),
-            MobiHeaderData::NameOffset => reader.set_position(164 + (num_of_records * 8) as u64),
-            MobiHeaderData::NameLength => reader.set_position(168 + (num_of_records * 8) as u64),
-            MobiHeaderData::Language => reader.set_position(172 + (num_of_records * 8) as u64),
-            MobiHeaderData::InputLanguage => reader.set_position(176 + (num_of_records * 8) as u64),
-            MobiHeaderData::OutputLanguage => reader.set_position(180 + (num_of_records * 8) as u64),
-            MobiHeaderData::FormatVersion => reader.set_position(184 + (num_of_records * 8) as u64),
-            MobiHeaderData::FirstImageIndex => reader.set_position(188 + (num_of_records * 8) as u64),
-            MobiHeaderData::FirstHuffRecord => reader.set_position(192 + (num_of_records * 8) as u64),
-            MobiHeaderData::HuffRecordCount => reader.set_position(196 + (num_of_records * 8) as u64),
-            MobiHeaderData::FirstDataRecord => reader.set_position(200 + (num_of_records * 8) as u64),
-            MobiHeaderData::DataRecordCount => reader.set_position(204 + (num_of_records * 8) as u64),
-            MobiHeaderData::ExthFlags => reader.set_position(208 + (num_of_records * 8) as u64),
-            MobiHeaderData::DrmOffset => reader.set_position(248 + (num_of_records * 8) as u64),
-            MobiHeaderData::DrmCount => reader.set_position(252 + (num_of_records * 8) as u64),
-            MobiHeaderData::DrmSize => reader.set_position(256 + (num_of_records * 8) as u64),
-            MobiHeaderData::DrmFlags => reader.set_position(260 + (num_of_records * 8) as u64),
-            MobiHeaderData::FcisRecord => reader.set_position(280 + (num_of_records * 8) as u64),
-            MobiHeaderData::FlisRecord => reader.set_position(288 + (num_of_records * 8) as u64),
-            _ => {},
-        }
+        let position = match mheader {
+            MobiHeaderData::Identifier => 100,
+            MobiHeaderData::HeaderLength => 104,
+            MobiHeaderData::MobiType => 108,
+            MobiHeaderData::TextEncoding => 112,
+            MobiHeaderData::Id => 116,
+            MobiHeaderData::GenVersion => 120,
+            MobiHeaderData::FirstNonBookIndex => 160,
+            MobiHeaderData::NameOffset => 164,
+            MobiHeaderData::NameLength => 168,
+            MobiHeaderData::Language => 172,
+            MobiHeaderData::InputLanguage => 176,
+            MobiHeaderData::OutputLanguage => 180,
+            MobiHeaderData::FormatVersion => 184,
+            MobiHeaderData::FirstImageIndex => 188,
+            MobiHeaderData::FirstHuffRecord => 192,
+            MobiHeaderData::HuffRecordCount => 196,
+            MobiHeaderData::FirstDataRecord => 200,
+            MobiHeaderData::DataRecordCount => 204,
+            MobiHeaderData::ExthFlags => 208,
+            MobiHeaderData::DrmOffset => 248,
+            MobiHeaderData::DrmCount => 252,
+            MobiHeaderData::DrmSize => 256,
+            MobiHeaderData::DrmFlags => 260,
+            MobiHeaderData::FcisRecord => 280,
+            MobiHeaderData::FlisRecord => 288,
+            _ => 0,
+        };
+        reader.set_position(position + (num_of_records*8) as u64);
         reader.read_u32::<BigEndian>().unwrap()
     }            
     fn get_headers_u16(content: &Vec<u8>, mheader: MobiHeaderData, num_of_records: u16) -> u16 {
         let mut reader = Cursor::new(content);
-        match mheader {
-            MobiHeaderData::LastImageRecord => reader.set_position(274 + (num_of_records * 8) as u64),
-            _ => {}
-        }
+        let position = match mheader {
+            MobiHeaderData::LastImageRecord => 274,
+            _ => 0,
+        };
+        reader.set_position(position + (num_of_records*8) as u64);
         reader.read_u16::<BigEndian>().unwrap()
     }    
     fn name(content: &Vec<u8>, num_of_records: u16) -> String {
@@ -329,7 +336,7 @@ impl Record {
     }
     fn parse_records(content: &Vec<u8>, num_of_records: u16) -> Vec<Record> {
         let mut reader = Cursor::new(content);
-        reader.set_position(78);
+        // 78);
 
         let mut records = vec![];
         for i in 0..num_of_records {
