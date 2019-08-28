@@ -71,7 +71,30 @@ impl Mobi {
     pub fn title(&self) -> Option<&String> {
         self.exth.get_book_info(BookInfo::Title)
     }
-    // pub fn print_book_info(&)
+    /// Prints basic information about the book into stdout
+    pub fn print_book_info(&self) {
+        let empty_str = String::from("");
+        println!(
+            "
+----------------------------------------------------------
+Title:          {}
+Author:         {}
+Publisher:      {}
+Description:    {}
+ISBN:           {}
+Publish Date:   {}
+Contributor:    {}
+----------------------------------------------------------
+",
+            self.title().unwrap_or(&empty_str),
+            self.author().unwrap_or(&empty_str),
+            self.publisher().unwrap_or(&empty_str),
+            self.description().unwrap_or(&empty_str),
+            self.isbn().unwrap_or(&empty_str),
+            self.publish_date().unwrap_or(&empty_str),
+            self.contributor().unwrap_or(&empty_str)
+        );
+    }
 }
 /// Parameters of Header
 pub enum HeaderData {
@@ -657,6 +680,4 @@ impl Record {
             &content[self.record_data_offset as usize..next_record.record_data_offset as usize],
         )
     }
-    // TODO
-    // lz77 decompression
 }
