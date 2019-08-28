@@ -1,9 +1,9 @@
 //! An implementation of [MOBI](https://wiki.mobileread.com/wiki/MOBI) format data parsing and manipulation, written in Rust.
 //!
 //! The code is available on [GitHub](https://github.com/wojciechkepka/mobi-rs)
-//! 
+//!
 //! License: [*Apache-2.0*](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
-//! 
+//!
 mod utils;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::fs;
@@ -28,7 +28,12 @@ impl Mobi {
         let records = Record::parse_records(&contents, header.num_of_records);
         let palmdoc = PalmDocHeader::parse(&contents, header.num_of_records);
         let mobi = MobiHeader::parse(&contents, header.num_of_records);
-        let exth = ExtHeader::parse(&contents, header.num_of_records);
+        let exth = if mobi.has_exth_header {
+            ExtHeader::parse(&contents, header.num_of_records)
+        } else {
+            ExtHeader::default()
+        };
+
         Mobi {
             contents,
             header,
@@ -491,7 +496,7 @@ pub struct ExtHeader {
     pub identifier: u32,
     pub header_length: u32,
     pub record_count: u32,
-    pub records: Vec<(u32, u32, String)>,
+    pub records: Vec<String>,
 }
 impl ExtHeader {
     /// Parse a Exth header from the content
@@ -536,16 +541,12 @@ impl ExtHeader {
         reader.set_position(position);
         for _i in 0..self.record_count {
             let mut record_data = vec![];
-            let record_type = reader.read_u32::<BigEndian>().unwrap_or(0);
+            let _record_type = reader.read_u32::<BigEndian>().unwrap_or(0);
             let record_len = reader.read_u32::<BigEndian>().unwrap_or(0);
             for _j in 0..record_len - 8 {
                 record_data.push(reader.read_u8().unwrap_or(0));
             }
-            records.push((
-                record_len,
-                record_type,
-                utils::u8_as_string(&record_data[..]),
-            ));
+            records.push(utils::u8_as_string(&record_data[..]));
         }
         self.records = records;
     }
