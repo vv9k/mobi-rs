@@ -2,7 +2,7 @@
 A library written in rust to extract data from `.mobi` format ebooks It's purely for the sake of learning. 
 ## TODO:
 - [ ] Implement lz77 decompression
-- [ ] Write tests
+- [ X ] Write tests
 - [ ] Proper file hierarchy
 - [ ] Comments!
 - [ ] Prepare for cargo
@@ -10,7 +10,7 @@ A library written in rust to extract data from `.mobi` format ebooks It's purely
 ## Example
 Writing a program like this:
 ```rust
-use mobirs::Mobi;
+use mobi::Mobi;
 
 fn main() {
     let m = Mobi::init(Path::new("/home/wojtek/Downloads/lotr.mobi"));
