@@ -1,14 +1,17 @@
 # mobi-rs
----
 A library written in rust to extract data from `.mobi` format ebooks It's purely for the sake of learning. 
 ## TODO:
 - [ ] Implement lz77 decompression
-- [X] Write tests
-- [X] Proper file hierarchy
+- [ ] Implement reading records
 - [ ] Comments!
-- [ ] Prepare for cargo
+## Usage
+- add to `Cargo.toml`
+```
+[dependencies]
+mobi = "0.1.0"
+```
 ## Example
-Writing a program like this:
+- `src/main.rs`
 ```rust
 use mobi::Mobi;
 
@@ -20,7 +23,7 @@ fn main() {
     );
 }
 ```
-Would yield such result:
+Running `cargo run` would yield (different data based on the file ofcourse):
 ```
 Header {
     name: "Lord_of_the_Rings_-_Fellowship_\u{0}",
