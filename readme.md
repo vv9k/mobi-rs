@@ -6,7 +6,7 @@ A library written in rust to extract data from `.mobi` format ebooks It's purely
 - [ ] Comments!
 ## Usage
 - add to `Cargo.toml`
-```
+```toml
 [dependencies]
 mobi = "0.1.0"
 ```
@@ -80,61 +80,17 @@ Header {
     header_length: 1109,
     record_count: 11,
     records: [
-        (
-            36,
-            101,
-            "HarperCollins Publishers Ltd",
-        ),
-        (
-            813,
-            103,
-            "<h3>From Library Journal</h3><p>New Line Cinema will be releasing \"The Lord of the Rings\" trilogy in three separate installments, and Houghton Mifflin Tolkien\'s U.S. publisher since the release of The Hobbit in 1938 will be re-releasing each volume of the trilogy separately and in a boxed set (ISBN 0-618-15397-7. $22; pap. ISBN 0-618-15396-9. $12). <br />Copyright 2001 Reed Business Information, Inc. </p><h3>Review</h3><p>\'An extraordinary book. It deals with a stupendous theme. It leads us through a succession of strange and astonishing episodes, some of them magnificent, in a region where everything is invented, forest, moor, river, wilderness, town and the races which inhabit them.\' The Observer \'Among the greatest works of imaginative fiction of the twentieth century.\' Sunday Telegraph </p>",
-        ),
-        (
-            24,
-            100,
-            "J. R. R. Tolkien",
-        ),
-        (
-            50,
-            503,
-            "Lord of the Rings - Fellowship of the Ring",
-        ),
-        (
-            33,
-            106,
-            "2010-12-21T00:00:00+00:00",
-        ),
-        (
-            51,
-            108,
-            "calibre (0.7.31) [http://calibre-ebook.com]",
-        ),
-        (
-            21,
-            104,
-            "9780261102316",
-        ),
-        (
-            33,
-            106,
-            "2010-12-21T00:00:00+00:00",
-        ),
-        (
-            12,
-            201,
-            "\u{0}\u{0}\u{0}\u{0}",
-        ),
-        (
-            12,
-            203,
-            "\u{0}\u{0}\u{0}\u{0}",
-        ),
-        (
-            12,
-            202,
-            "\u{0}\u{0}\u{0}\u{1}",
-        ),
+        "HarperCollins Publishers Ltd",
+        "<h3>From Library Journal</h3><p>New Line Cinema will be releasing \"The Lord of the Rings\" trilogy in three separate installments, and Houghton Mifflin Tolkien\'s U.S. publisher since the release of The Hobbit in 1938 will be re-releasing each volume of the trilogy separately and in a boxed set (ISBN 0-618-15397-7. $22; pap. ISBN 0-618-15396-9. $12). <br />Copyright 2001 Reed Business Information, Inc. </p><h3>Review</h3><p>\'An extraordinary book. It deals with a stupendous theme. It leads us through a succession of strange and astonishing episodes, some of them magnificent, in a region where everything is invented, forest, moor, river, wilderness, town and the races which inhabit them.\' The Observer \'Among the greatest works of imaginative fiction of the twentieth century.\' Sunday Telegraph </p>",
+        "J. R. R. Tolkien",
+        "Lord of the Rings - Fellowship of the Ring",
+        "2010-12-21T00:00:00+00:00",
+        "calibre (0.7.31) [http://calibre-ebook.com]",
+        "9780261102316",
+        "2010-12-21T00:00:00+00:00",
+        "\u{0}\u{0}\u{0}\u{0}",
+        "\u{0}\u{0}\u{0}\u{0}",
+        "\u{0}\u{0}\u{0}\u{1}",
     ],
 }
 ```
