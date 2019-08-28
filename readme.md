@@ -1,12 +1,12 @@
 # mobi-rs
+---
 A library written in rust to extract data from `.mobi` format ebooks It's purely for the sake of learning. 
 ## TODO:
 - [ ] Implement lz77 decompression
-- [ X ] Write tests
-- [ ] Proper file hierarchy
+- [X] Write tests
+- [X] Proper file hierarchy
 - [ ] Comments!
 - [ ] Prepare for cargo
-
 ## Example
 Writing a program like this:
 ```rust
@@ -135,8 +135,9 @@ Header {
     ],
 }
 ```
-
 ## License
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
+## Thanks to
+[kroo](https://github.com/kroo/mobi-python) for inspiration and idea.
