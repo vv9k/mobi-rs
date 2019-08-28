@@ -9,7 +9,7 @@ A library written in rust to extract data from `.mobi` format ebooks It's purely
 
 ## Example
 Writing a program like this:
-```
+```rust
 use mobirs::Mobi;
 
 fn main() {
@@ -21,7 +21,7 @@ fn main() {
 }
 ```
 Would yield such result:
-```
+```json
 Header {
     name: "Lord_of_the_Rings_-_Fellowship_\u{0}",
     attributes: 0,
