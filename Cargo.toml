@@ -1,11 +1,11 @@
 [package]
-name = "mobi-rs"
+name = "mobi"
 version = "0.1.0"
 authors = ["wojciechkepka <wojtek.kepka@protonmail.com>"]
 edition = "2018"
 license = "Apache-2.0"
 repository = "https://github.com/wojciechkepka/mobi-rs"
-keywords = ["mobi", "ebook", "library", "e-book", ".mobi", "format"]
+keywords = ["mobi", "ebook", "library", "e-book", "format"]
 readme = "readme.md"
 categories = ["parsing"]
 
