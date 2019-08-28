@@ -18,7 +18,7 @@ use mobi::Mobi;
 fn main() {
     let m = Mobi::init(Path::new("/home/wojtek/Downloads/lotr.mobi"));
     println!(
-        "{:#?} {:#?} {:#?} {:#?}",
+        "{:#?}\n{:#?}\n{:#?}\n{:#?}",
         m.header, m.palmdoc, m.mobi, m.exth
     );
 }
@@ -40,13 +40,15 @@ Header {
     unique_id_seed: 292,
     next_record_list_id: 0,
     num_of_records: 292,
-} PalmDocHeader {
+}
+PalmDocHeader {
     compression: 2,
     text_length: 1151461,
     record_count: 282,
     record_size: 4096,
     encryption_type: 0,
-} MobiHeader {
+}
+MobiHeader {
     identifier: 232,
     header_length: 2,
     mobi_type: 65001,
@@ -75,7 +77,8 @@ Header {
     last_image_record: 288,
     fcis_record: 290,
     flis_record: 289,
-} ExtHeader {
+}
+ExtHeader {
     identifier: 1163416648,
     header_length: 1109,
     record_count: 11,
