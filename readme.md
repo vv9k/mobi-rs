@@ -8,9 +8,35 @@ A library written in rust to extract data from `.mobi` format ebooks It's purely
 - add to `Cargo.toml`
 ```toml
 [dependencies]
-mobi = "0.1.1"
+mobi = "0.1.2"
 ```
-## Example
+## Examples
+### Access basic info
+- `src/main.rs`
+```rust
+use mobi::Mobi;
+fn main() {
+    let m = Mobi::init(Path::new("/home/wojtek/Downloads/lotr.mobi"));
+    let title = m.title().unwrap();
+    let author = m.author().unwrap();
+    let publisher = m.publisher().unwrap();
+    let desc = m.description().unwrap();
+    let isbn = m.isbn().unwrap();
+    let pub_date = m.publish_date().unwrap();
+    let contributor = m.contributor().unwrap();
+}
+```
+Output:
+```
+The Fellowship of the Ring
+J. R. R. Tolkien
+Houghton Mifflin
+9780618574940
+2005-07-15T07:00:00+00:00
+SUMMARY: For over fifty years, J.R.R. Tolkienâs peerless fantasy has accumulated worldwide acclaim as the greatest adventure tale ever written.No other writer has created a world as distinct as Middle-earth, complete with its own geography, history, languages, and legends. And no one has created characters as endearing as Tolkienâs large-hearted, hairy-footed hobbits. Tolkienâs The Lord of the Rings continues to seize the imaginations of readers of all ages, and this new three-volume paperback edition is designed to appeal to the youngest of them.In ancient times the Rings of Power were crafted by the Elvensmiths, and Sauron, the Dark Lord, forged the One Ring, filling it with his own power so that he could rule all others. But the One Ring was taken from him, and though he sought it throughout Middle-earth, still it remained lost to him . . .
+calibre (0.7.23) [http://calibre-ebook.com]
+```
+### Print headers
 - `src/main.rs`
 ```rust
 use mobi::Mobi;
