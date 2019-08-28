@@ -577,9 +577,9 @@ impl Record {
 }
 
 fn main() {
-    let m = Mobi::init(Path::new("/home/user/file"));
+    let m = Mobi::init(Path::new("/home/wojtek/Downloads/lotr.mobi"));
     println!(
-        "{:#?} {:#?} {:#?} {:?}",
+        "{:#?} {:#?} {:#?} {:#g?}",
         m.header, m.palmdoc, m.mobi, m.exth
     );
 }
