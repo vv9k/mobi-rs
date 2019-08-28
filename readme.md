@@ -21,7 +21,7 @@ fn main() {
 }
 ```
 Would yield such result:
-```json
+```
 Header {
     name: "Lord_of_the_Rings_-_Fellowship_\u{0}",
     attributes: 0,
