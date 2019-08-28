@@ -196,12 +196,12 @@ fn parse_palmdocheader() {
 #[test]
 fn parse_mobiheader() {
     let mobiheader = MobiHeader {
-        identifier: 232,
-        header_length: 2,
-        mobi_type: 65001,
-        text_encoding: 3428045761,
-        id: 6,
-        gen_version: 4294967295,
+        identifier: 1297039945,
+        header_length: 232,
+        mobi_type: 2,
+        text_encoding: 65001,
+        id: 3428045761,
+        gen_version: 6,
         first_non_book_index: 284,
         name: String::from("Lord of the Rings - Fellowship of the Ring"),
         name_offset: 1360,
