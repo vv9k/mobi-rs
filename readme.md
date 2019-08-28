@@ -1,5 +1,6 @@
 # mobi-rs
 A library written in rust to extract data from `.mobi` format ebooks It's purely for the sake of learning. 
+[Crates.io](https://crates.io/crates/mobi)
 ## TODO:
 - [ ] Implement lz77 decompression
 - [ ] Implement reading records
@@ -24,6 +25,7 @@ fn main() {
     let isbn = m.isbn().unwrap();
     let pub_date = m.publish_date().unwrap();
     let contributor = m.contributor().unwrap();
+    println!("{}\n{}\n{}\n{}\n{}\n{}\n{}\n", title, author, publisher, isbn, pub_date, desc, contributor);
 }
 ```
 Output:
