@@ -422,12 +422,12 @@ impl MobiHeader {
     fn get_headers_u32(content: &[u8], mheader: MobiHeaderData, num_of_records: u16) -> u32 {
         let mut reader = Cursor::new(content);
         let position = match mheader {
-            MobiHeaderData::Identifier => 100,
-            MobiHeaderData::HeaderLength => 104,
-            MobiHeaderData::MobiType => 108,
-            MobiHeaderData::TextEncoding => 112,
-            MobiHeaderData::Id => 116,
-            MobiHeaderData::GenVersion => 120,
+            MobiHeaderData::Identifier => 96,
+            MobiHeaderData::HeaderLength => 100,
+            MobiHeaderData::MobiType => 104,
+            MobiHeaderData::TextEncoding => 108,
+            MobiHeaderData::Id => 112,
+            MobiHeaderData::GenVersion => 116,
             MobiHeaderData::FirstNonBookIndex => 160,
             MobiHeaderData::NameOffset => 164,
             MobiHeaderData::NameLength => 168,
