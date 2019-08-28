@@ -6,10 +6,10 @@
 //!
 mod utils;
 use byteorder::{BigEndian, ReadBytesExt};
+use std::collections::HashMap;
 use std::fs;
 use std::io::Cursor;
 use std::path::Path;
-
 #[derive(Debug)]
 /// Structure that holds parsed ebook information and contents
 pub struct Mobi {
@@ -43,6 +43,35 @@ impl Mobi {
             exth,
         }
     }
+    /// Returns author record if such exists
+    pub fn author(&self) -> Option<&String> {
+        self.exth.get_book_info(BookInfo::Author)
+    }
+    /// Returns publisher record if such exists
+    pub fn publisher(&self) -> Option<&String> {
+        self.exth.get_book_info(BookInfo::Publisher)
+    }
+    /// Returns description record if such exists
+    pub fn description(&self) -> Option<&String> {
+        self.exth.get_book_info(BookInfo::Description)
+    }
+    /// Returns isbn record if such exists
+    pub fn isbn(&self) -> Option<&String> {
+        self.exth.get_book_info(BookInfo::Isbn)
+    }
+    /// Returns publish_date record if such exists
+    pub fn publish_date(&self) -> Option<&String> {
+        self.exth.get_book_info(BookInfo::PublishDate)
+    }
+    /// Returns contributor record if such exists
+    pub fn contributor(&self) -> Option<&String> {
+        self.exth.get_book_info(BookInfo::Contributor)
+    }
+    /// Returns title record if such exists
+    pub fn title(&self) -> Option<&String> {
+        self.exth.get_book_info(BookInfo::Title)
+    }
+    // pub fn print_book_info(&)
 }
 /// Parameters of Header
 pub enum HeaderData {
@@ -484,6 +513,15 @@ impl MobiHeader {
         self.has_exth_header = (self.exth_flags & 0x40) != 0;
     }
 }
+pub enum BookInfo {
+    Author,
+    Publisher,
+    Description,
+    Isbn,
+    PublishDate,
+    Contributor,
+    Title,
+}
 /// Parameters of Exth Header
 pub enum ExtHeaderData {
     Identifier,
@@ -496,7 +534,7 @@ pub struct ExtHeader {
     pub identifier: u32,
     pub header_length: u32,
     pub record_count: u32,
-    pub records: Vec<String>,
+    pub records: HashMap<u32, String>,
 }
 impl ExtHeader {
     /// Parse a Exth header from the content
@@ -517,7 +555,7 @@ impl ExtHeader {
                 ExtHeaderData::RecordCount,
                 num_of_records,
             ),
-            records: vec![],
+            records: HashMap::new(),
         };
         extheader.get_records(content, num_of_records);
         extheader
@@ -535,20 +573,32 @@ impl ExtHeader {
     }
     /// Gets header records
     fn get_records(&mut self, content: &[u8], num_of_records: u16) {
-        let mut records = vec![];
+        let mut records = HashMap::new();
         let mut reader = Cursor::new(content);
         let position: u64 = 340 + u64::from(num_of_records * 8);
         reader.set_position(position);
         for _i in 0..self.record_count {
-            let mut record_data = vec![];
-            let _record_type = reader.read_u32::<BigEndian>().unwrap_or(0);
+            let mut record_data = String::new();
+            let record_type = reader.read_u32::<BigEndian>().unwrap_or(0);
             let record_len = reader.read_u32::<BigEndian>().unwrap_or(0);
             for _j in 0..record_len - 8 {
-                record_data.push(reader.read_u8().unwrap_or(0));
+                record_data.push(reader.read_u8().unwrap_or(0) as char);
             }
-            records.push(utils::u8_as_string(&record_data[..]));
+            records.insert(record_type, record_data);
         }
         self.records = records;
+    }
+    pub fn get_book_info(&self, info: BookInfo) -> Option<&String> {
+        let record: u32 = match info {
+            BookInfo::Author => 100,
+            BookInfo::Publisher => 101,
+            BookInfo::Description => 103,
+            BookInfo::Isbn => 104,
+            BookInfo::PublishDate => 106,
+            BookInfo::Contributor => 108,
+            BookInfo::Title => 503,
+        };
+        self.records.get(&record)
     }
 }
 
