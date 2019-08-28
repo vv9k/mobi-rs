@@ -1,3 +1,9 @@
+//! An implementation of [MOBI](https://wiki.mobileread.com/wiki/MOBI) format data parsing and manipulation, written in Rust.
+//!
+//! The code is available on [GitHub](https://github.com/wojciechkepka/mobi-rs)
+//! 
+//! License: [*Apache-2.0*](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
+//! 
 mod utils;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::fs;
@@ -5,6 +11,7 @@ use std::io::Cursor;
 use std::path::Path;
 
 #[derive(Debug)]
+/// Structure that holds parsed ebook information and contents
 pub struct Mobi {
     pub contents: Vec<u8>,
     pub header: Header,
@@ -14,6 +21,7 @@ pub struct Mobi {
     pub exth: ExtHeader,
 }
 impl Mobi {
+    /// Construct a Mobi object from passed file path
     pub fn init(file_path: &Path) -> Mobi {
         let contents = fs::read(file_path).unwrap();
         let header = Header::parse(&contents);
@@ -31,6 +39,7 @@ impl Mobi {
         }
     }
 }
+/// Parameters of Header
 pub enum HeaderData {
     Name,
     Attributes,
@@ -47,7 +56,8 @@ pub enum HeaderData {
     NextRecordListId,
     NumOfRecords,
 }
-enum PalmDocHeaderData {
+/// Parameters of PalmDOC Header
+pub enum PalmDocHeaderData {
     Compression,
     TextLength,
     RecordCount,
@@ -56,6 +66,7 @@ enum PalmDocHeaderData {
 }
 
 #[derive(Debug, PartialEq)]
+/// Strcture that holds header information
 pub struct Header {
     pub name: String,
     pub attributes: i16,
@@ -73,6 +84,7 @@ pub struct Header {
     pub num_of_records: u16,
 }
 impl Header {
+    /// Parse a header from the content
     pub fn parse(content: &[u8]) -> Header {
         Header {
             name: Header::get_headers_string(content, HeaderData::Name),
@@ -91,6 +103,7 @@ impl Header {
             num_of_records: Header::get_headers_u16(content, HeaderData::NumOfRecords),
         }
     }
+    /// Gets i16 header value from specific location
     fn get_headers_i16(content: &[u8], header: HeaderData) -> i16 {
         let mut reader = Cursor::new(content);
         let position = match header {
@@ -101,6 +114,7 @@ impl Header {
         reader.set_position(position);
         reader.read_i16::<BigEndian>().unwrap()
     }
+    /// Gets u16 header value from specific location
     pub fn get_headers_u16(content: &[u8], header: HeaderData) -> u16 {
         let mut reader = Cursor::new(content);
         let position = match header {
@@ -110,6 +124,7 @@ impl Header {
         reader.set_position(position);
         reader.read_u16::<BigEndian>().unwrap()
     }
+    /// Gets u32 header value from specific location
     fn get_headers_u32(content: &[u8], header: HeaderData) -> u32 {
         let mut reader = Cursor::new(content);
         let position = match header {
@@ -126,6 +141,7 @@ impl Header {
         reader.set_position(position);
         reader.read_u32::<BigEndian>().unwrap()
     }
+    /// Creates a string based on header bytes from specific location
     fn get_headers_string(content: &[u8], header: HeaderData) -> String {
         match header {
             HeaderData::Name => utils::u8_as_string(&content[0..32]),
@@ -136,6 +152,7 @@ impl Header {
     }
 }
 #[derive(Debug, PartialEq)]
+/// Strcture that holds PalmDOC header information
 pub struct PalmDocHeader {
     pub compression: u16,
     pub text_length: u32,
@@ -144,6 +161,7 @@ pub struct PalmDocHeader {
     pub encryption_type: u16,
 }
 impl PalmDocHeader {
+    /// Parse a PalmDOC header from the content
     pub fn parse(content: &[u8], num_of_records: u16) -> PalmDocHeader {
         PalmDocHeader {
             compression: PalmDocHeader::get_headers_u16(
@@ -173,6 +191,7 @@ impl PalmDocHeader {
             ),
         }
     }
+    /// Gets u16 header value from specific location
     fn get_headers_u16(content: &[u8], pdheader: PalmDocHeaderData, num_of_records: u16) -> u16 {
         let mut reader = Cursor::new(content);
         let position = match pdheader {
@@ -185,6 +204,7 @@ impl PalmDocHeader {
         reader.set_position(position + u64::from(num_of_records * 8));
         reader.read_u16::<BigEndian>().unwrap()
     }
+    /// Gets u32 header value from specific location
     fn get_headers_u32(content: &[u8], pdheader: PalmDocHeaderData, num_of_records: u16) -> u32 {
         let mut reader = Cursor::new(content);
         let position = match pdheader {
@@ -197,6 +217,7 @@ impl PalmDocHeader {
 }
 
 #[derive(Debug, PartialEq)]
+/// Strcture that holds Mobi header information
 pub struct MobiHeader {
     pub identifier: u32,
     pub header_length: u32,
@@ -227,7 +248,8 @@ pub struct MobiHeader {
     pub fcis_record: u32,
     pub flis_record: u32,
 }
-enum MobiHeaderData {
+/// Parameters of Mobi Header
+pub enum MobiHeaderData {
     Identifier,
     HeaderLength,
     MobiType,
@@ -256,6 +278,7 @@ enum MobiHeaderData {
     FlisRecord,
 }
 impl MobiHeader {
+    /// Parse a Mobi header from the content
     pub fn parse(content: &[u8], num_of_records: u16) -> MobiHeader {
         let mut m = MobiHeader {
             identifier: MobiHeader::get_headers_u32(
@@ -390,6 +413,7 @@ impl MobiHeader {
         m.exth_header();
         m
     }
+    /// Gets u32 header value from specific location
     fn get_headers_u32(content: &[u8], mheader: MobiHeaderData, num_of_records: u16) -> u32 {
         let mut reader = Cursor::new(content);
         let position = match mheader {
@@ -423,6 +447,7 @@ impl MobiHeader {
         reader.set_position(position + u64::from(num_of_records * 8));
         reader.read_u32::<BigEndian>().unwrap()
     }
+    /// Gets u16 header value from specific location
     fn get_headers_u16(content: &[u8], mheader: MobiHeaderData, num_of_records: u16) -> u16 {
         let mut reader = Cursor::new(content);
         let position = match mheader {
@@ -432,6 +457,7 @@ impl MobiHeader {
         reader.set_position(position + u64::from(num_of_records * 8));
         reader.read_u16::<BigEndian>().unwrap()
     }
+    /// Returns the book name
     pub fn name(content: &[u8], num_of_records: u16) -> String {
         let name_offset =
             MobiHeader::get_headers_u32(content, MobiHeaderData::NameOffset, num_of_records);
@@ -448,16 +474,19 @@ impl MobiHeader {
         }
         name
     }
+    /// Checks if there is a Exth Header and changes the parameter
     fn exth_header(&mut self) {
         self.has_exth_header = (self.exth_flags & 0x40) != 0;
     }
 }
-enum ExtHeaderData {
+/// Parameters of Exth Header
+pub enum ExtHeaderData {
     Identifier,
     HeaderLength,
     RecordCount,
 }
 #[derive(Debug, Default, PartialEq)]
+/// Strcture that holds Exth header information
 pub struct ExtHeader {
     pub identifier: u32,
     pub header_length: u32,
@@ -465,6 +494,7 @@ pub struct ExtHeader {
     pub records: Vec<(u32, u32, String)>,
 }
 impl ExtHeader {
+    /// Parse a Exth header from the content
     pub fn parse(content: &[u8], num_of_records: u16) -> ExtHeader {
         let mut extheader = ExtHeader {
             identifier: ExtHeader::get_headers_u32(
@@ -487,6 +517,7 @@ impl ExtHeader {
         extheader.get_records(content, num_of_records);
         extheader
     }
+    /// Gets u32 header value from specific location
     fn get_headers_u32(content: &[u8], extheader: ExtHeaderData, num_of_records: u16) -> u32 {
         let mut reader = Cursor::new(content);
         let position = match extheader {
@@ -497,6 +528,7 @@ impl ExtHeader {
         reader.set_position(position + u64::from(num_of_records * 8));
         reader.read_u32::<BigEndian>().unwrap()
     }
+    /// Gets header records
     fn get_records(&mut self, content: &[u8], num_of_records: u16) {
         let mut records = vec![];
         let mut reader = Cursor::new(content);
@@ -520,6 +552,7 @@ impl ExtHeader {
 }
 
 #[derive(Debug)]
+/// A "cell" in the whole books content
 pub struct Record {
     record_data_offset: u32,
     id: u32,
@@ -534,6 +567,7 @@ impl Record {
             record_data: String::new(),
         }
     }
+    /// Reads into a string the record data based on record_data_offset
     fn record_data(&mut self, content: &[u8]) {
         if self.record_data_offset + 8 < content.len() as u32 {
             let string =
@@ -541,6 +575,7 @@ impl Record {
             self.record_data = utils::u8_as_string(string);
         }
     }
+    /// Parses a record from the reader at current position
     fn parse_record(reader: &mut Cursor<&[u8]>) -> Record {
         let record_data_offset = reader.read_u32::<BigEndian>().unwrap();
         let id = reader.read_u32::<BigEndian>().unwrap();
@@ -552,6 +587,7 @@ impl Record {
         record.record_data(*reader.get_ref());
         record
     }
+    /// Gets all records in the specified content
     fn parse_records(content: &[u8], num_of_records: u16) -> Vec<Record> {
         let mut reader = Cursor::new(content);
         let mut records = vec![];
