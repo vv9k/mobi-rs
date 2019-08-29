@@ -151,25 +151,25 @@ pub struct Header {
 impl Header {
     /// Parse a header from the content
     pub fn parse(content: &[u8]) -> Result<Header, std::io::Error> {
-        macro_rules! get_header {
-            ($type:ident, $method:ident) => {
+        macro_rules! header {
+            ($method:ident($type:ident)) => {
                 return_or_err!(Header::$method(content, HeaderData::$type))
             };
         }
         let name = Header::get_headers_string(content, HeaderData::Name);
-        let attributes = get_header!(Attributes, get_headers_i16);
-        let version = get_header!(Version, get_headers_i16);
-        let created = get_header!(Created, get_headers_u32);
-        let modified = get_header!(Modified, get_headers_u32);
-        let backup = get_header!(Backup, get_headers_u32);
-        let modnum = get_header!(Modnum, get_headers_u32);
-        let app_info_id = get_header!(AppInfoId, get_headers_u32);
-        let sort_info_id = get_header!(SortInfoId, get_headers_u32);
+        let attributes = header!(get_headers_i16(Attributes));
+        let version = header!(get_headers_i16(Version));
+        let created = header!(get_headers_u32(Created));
+        let modified = header!(get_headers_u32(Modified));
+        let backup = header!(get_headers_u32(Backup));
+        let modnum = header!(get_headers_u32(Modnum));
+        let app_info_id = header!(get_headers_u32(AppInfoId));
+        let sort_info_id = header!(get_headers_u32(SortInfoId));
         let typ_e = Header::get_headers_string(content, HeaderData::TypE);
         let creator = Header::get_headers_string(content, HeaderData::Creator);
-        let unique_id_seed = get_header!(UniqueIdSeed, get_headers_u32);
-        let next_record_list_id = get_header!(NextRecordListId, get_headers_u32);
-        let num_of_records = get_header!(NumOfRecords, get_headers_u16);
+        let unique_id_seed = header!(get_headers_u32(UniqueIdSeed));
+        let next_record_list_id = header!(get_headers_u32(NextRecordListId));
+        let num_of_records = header!(get_headers_u16(NumOfRecords));
         Ok(Header {
             name,
             attributes,
@@ -247,8 +247,8 @@ pub struct PalmDocHeader {
 impl PalmDocHeader {
     /// Parse a PalmDOC header from the content
     pub fn parse(content: &[u8], num_of_records: u16) -> Result<PalmDocHeader, std::io::Error> {
-        macro_rules! get_pdheader {
-            ($type:ident, $method:ident) => {
+        macro_rules! pdheader {
+            ($method:ident($type:ident)) => {
                 return_or_err!(PalmDocHeader::$method(
                     content,
                     PalmDocHeaderData::$type,
@@ -256,11 +256,11 @@ impl PalmDocHeader {
                 ))
             };
         }
-        let compression = get_pdheader!(Compression, get_headers_u16);
-        let text_length = get_pdheader!(TextLength, get_headers_u32);
-        let record_count = get_pdheader!(RecordCount, get_headers_u16);
-        let record_size = get_pdheader!(RecordSize, get_headers_u16);
-        let encryption_type = get_pdheader!(EncryptionType, get_headers_u16);
+        let compression = pdheader!(get_headers_u16(Compression));
+        let text_length = pdheader!(get_headers_u32(TextLength));
+        let record_count = pdheader!(get_headers_u16(RecordCount));
+        let record_size = pdheader!(get_headers_u16(RecordSize));
+        let encryption_type = pdheader!(get_headers_u16(EncryptionType));
         Ok(PalmDocHeader {
             compression,
             text_length,
@@ -366,47 +366,43 @@ pub enum MobiHeaderData {
 impl MobiHeader {
     /// Parse a Mobi header from the content
     pub fn parse(content: &[u8], num_of_records: u16) -> Result<MobiHeader, std::io::Error> {
-        macro_rules! get_headers {
-            ($cont:expr, $nr:expr, $method:ident($enum:ident)) => {
-                return_or_err!(MobiHeader::$method($cont, MobiHeaderData::$enum, $nr))
+        macro_rules! mobiheader {
+            ($method:ident($enum:ident)) => {
+                return_or_err!(MobiHeader::$method(
+                    content,
+                    MobiHeaderData::$enum,
+                    num_of_records
+                ))
             };
         }
-        let identifier = get_headers!(content, num_of_records, get_headers_u32(Identifier));
-        let header_length = get_headers!(content, num_of_records, get_headers_u32(HeaderLength));
-        let mobi_type = get_headers!(content, num_of_records, get_headers_u32(MobiType));
-        let text_encoding = get_headers!(content, num_of_records, get_headers_u32(TextEncoding));
-        let id = get_headers!(content, num_of_records, get_headers_u32(Id));
-        let gen_version = get_headers!(content, num_of_records, get_headers_u32(GenVersion));
-        let first_non_book_index =
-            get_headers!(content, num_of_records, get_headers_u32(FirstNonBookIndex));
+        let identifier = mobiheader!(get_headers_u32(Identifier));
+        let header_length = mobiheader!(get_headers_u32(HeaderLength));
+        let mobi_type = mobiheader!(get_headers_u32(MobiType));
+        let text_encoding = mobiheader!(get_headers_u32(TextEncoding));
+        let id = mobiheader!(get_headers_u32(Id));
+        let gen_version = mobiheader!(get_headers_u32(GenVersion));
+        let first_non_book_index = mobiheader!(get_headers_u32(FirstNonBookIndex));
         let name = return_or_err!(MobiHeader::name(content, num_of_records));
-        let name_offset = get_headers!(content, num_of_records, get_headers_u32(NameOffset));
-        let name_length = get_headers!(content, num_of_records, get_headers_u32(NameLength));
-        let language = get_headers!(content, num_of_records, get_headers_u32(Language));
-        let input_language = get_headers!(content, num_of_records, get_headers_u32(InputLanguage));
-        let output_language =
-            get_headers!(content, num_of_records, get_headers_u32(OutputLanguage));
-        let format_version = get_headers!(content, num_of_records, get_headers_u32(FormatVersion));
-        let first_image_index =
-            get_headers!(content, num_of_records, get_headers_u32(FirstImageIndex));
-        let first_huff_record =
-            get_headers!(content, num_of_records, get_headers_u32(FirstHuffRecord));
-        let huff_record_count =
-            get_headers!(content, num_of_records, get_headers_u32(HuffRecordCount));
-        let first_data_record =
-            get_headers!(content, num_of_records, get_headers_u32(FirstDataRecord));
-        let data_record_count =
-            get_headers!(content, num_of_records, get_headers_u32(DataRecordCount));
-        let exth_flags = get_headers!(content, num_of_records, get_headers_u32(ExthFlags));
+        let name_offset = mobiheader!(get_headers_u32(NameOffset));
+        let name_length = mobiheader!(get_headers_u32(NameLength));
+        let language = mobiheader!(get_headers_u32(Language));
+        let input_language = mobiheader!(get_headers_u32(InputLanguage));
+        let output_language = mobiheader!(get_headers_u32(OutputLanguage));
+        let format_version = mobiheader!(get_headers_u32(FormatVersion));
+        let first_image_index = mobiheader!(get_headers_u32(FirstImageIndex));
+        let first_huff_record = mobiheader!(get_headers_u32(FirstHuffRecord));
+        let huff_record_count = mobiheader!(get_headers_u32(HuffRecordCount));
+        let first_data_record = mobiheader!(get_headers_u32(FirstDataRecord));
+        let data_record_count = mobiheader!(get_headers_u32(DataRecordCount));
+        let exth_flags = mobiheader!(get_headers_u32(ExthFlags));
         let has_exth_header = MobiHeader::exth_header(exth_flags);
-        let drm_offset = get_headers!(content, num_of_records, get_headers_u32(DrmOffset));
-        let drm_count = get_headers!(content, num_of_records, get_headers_u32(DrmCount));
-        let drm_size = get_headers!(content, num_of_records, get_headers_u32(DrmSize));
-        let drm_flags = get_headers!(content, num_of_records, get_headers_u32(DrmFlags));
-        let last_image_record =
-            get_headers!(content, num_of_records, get_headers_u16(LastImageRecord));
-        let fcis_record = get_headers!(content, num_of_records, get_headers_u32(FcisRecord));
-        let flis_record = get_headers!(content, num_of_records, get_headers_u32(FlisRecord));
+        let drm_offset = mobiheader!(get_headers_u32(DrmOffset));
+        let drm_count = mobiheader!(get_headers_u32(DrmCount));
+        let drm_size = mobiheader!(get_headers_u32(DrmSize));
+        let drm_flags = mobiheader!(get_headers_u32(DrmFlags));
+        let last_image_record = mobiheader!(get_headers_u16(LastImageRecord));
+        let fcis_record = mobiheader!(get_headers_u32(FcisRecord));
+        let flis_record = mobiheader!(get_headers_u32(FlisRecord));
         Ok(MobiHeader {
             identifier,
             header_length,
