@@ -106,13 +106,13 @@ Contributor:    {}
 }
 
 macro_rules! get_headers_pmatch {
-    ($input:expr, { $prefix:ident, $($elem:ident => $val:expr),+ }) => {
-        get_headers_pmatch!($input, { $prefix, $($elem => $val,)+ })
+    ($input:expr, $prefix:ty, { $($elem:ident => $val:expr),+ }) => {
+        get_headers_pmatch!($input, $prefix, { $($elem => $val,)+ })
     };
-    ($input:expr, { $prefix:ident, $($elem:ident => $val:expr),+ , }) => {
+    ($input:expr, $prefix:ty, { $($elem:ident => $val:expr),+ , }) => {
         match $input {
             $(
-                $prefix::$elem => $val,
+                <$prefix>::$elem => $val,
             )+
             #[allow(unreachable_patterns)]
             _ => 0,
@@ -124,7 +124,7 @@ macro_rules! get_headers_pmatch {
 macro_rules! get_headers_impl {
     ($method:ident($hdty:ty) -> $rty:ty, $read_fn:ident, $pmatch:tt) => {
         fn $method(content: &[u8], header_data: $hdty) -> $rty {
-            let position = get_headers_pmatch!(header_data, $pmatch);
+            let position = get_headers_pmatch!(header_data, $hdty, $pmatch);
             let mut reader = Cursor::new(content);
             reader.set_position(position);
             reader.$read_fn::<BigEndian>().unwrap()
@@ -132,7 +132,7 @@ macro_rules! get_headers_impl {
     };
     ($method:ident($hdty:ty) -> $rty:ty, $num_of_records:ident, $read_fn:ident, $pmatch:tt) => {
         fn $method(content: &[u8], header_data: $hdty, $num_of_records: u16) -> $rty {
-            let position = get_headers_pmatch!(header_data, $pmatch);
+            let position = get_headers_pmatch!(header_data, $hdty, $pmatch);
             let mut reader = Cursor::new(content);
             reader.set_position(position + u64::from($num_of_records * 8));
             reader.$read_fn::<BigEndian>().unwrap()
@@ -207,7 +207,6 @@ impl Header {
     }
 
     get_headers_impl!(get_headers_i16(HeaderData) -> i16, read_i16, {
-        HeaderData,
         Attributes => 32,
         Version => 34,
     });
@@ -224,7 +223,6 @@ impl Header {
     }
 
     get_headers_impl!(get_headers_u32(HeaderData) -> u32, read_u32, {
-        HeaderData,
         Created => 36,
         Modified => 40,
         Backup => 44,
@@ -290,7 +288,6 @@ impl PalmDocHeader {
     }
 
     get_headers_impl!(get_headers_u16(PalmDocHeaderData) -> u16, num_of_records, read_u16, {
-        PalmDocHeaderData,
         Compression => 80,
         RecordCount => 88,
         RecordSize => 90,
@@ -298,7 +295,6 @@ impl PalmDocHeader {
     });
 
     get_headers_impl!(get_headers_u32(PalmDocHeaderData) -> u32, num_of_records, read_u32, {
-        PalmDocHeaderData,
         TextLength => 84,
     });
 }
@@ -410,7 +406,6 @@ impl MobiHeader {
     }
 
     get_headers_impl!(get_headers_u32(MobiHeaderData) -> u32, num_of_records, read_u32, {
-        MobiHeaderData,
         Identifier => 96,
         HeaderLength => 100,
         MobiType => 104,
@@ -439,7 +434,6 @@ impl MobiHeader {
     });
 
     get_headers_impl!(get_headers_u16(MobiHeaderData) -> u16, num_of_records, read_u16, {
-        MobiHeaderData,
         LastImageRecord => 274,
     });
 
@@ -514,7 +508,6 @@ impl ExtHeader {
     }
 
     get_headers_impl!(get_headers_u32(ExtHeaderData) -> u32, num_of_records, read_u32, {
-        ExtHeaderData,
         Identifier => 328,
         HeaderLength => 332,
         RecordCount => 336,
