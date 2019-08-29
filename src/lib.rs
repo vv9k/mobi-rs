@@ -6,10 +6,10 @@
 //!
 use byteorder::{BigEndian, ReadBytesExt};
 use std::collections::HashMap;
+use std::fmt;
 use std::fs;
 use std::io::Cursor;
 use std::path::Path;
-use std::fmt;
 macro_rules! return_or_err {
     ($x:expr) => {
         match $x {
@@ -85,8 +85,9 @@ impl Mobi {
 impl fmt::Display for Mobi {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let empty_str = String::from("");
-        write!(f,
-"
+        write!(
+            f,
+            "
 ------------------------------------------------------------------------------------
 Title:          {}
 Author:         {}
@@ -164,8 +165,9 @@ pub struct Header {
 }
 impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f,
-"HEADER
+        write!(
+            f,
+            "HEADER
 Name:                   {}
 Attributes:             {}
 Version:                {}
@@ -180,20 +182,20 @@ Creator:                {}
 Unique_id_seed:         {}
 Next_record_list_id:    {}
 Num_of_records:         {}",
-        self.name,
-        self.attributes,
-        self.version,
-        self.created,
-        self.modified,
-        self.backup,
-        self.modnum,
-        self.app_info_id,
-        self.sort_info_id,
-        self.typ_e,
-        self.creator,
-        self.unique_id_seed,
-        self.next_record_list_id,
-        self.num_of_records,
+            self.name,
+            self.attributes,
+            self.version,
+            self.created,
+            self.modified,
+            self.backup,
+            self.modnum,
+            self.app_info_id,
+            self.sort_info_id,
+            self.typ_e,
+            self.creator,
+            self.unique_id_seed,
+            self.next_record_list_id,
+            self.num_of_records,
         )
     }
 }
@@ -287,18 +289,19 @@ pub struct PalmDocHeader {
 }
 impl fmt::Display for PalmDocHeader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f,
-"PALMDOC HEADER
+        write!(
+            f,
+            "PALMDOC HEADER
 Compression:            {}
 Text length:            {}
 Record count:           {}
 Record size:            {}
 Encryption type:        {}",
-        self.compression,
-        self.text_length,
-        self.record_count,
-        self.record_size,
-        self.encryption_type,
+            self.compression,
+            self.text_length,
+            self.record_count,
+            self.record_size,
+            self.encryption_type,
         )
     }
 }
@@ -418,8 +421,9 @@ pub enum MobiHeaderData {
 }
 impl fmt::Display for MobiHeader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f,
-"MOBI HEADER
+        write!(
+            f,
+            "MOBI HEADER
 Identifier:             {}
 HeaderLength:           {}
 Mobi type:              {}
@@ -447,35 +451,35 @@ Drm size:               {}
 Drm flags:              {}
 Last image record:      {}
 Fcis record:            {}
-Flis record:            {}",       
-        self.identifier,
-        self.header_length,
-        self.mobi_type,
-        self.text_encoding,
-        self.id,
-        self.gen_version,
-        self.first_non_book_index,
-        self.name,
-        self.name_offset,
-        self.name_length,
-        self.language,
-        self.input_language,
-        self.output_language,
-        self.format_version,
-        self.first_image_index,
-        self.first_huff_record,
-        self.huff_record_count,
-        self.first_data_record,
-        self.data_record_count,
-        self.exth_flags,
-        self.has_exth_header,
-        self.drm_offset,
-        self.drm_count,
-        self.drm_size,
-        self.drm_flags,
-        self.last_image_record,
-        self.fcis_record,
-        self.flis_record,
+Flis record:            {}",
+            self.identifier,
+            self.header_length,
+            self.mobi_type,
+            self.text_encoding,
+            self.id,
+            self.gen_version,
+            self.first_non_book_index,
+            self.name,
+            self.name_offset,
+            self.name_length,
+            self.language,
+            self.input_language,
+            self.output_language,
+            self.format_version,
+            self.first_image_index,
+            self.first_huff_record,
+            self.huff_record_count,
+            self.first_data_record,
+            self.data_record_count,
+            self.exth_flags,
+            self.has_exth_header,
+            self.drm_offset,
+            self.drm_count,
+            self.drm_size,
+            self.drm_flags,
+            self.last_image_record,
+            self.fcis_record,
+            self.flis_record,
         )
     }
 }
@@ -623,16 +627,14 @@ pub struct ExtHeader {
 }
 impl fmt::Display for ExtHeader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f,
-"EXTHEADER
+        write!(
+            f,
+            "EXTHEADER
 Identifier:             {}
 Header_length:          {}
 Record_count:           {}
 Records:                {:#?}",
-        self.identifier,
-        self.header_length,
-        self.record_count,
-        self.records,
+            self.identifier, self.header_length, self.record_count, self.records,
         )
     }
 }
