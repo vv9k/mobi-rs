@@ -10,6 +10,15 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::Cursor;
 use std::path::Path;
+
+macro_rules! return_or_err {
+    ($x:expr) => {
+        match $x {
+            Ok(data) => data,
+            Err(e) => return Err(e),
+        }
+    };
+}
 #[derive(Debug)]
 /// Structure that holds parsed ebook information and contents
 pub struct Mobi {
@@ -22,26 +31,25 @@ pub struct Mobi {
 }
 impl Mobi {
     /// Construct a Mobi object from passed file path
-    pub fn init(file_path: &Path) -> Mobi {
-        let contents = fs::read(file_path).unwrap();
-        let header = Header::parse(&contents);
-        let records = Record::parse_records(&contents, header.num_of_records);
-        let palmdoc = PalmDocHeader::parse(&contents, header.num_of_records);
-        let mobi = MobiHeader::parse(&contents, header.num_of_records);
-        let exth = if mobi.has_exth_header {
-            ExtHeader::parse(&contents, header.num_of_records)
-        } else {
-            ExtHeader::default()
-        };
-
-        Mobi {
+    /// Returns std::io::Error if there is a problem with the provided path
+    pub fn init<P: AsRef<Path>>(file_path: P) -> Result<Mobi, std::io::Error> {
+        let contents = return_or_err!(fs::read(file_path));
+        let header = return_or_err!(Header::parse(&contents));
+        let records = return_or_err!(Record::parse_records(&contents, header.num_of_records));
+        let palmdoc = return_or_err!(PalmDocHeader::parse(&contents, header.num_of_records));
+        let mobi = return_or_err!(MobiHeader::parse(&contents, header.num_of_records));
+        let mut exth = ExtHeader::default();
+        if mobi.has_exth_header {
+            exth = return_or_err!(ExtHeader::parse(&contents, header.num_of_records));
+        }
+        Ok(Mobi {
             contents,
             header,
             records,
             palmdoc,
             mobi,
             exth,
-        }
+        })
     }
     /// Returns author record if such exists
     pub fn author(&self) -> Option<&String> {
@@ -142,26 +150,45 @@ pub struct Header {
 }
 impl Header {
     /// Parse a header from the content
-    pub fn parse(content: &[u8]) -> Header {
-        Header {
-            name: Header::get_headers_string(content, HeaderData::Name),
-            attributes: Header::get_headers_i16(content, HeaderData::Attributes),
-            version: Header::get_headers_i16(content, HeaderData::Version),
-            created: Header::get_headers_u32(content, HeaderData::Created),
-            modified: Header::get_headers_u32(content, HeaderData::Modified),
-            backup: Header::get_headers_u32(content, HeaderData::Backup),
-            modnum: Header::get_headers_u32(content, HeaderData::Modnum),
-            app_info_id: Header::get_headers_u32(content, HeaderData::AppInfoId),
-            sort_info_id: Header::get_headers_u32(content, HeaderData::SortInfoId),
-            typ_e: Header::get_headers_string(content, HeaderData::TypE),
-            creator: Header::get_headers_string(content, HeaderData::Creator),
-            unique_id_seed: Header::get_headers_u32(content, HeaderData::UniqueIdSeed),
-            next_record_list_id: Header::get_headers_u32(content, HeaderData::NextRecordListId),
-            num_of_records: Header::get_headers_u16(content, HeaderData::NumOfRecords),
+    pub fn parse(content: &[u8]) -> Result<Header, std::io::Error> {
+        macro_rules! get_header {
+            ($type:ident, $method:ident) => {
+                return_or_err!(Header::$method(content, HeaderData::$type))
+            };
         }
+        let name = Header::get_headers_string(content, HeaderData::Name);
+        let attributes = get_header!(Attributes, get_headers_i16);
+        let version = get_header!(Version, get_headers_i16);
+        let created = get_header!(Created, get_headers_u32);
+        let modified = get_header!(Modified, get_headers_u32);
+        let backup = get_header!(Backup, get_headers_u32);
+        let modnum = get_header!(Modnum, get_headers_u32);
+        let app_info_id = get_header!(AppInfoId, get_headers_u32);
+        let sort_info_id = get_header!(SortInfoId, get_headers_u32);
+        let typ_e = Header::get_headers_string(content, HeaderData::TypE);
+        let creator = Header::get_headers_string(content, HeaderData::Creator);
+        let unique_id_seed = get_header!(UniqueIdSeed, get_headers_u32);
+        let next_record_list_id = get_header!(NextRecordListId, get_headers_u32);
+        let num_of_records = get_header!(NumOfRecords, get_headers_u16);
+        Ok(Header {
+            name,
+            attributes,
+            version,
+            created,
+            modified,
+            backup,
+            modnum,
+            app_info_id,
+            sort_info_id,
+            typ_e,
+            creator,
+            unique_id_seed,
+            next_record_list_id,
+            num_of_records,
+        })
     }
     /// Gets i16 header value from specific location
-    fn get_headers_i16(content: &[u8], header: HeaderData) -> i16 {
+    fn get_headers_i16(content: &[u8], header: HeaderData) -> Result<i16, std::io::Error> {
         let mut reader = Cursor::new(content);
         let position = match header {
             HeaderData::Attributes => 32,
@@ -169,20 +196,20 @@ impl Header {
             _ => 0,
         };
         reader.set_position(position);
-        reader.read_i16::<BigEndian>().unwrap()
+        reader.read_i16::<BigEndian>()
     }
     /// Gets u16 header value from specific location
-    pub fn get_headers_u16(content: &[u8], header: HeaderData) -> u16 {
+    pub fn get_headers_u16(content: &[u8], header: HeaderData) -> Result<u16, std::io::Error> {
         let mut reader = Cursor::new(content);
         let position = match header {
             HeaderData::NumOfRecords => 76,
             _ => 0,
         };
         reader.set_position(position);
-        reader.read_u16::<BigEndian>().unwrap()
+        reader.read_u16::<BigEndian>()
     }
     /// Gets u32 header value from specific location
-    fn get_headers_u32(content: &[u8], header: HeaderData) -> u32 {
+    fn get_headers_u32(content: &[u8], header: HeaderData) -> Result<u32, std::io::Error> {
         let mut reader = Cursor::new(content);
         let position = match header {
             HeaderData::Created => 36,
@@ -196,7 +223,7 @@ impl Header {
             _ => 0,
         };
         reader.set_position(position);
-        reader.read_u32::<BigEndian>().unwrap()
+        reader.read_u32::<BigEndian>()
     }
     /// Creates a string based on header bytes from specific location
     fn get_headers_string(content: &[u8], header: HeaderData) -> String {
@@ -219,37 +246,35 @@ pub struct PalmDocHeader {
 }
 impl PalmDocHeader {
     /// Parse a PalmDOC header from the content
-    pub fn parse(content: &[u8], num_of_records: u16) -> PalmDocHeader {
-        PalmDocHeader {
-            compression: PalmDocHeader::get_headers_u16(
-                content,
-                PalmDocHeaderData::Compression,
-                num_of_records,
-            ),
-            text_length: PalmDocHeader::get_headers_u32(
-                content,
-                PalmDocHeaderData::TextLength,
-                num_of_records,
-            ),
-            record_count: PalmDocHeader::get_headers_u16(
-                content,
-                PalmDocHeaderData::RecordCount,
-                num_of_records,
-            ),
-            record_size: PalmDocHeader::get_headers_u16(
-                content,
-                PalmDocHeaderData::RecordSize,
-                num_of_records,
-            ),
-            encryption_type: PalmDocHeader::get_headers_u16(
-                content,
-                PalmDocHeaderData::EncryptionType,
-                num_of_records,
-            ),
+    pub fn parse(content: &[u8], num_of_records: u16) -> Result<PalmDocHeader, std::io::Error> {
+        macro_rules! get_pdheader {
+            ($type:ident, $method:ident) => {
+                return_or_err!(PalmDocHeader::$method(
+                    content,
+                    PalmDocHeaderData::$type,
+                    num_of_records
+                ))
+            };
         }
+        let compression = get_pdheader!(Compression, get_headers_u16);
+        let text_length = get_pdheader!(TextLength, get_headers_u32);
+        let record_count = get_pdheader!(RecordCount, get_headers_u16);
+        let record_size = get_pdheader!(RecordSize, get_headers_u16);
+        let encryption_type = get_pdheader!(EncryptionType, get_headers_u16);
+        Ok(PalmDocHeader {
+            compression,
+            text_length,
+            record_count,
+            record_size,
+            encryption_type,
+        })
     }
     /// Gets u16 header value from specific location
-    fn get_headers_u16(content: &[u8], pdheader: PalmDocHeaderData, num_of_records: u16) -> u16 {
+    fn get_headers_u16(
+        content: &[u8],
+        pdheader: PalmDocHeaderData,
+        num_of_records: u16,
+    ) -> Result<u16, std::io::Error> {
         let mut reader = Cursor::new(content);
         let position = match pdheader {
             PalmDocHeaderData::Compression => 80,
@@ -259,17 +284,21 @@ impl PalmDocHeader {
             _ => 0,
         };
         reader.set_position(position + u64::from(num_of_records * 8));
-        reader.read_u16::<BigEndian>().unwrap()
+        reader.read_u16::<BigEndian>()
     }
     /// Gets u32 header value from specific location
-    fn get_headers_u32(content: &[u8], pdheader: PalmDocHeaderData, num_of_records: u16) -> u32 {
+    fn get_headers_u32(
+        content: &[u8],
+        pdheader: PalmDocHeaderData,
+        num_of_records: u16,
+    ) -> Result<u32, std::io::Error> {
         let mut reader = Cursor::new(content);
         let position = match pdheader {
             PalmDocHeaderData::TextLength => 84,
             _ => 0,
         };
         reader.set_position(position + u64::from(num_of_records * 8));
-        reader.read_u32::<BigEndian>().unwrap()
+        reader.read_u32::<BigEndian>()
     }
 }
 
@@ -336,142 +365,85 @@ pub enum MobiHeaderData {
 }
 impl MobiHeader {
     /// Parse a Mobi header from the content
-    pub fn parse(content: &[u8], num_of_records: u16) -> MobiHeader {
-        let mut m = MobiHeader {
-            identifier: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::Identifier,
-                num_of_records,
-            ),
-            header_length: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::HeaderLength,
-                num_of_records,
-            ),
-            mobi_type: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::MobiType,
-                num_of_records,
-            ),
-            text_encoding: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::TextEncoding,
-                num_of_records,
-            ),
-            id: MobiHeader::get_headers_u32(&content, MobiHeaderData::Id, num_of_records),
-            gen_version: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::GenVersion,
-                num_of_records,
-            ),
-            first_non_book_index: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::FirstNonBookIndex,
-                num_of_records,
-            ),
-            name: MobiHeader::name(&content, num_of_records),
-            name_offset: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::NameOffset,
-                num_of_records,
-            ),
-            name_length: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::NameLength,
-                num_of_records,
-            ),
-            language: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::Language,
-                num_of_records,
-            ),
-            input_language: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::InputLanguage,
-                num_of_records,
-            ),
-            output_language: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::OutputLanguage,
-                num_of_records,
-            ),
-            format_version: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::FormatVersion,
-                num_of_records,
-            ),
-            first_image_index: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::FirstImageIndex,
-                num_of_records,
-            ),
-            first_huff_record: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::FirstHuffRecord,
-                num_of_records,
-            ),
-            huff_record_count: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::HuffRecordCount,
-                num_of_records,
-            ),
-            first_data_record: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::FirstDataRecord,
-                num_of_records,
-            ),
-            data_record_count: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::DataRecordCount,
-                num_of_records,
-            ),
-            exth_flags: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::ExthFlags,
-                num_of_records,
-            ),
-            has_exth_header: false,
-            drm_offset: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::DrmOffset,
-                num_of_records,
-            ),
-            drm_count: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::DrmCount,
-                num_of_records,
-            ),
-            drm_size: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::DrmSize,
-                num_of_records,
-            ),
-            drm_flags: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::DrmFlags,
-                num_of_records,
-            ),
-            last_image_record: MobiHeader::get_headers_u16(
-                &content,
-                MobiHeaderData::LastImageRecord,
-                num_of_records,
-            ),
-            fcis_record: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::FcisRecord,
-                num_of_records,
-            ),
-            flis_record: MobiHeader::get_headers_u32(
-                &content,
-                MobiHeaderData::FlisRecord,
-                num_of_records,
-            ),
-        };
-        m.exth_header();
-        m
+    pub fn parse(content: &[u8], num_of_records: u16) -> Result<MobiHeader, std::io::Error> {
+        macro_rules! get_headers {
+            ($cont:expr, $nr:expr, $method:ident($enum:ident)) => {
+                return_or_err!(MobiHeader::$method($cont, MobiHeaderData::$enum, $nr))
+            };
+        }
+        let identifier = get_headers!(content, num_of_records, get_headers_u32(Identifier));
+        let header_length = get_headers!(content, num_of_records, get_headers_u32(HeaderLength));
+        let mobi_type = get_headers!(content, num_of_records, get_headers_u32(MobiType));
+        let text_encoding = get_headers!(content, num_of_records, get_headers_u32(TextEncoding));
+        let id = get_headers!(content, num_of_records, get_headers_u32(Id));
+        let gen_version = get_headers!(content, num_of_records, get_headers_u32(GenVersion));
+        let first_non_book_index =
+            get_headers!(content, num_of_records, get_headers_u32(FirstNonBookIndex));
+        let name = return_or_err!(MobiHeader::name(content, num_of_records));
+        let name_offset = get_headers!(content, num_of_records, get_headers_u32(NameOffset));
+        let name_length = get_headers!(content, num_of_records, get_headers_u32(NameLength));
+        let language = get_headers!(content, num_of_records, get_headers_u32(Language));
+        let input_language = get_headers!(content, num_of_records, get_headers_u32(InputLanguage));
+        let output_language =
+            get_headers!(content, num_of_records, get_headers_u32(OutputLanguage));
+        let format_version = get_headers!(content, num_of_records, get_headers_u32(FormatVersion));
+        let first_image_index =
+            get_headers!(content, num_of_records, get_headers_u32(FirstImageIndex));
+        let first_huff_record =
+            get_headers!(content, num_of_records, get_headers_u32(FirstHuffRecord));
+        let huff_record_count =
+            get_headers!(content, num_of_records, get_headers_u32(HuffRecordCount));
+        let first_data_record =
+            get_headers!(content, num_of_records, get_headers_u32(FirstDataRecord));
+        let data_record_count =
+            get_headers!(content, num_of_records, get_headers_u32(DataRecordCount));
+        let exth_flags = get_headers!(content, num_of_records, get_headers_u32(ExthFlags));
+        let has_exth_header = MobiHeader::exth_header(exth_flags);
+        let drm_offset = get_headers!(content, num_of_records, get_headers_u32(DrmOffset));
+        let drm_count = get_headers!(content, num_of_records, get_headers_u32(DrmCount));
+        let drm_size = get_headers!(content, num_of_records, get_headers_u32(DrmSize));
+        let drm_flags = get_headers!(content, num_of_records, get_headers_u32(DrmFlags));
+        let last_image_record =
+            get_headers!(content, num_of_records, get_headers_u16(LastImageRecord));
+        let fcis_record = get_headers!(content, num_of_records, get_headers_u32(FcisRecord));
+        let flis_record = get_headers!(content, num_of_records, get_headers_u32(FlisRecord));
+        Ok(MobiHeader {
+            identifier,
+            header_length,
+            mobi_type,
+            text_encoding,
+            id,
+            gen_version,
+            first_non_book_index,
+            name,
+            name_offset,
+            name_length,
+            language,
+            input_language,
+            output_language,
+            format_version,
+            first_image_index,
+            first_huff_record,
+            huff_record_count,
+            first_data_record,
+            data_record_count,
+            exth_flags,
+            has_exth_header,
+            drm_offset,
+            drm_count,
+            drm_size,
+            drm_flags,
+            last_image_record,
+            fcis_record,
+            flis_record,
+        })
     }
     /// Gets u32 header value from specific location
-    fn get_headers_u32(content: &[u8], mheader: MobiHeaderData, num_of_records: u16) -> u32 {
+    fn get_headers_u32(
+        content: &[u8],
+        mheader: MobiHeaderData,
+        num_of_records: u16,
+    ) -> Result<u32, std::io::Error> {
         let mut reader = Cursor::new(content);
         let position = match mheader {
             MobiHeaderData::Identifier => 96,
@@ -502,24 +474,34 @@ impl MobiHeader {
             _ => 0,
         };
         reader.set_position(position + u64::from(num_of_records * 8));
-        reader.read_u32::<BigEndian>().unwrap()
+        reader.read_u32::<BigEndian>()
     }
     /// Gets u16 header value from specific location
-    fn get_headers_u16(content: &[u8], mheader: MobiHeaderData, num_of_records: u16) -> u16 {
+    fn get_headers_u16(
+        content: &[u8],
+        mheader: MobiHeaderData,
+        num_of_records: u16,
+    ) -> Result<u16, std::io::Error> {
         let mut reader = Cursor::new(content);
         let position = match mheader {
             MobiHeaderData::LastImageRecord => 274,
             _ => 0,
         };
         reader.set_position(position + u64::from(num_of_records * 8));
-        reader.read_u16::<BigEndian>().unwrap()
+        reader.read_u16::<BigEndian>()
     }
     /// Returns the book name
-    pub fn name(content: &[u8], num_of_records: u16) -> String {
-        let name_offset =
-            MobiHeader::get_headers_u32(content, MobiHeaderData::NameOffset, num_of_records);
-        let name_length =
-            MobiHeader::get_headers_u32(content, MobiHeaderData::NameLength, num_of_records);
+    pub fn name(content: &[u8], num_of_records: u16) -> Result<String, std::io::Error> {
+        let name_offset = return_or_err!(MobiHeader::get_headers_u32(
+            content,
+            MobiHeaderData::NameOffset,
+            num_of_records
+        ));
+        let name_length = return_or_err!(MobiHeader::get_headers_u32(
+            content,
+            MobiHeaderData::NameLength,
+            num_of_records
+        ));
         let mut name = String::new();
         let mut count = 0;
         for byte in &content[name_offset as usize + (num_of_records * 8) as usize + 80..] {
@@ -529,11 +511,11 @@ impl MobiHeader {
             name.push(*byte as char);
             count += 1;
         }
-        name
+        Ok(name)
     }
     /// Checks if there is a Exth Header and changes the parameter
-    fn exth_header(&mut self) {
-        self.has_exth_header = (self.exth_flags & 0x40) != 0;
+    fn exth_header(exth_flags: u32) -> bool {
+        (exth_flags & 0x40) != 0
     }
 }
 pub enum BookInfo {
@@ -561,30 +543,37 @@ pub struct ExtHeader {
 }
 impl ExtHeader {
     /// Parse a Exth header from the content
-    pub fn parse(content: &[u8], num_of_records: u16) -> ExtHeader {
+    pub fn parse(content: &[u8], num_of_records: u16) -> Result<ExtHeader, std::io::Error> {
+        let identifier = return_or_err!(ExtHeader::get_headers_u32(
+            content,
+            ExtHeaderData::Identifier,
+            num_of_records
+        ));
+        let header_length = return_or_err!(ExtHeader::get_headers_u32(
+            content,
+            ExtHeaderData::HeaderLength,
+            num_of_records
+        ));
+        let record_count = return_or_err!(ExtHeader::get_headers_u32(
+            content,
+            ExtHeaderData::RecordCount,
+            num_of_records
+        ));
         let mut extheader = ExtHeader {
-            identifier: ExtHeader::get_headers_u32(
-                content,
-                ExtHeaderData::Identifier,
-                num_of_records,
-            ),
-            header_length: ExtHeader::get_headers_u32(
-                content,
-                ExtHeaderData::HeaderLength,
-                num_of_records,
-            ),
-            record_count: ExtHeader::get_headers_u32(
-                content,
-                ExtHeaderData::RecordCount,
-                num_of_records,
-            ),
+            identifier,
+            header_length,
+            record_count,
             records: HashMap::new(),
         };
         extheader.get_records(content, num_of_records);
-        extheader
+        Ok(extheader)
     }
     /// Gets u32 header value from specific location
-    fn get_headers_u32(content: &[u8], extheader: ExtHeaderData, num_of_records: u16) -> u32 {
+    fn get_headers_u32(
+        content: &[u8],
+        extheader: ExtHeaderData,
+        num_of_records: u16,
+    ) -> Result<u32, std::io::Error> {
         let mut reader = Cursor::new(content);
         let position = match extheader {
             ExtHeaderData::Identifier => 328,
@@ -592,7 +581,7 @@ impl ExtHeader {
             ExtHeaderData::RecordCount => 336,
         };
         reader.set_position(position + u64::from(num_of_records * 8));
-        reader.read_u32::<BigEndian>().unwrap()
+        reader.read_u32::<BigEndian>()
     }
     /// Gets header records
     fn get_records(&mut self, content: &[u8], num_of_records: u16) {
@@ -650,26 +639,26 @@ impl Record {
         }
     }
     /// Parses a record from the reader at current position
-    fn parse_record(reader: &mut Cursor<&[u8]>) -> Record {
-        let record_data_offset = reader.read_u32::<BigEndian>().unwrap();
-        let id = reader.read_u32::<BigEndian>().unwrap();
+    fn parse_record(reader: &mut Cursor<&[u8]>) -> Result<Record, std::io::Error> {
+        let record_data_offset = return_or_err!(reader.read_u32::<BigEndian>());;
+        let id = return_or_err!(reader.read_u32::<BigEndian>());
         let mut record = Record {
             record_data_offset,
             id,
             record_data: String::new(),
         };
         record.record_data(*reader.get_ref());
-        record
+        Ok(record)
     }
     /// Gets all records in the specified content
-    fn parse_records(content: &[u8], num_of_records: u16) -> Vec<Record> {
+    fn parse_records(content: &[u8], num_of_records: u16) -> Result<Vec<Record>, std::io::Error> {
         let mut reader = Cursor::new(content);
         let mut records = vec![];
         for _i in 0..num_of_records {
-            let record = Record::parse_record(&mut reader);
+            let record = return_or_err!(Record::parse_record(&mut reader));
             records.push(record);
         }
-        records
+        Ok(records)
     }
     #[allow(dead_code)]
     fn read(&self, content: &[u8], record_num: usize, records: &[Record]) -> String {

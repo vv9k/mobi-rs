@@ -177,7 +177,7 @@ fn parse_header() {
         num_of_records: 292,
     };
     let parsed_header = Header::parse(BOOK);
-    assert_eq!(header, parsed_header);
+    assert_eq!(header, parsed_header.unwrap())
 }
 #[test]
 fn parse_palmdocheader() {
@@ -190,8 +190,9 @@ fn parse_palmdocheader() {
     };
     let parsed_header = PalmDocHeader::parse(
         BOOK,
-        Header::get_headers_u16(BOOK, HeaderData::NumOfRecords),
-    );
+        Header::get_headers_u16(BOOK, HeaderData::NumOfRecords).unwrap(),
+    )
+    .unwrap();
     assert_eq!(pdheader, parsed_header);
 }
 #[test]
@@ -228,8 +229,9 @@ fn parse_mobiheader() {
     };
     let parsed_header = MobiHeader::parse(
         BOOK,
-        Header::get_headers_u16(BOOK, HeaderData::NumOfRecords),
-    );
+        Header::get_headers_u16(BOOK, HeaderData::NumOfRecords).unwrap(),
+    )
+    .unwrap();
     assert_eq!(mobiheader, parsed_header);
 }
 #[test]
@@ -256,43 +258,44 @@ fn parse_extheader() {
     };
     let parsed_header = ExtHeader::parse(
         BOOK,
-        Header::get_headers_u16(BOOK, HeaderData::NumOfRecords),
-    );
+        Header::get_headers_u16(BOOK, HeaderData::NumOfRecords).unwrap(),
+    )
+    .unwrap();
     assert_eq!(extheader, parsed_header);
 }
 #[test]
 fn author_exth() {
-    let exth = ExtHeader::parse(BOOK, 292);
+    let exth = ExtHeader::parse(BOOK, 292).unwrap();
     let author = exth.get_book_info(BookInfo::Author).unwrap();
     assert_eq!(&String::from("J. R. R. Tolkien"), author)
 }
 #[test]
 fn publisher_exth() {
-    let exth = ExtHeader::parse(BOOK, 292);
+    let exth = ExtHeader::parse(BOOK, 292).unwrap();
     let publisher = exth.get_book_info(BookInfo::Publisher).unwrap();
     assert_eq!(&String::from("HarperCollins Publishers Ltd"), publisher)
 }
 #[test]
 fn description_exth() {
-    let exth = ExtHeader::parse(BOOK, 292);
+    let exth = ExtHeader::parse(BOOK, 292).unwrap();
     let description = exth.get_book_info(BookInfo::Description).unwrap();
     assert_eq!(&String::from("<h3>From Library Journal</h3><p>New Line Cinema will be releasing \"The Lord of the Rings\" trilogy in three separate installments, and Houghton Mifflin Tolkien\'s U.S. publisher since the release of The Hobbit in 1938 will be re-releasing each volume of the trilogy separately and in a boxed set (ISBN 0-618-15397-7. $22; pap. ISBN 0-618-15396-9. $12). <br />Copyright 2001 Reed Business Information, Inc. </p><h3>Review</h3><p>\'An extraordinary book. It deals with a stupendous theme. It leads us through a succession of strange and astonishing episodes, some of them magnificent, in a region where everything is invented, forest, moor, river, wilderness, town and the races which inhabit them.\' The Observer \'Among the greatest works of imaginative fiction of the twentieth century.\' Sunday Telegraph </p>"), description)
 }
 #[test]
 fn isbn_exth() {
-    let exth = ExtHeader::parse(BOOK, 292);
+    let exth = ExtHeader::parse(BOOK, 292).unwrap();
     let isbn = exth.get_book_info(BookInfo::Isbn).unwrap();
     assert_eq!(&String::from("9780261102316"), isbn)
 }
 #[test]
 fn publish_date_exth() {
-    let exth = ExtHeader::parse(BOOK, 292);
+    let exth = ExtHeader::parse(BOOK, 292).unwrap();
     let publish_date = exth.get_book_info(BookInfo::PublishDate).unwrap();
     assert_eq!(&String::from("2010-12-21T00:00:00+00:00"), publish_date)
 }
 #[test]
 fn contributor_exth() {
-    let exth = ExtHeader::parse(BOOK, 292);
+    let exth = ExtHeader::parse(BOOK, 292).unwrap();
     let contributor = exth.get_book_info(BookInfo::Contributor).unwrap();
     assert_eq!(
         &String::from("calibre (0.7.31) [http://calibre-ebook.com]"),
@@ -301,7 +304,7 @@ fn contributor_exth() {
 }
 #[test]
 fn title_exth() {
-    let exth = ExtHeader::parse(BOOK, 292);
+    let exth = ExtHeader::parse(BOOK, 292).unwrap();
     let title = exth.get_book_info(BookInfo::Title).unwrap();
     assert_eq!(
         &String::from("Lord of the Rings - Fellowship of the Ring"),
