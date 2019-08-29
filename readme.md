@@ -1,15 +1,11 @@
 # mobi-rs
 A library written in rust to extract data from `.mobi` format ebooks It's purely for the sake of learning. 
 [Crates.io](https://crates.io/crates/mobi)
-## TODO:
-- [ ] Implement lz77 decompression
-- [ ] Implement reading records
-- [ ] Comments!
 ## Usage
 - add to `Cargo.toml`
 ```toml
 [dependencies]
-mobi = "0.1.3"
+mobi = "0.1.4"
 ```
 ## Examples
 ### Access basic info
@@ -54,44 +50,44 @@ fn main() {
 Running `cargo run` would yield (different data based on the file ofcourse):
 ```
 Header {
-    name: "Lord_of_the_Rings_-_Fellowship_\u{0}",
+    name: "The_Fellowship_of_the_Ring\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}",
     attributes: 0,
     version: 0,
-    created: 1299709979,
-    modified: 1299709979,
+    created: 1286664537,
+    modified: 1286664537,
     backup: 0,
     modnum: 0,
     app_info_id: 0,
     sort_info_id: 0,
     typ_e: "BOOK",
     creator: "MOBI",
-    unique_id_seed: 292,
+    unique_id_seed: 326,
     next_record_list_id: 0,
-    num_of_records: 292,
+    num_of_records: 326,
 }
 PalmDocHeader {
     compression: 2,
-    text_length: 1151461,
-    record_count: 282,
+    text_length: 1213227,
+    record_count: 297,
     record_size: 4096,
     encryption_type: 0,
 }
 MobiHeader {
-    identifier: 232,
-    header_length: 2,
-    mobi_type: 65001,
-    text_encoding: 3428045761,
-    id: 6,
-    gen_version: 4294967295,
-    first_non_book_index: 284,
-    name: "Lord of the Rings - Fellowship of the Ring",
-    name_offset: 1360,
-    name_length: 42,
-    language: 2057,
+    identifier: 1297039945,
+    header_length: 232,
+    mobi_type: 2,
+    text_encoding: 65001,
+    id: 1826426250,
+    gen_version: 6,
+    first_non_book_index: 299,
+    name: "The Fellowship of the Ring",
+    name_offset: 1840,
+    name_length: 26,
+    language: 9,
     input_language: 0,
     output_language: 0,
     format_version: 6,
-    first_image_index: 287,
+    first_image_index: 299,
     first_huff_record: 0,
     huff_record_count: 0,
     first_data_record: 0,
@@ -102,29 +98,34 @@ MobiHeader {
     drm_count: 0,
     drm_size: 0,
     drm_flags: 0,
-    last_image_record: 288,
-    fcis_record: 290,
-    flis_record: 289,
+    last_image_record: 322,
+    fcis_record: 324,
+    flis_record: 323,
 }
 ExtHeader {
     identifier: 1163416648,
-    header_length: 1109,
-    record_count: 11,
-    records: [
-        "HarperCollins Publishers Ltd",
-        "<h3>From Library Journal</h3><p>New Line Cinema will be releasing \"The Lord of the Rings\" trilogy in three separate installments, and Houghton Mifflin Tolkien\'s U.S. publisher since the release of The Hobbit in 1938 will be re-releasing each volume of the trilogy separately and in a boxed set (ISBN 0-618-15397-7. $22; pap. ISBN 0-618-15396-9. $12). <br />Copyright 2001 Reed Business Information, Inc. </p><h3>Review</h3><p>\'An extraordinary book. It deals with a stupendous theme. It leads us through a succession of strange and astonishing episodes, some of them magnificent, in a region where everything is invented, forest, moor, river, wilderness, town and the races which inhabit them.\' The Observer \'Among the greatest works of imaginative fiction of the twentieth century.\' Sunday Telegraph </p>",
-        "J. R. R. Tolkien",
-        "Lord of the Rings - Fellowship of the Ring",
-        "2010-12-21T00:00:00+00:00",
-        "calibre (0.7.31) [http://calibre-ebook.com]",
-        "9780261102316",
-        "2010-12-21T00:00:00+00:00",
-        "\u{0}\u{0}\u{0}\u{0}",
-        "\u{0}\u{0}\u{0}\u{0}",
-        "\u{0}\u{0}\u{0}\u{1}",
-    ],
+    header_length: 1588,
+    record_count: 29,
+    records: {
+        503: "The Fellowship of the Ring",
+        101: "Houghton Mifflin",
+        106: "2005-07-15T07:00:00+00:00",
+        201: "\u{0}\u{0}\u{0}\u{c}",
+        100: "J. R. R. Tolkien",
+        203: "\u{0}\u{0}\u{0}\u{0}",
+        202: "\u{0}\u{0}\u{0}\u{17}",
+        104: "9780618574940",
+        103: "SUMMARY: For over fifty years, J.R.R. Tolkien’s peerless fantasy has accumulated worldwide acclaim as the greatest adventure tale ever written.No other writer has created a world as distinct as Middle-earth, complete with its own geography, history, languages, and legends. And no one has created characters as endearing as Tolkien’s large-hearted, hairy-footed hobbits. Tolkien’s The Lord of the Rings continues to seize the imaginations of readers of all ages, and this new three-volume paperback edition is designed to appeal to the youngest of them.In ancient times the Rings of Power were crafted by the Elvensmiths, and Sauron, the Dark Lord, forged the One Ring, filling it with his own power so that he could rule all others. But the One Ring was taken from him, and though he sought it throughout Middle-earth, still it remained lost to him . . .",
+        105: "Gandalf (Fictitious character)",
+        108: "calibre (0.7.23) [http://calibre-ebook.com]",
+    },
 }
+
 ```
+## TODO:
+- [X] Implement lz77 decompression (almost done)
+- [ ] Implement reading records
+- [ ] Comments!
 ## License
                                  Apache License
                            Version 2.0, January 2004
