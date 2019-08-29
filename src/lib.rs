@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::Cursor;
 use std::path::Path;
-
+use std::fmt;
 macro_rules! return_or_err {
     ($x:expr) => {
         match $x {
@@ -81,12 +81,13 @@ impl Mobi {
     pub fn title(&self) -> Option<&String> {
         self.exth.get_book_info(BookInfo::Title)
     }
-    /// Prints basic information about the book into stdout
-    pub fn print_book_info(&self) {
+}
+impl fmt::Display for Mobi {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let empty_str = String::from("");
-        println!(
-            "
-----------------------------------------------------------
+        write!(f,
+"
+------------------------------------------------------------------------------------
 Title:          {}
 Author:         {}
 Publisher:      {}
@@ -94,16 +95,27 @@ Description:    {}
 ISBN:           {}
 Publish Date:   {}
 Contributor:    {}
-----------------------------------------------------------
-",
+------------------------------------------------------------------------------------
+{}
+------------------------------------------------------------------------------------
+{}
+------------------------------------------------------------------------------------
+{}
+------------------------------------------------------------------------------------
+{}
+------------------------------------------------------------------------------------",
             self.title().unwrap_or(&empty_str),
             self.author().unwrap_or(&empty_str),
             self.publisher().unwrap_or(&empty_str),
             self.description().unwrap_or(&empty_str),
             self.isbn().unwrap_or(&empty_str),
             self.publish_date().unwrap_or(&empty_str),
-            self.contributor().unwrap_or(&empty_str)
-        );
+            self.contributor().unwrap_or(&empty_str),
+            self.header,
+            self.palmdoc,
+            self.mobi,
+            self.exth,
+        )
     }
 }
 /// Parameters of Header
@@ -149,6 +161,41 @@ pub struct Header {
     pub unique_id_seed: u32,
     pub next_record_list_id: u32,
     pub num_of_records: u16,
+}
+impl fmt::Display for Header {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,
+"HEADER
+Name:                   {}
+Attributes:             {}
+Version:                {}
+Created:                {}
+Modified:               {}
+Backup:                 {}
+Modnum:                 {}
+App_info_id:            {}
+Sort_info_id:           {}
+Typ_e:                  {}
+Creator:                {}
+Unique_id_seed:         {}
+Next_record_list_id:    {}
+Num_of_records:         {}",
+        self.name,
+        self.attributes,
+        self.version,
+        self.created,
+        self.modified,
+        self.backup,
+        self.modnum,
+        self.app_info_id,
+        self.sort_info_id,
+        self.typ_e,
+        self.creator,
+        self.unique_id_seed,
+        self.next_record_list_id,
+        self.num_of_records,
+        )
+    }
 }
 impl Header {
     /// Parse a header from the content
@@ -237,6 +284,23 @@ pub struct PalmDocHeader {
     pub record_count: u16,
     pub record_size: u16,
     pub encryption_type: u16,
+}
+impl fmt::Display for PalmDocHeader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,
+"PALMDOC HEADER
+Compression:            {}
+Text length:            {}
+Record count:           {}
+Record size:            {}
+Encryption type:        {}",
+        self.compression,
+        self.text_length,
+        self.record_count,
+        self.record_size,
+        self.encryption_type,
+        )
+    }
 }
 impl PalmDocHeader {
     /// Parse a PalmDOC header from the content
@@ -351,6 +415,69 @@ pub enum MobiHeaderData {
     LastImageRecord,
     FcisRecord,
     FlisRecord,
+}
+impl fmt::Display for MobiHeader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,
+"MOBI HEADER
+Identifier:             {}
+HeaderLength:           {}
+Mobi type:              {}
+Text encoding:          {}
+Id:                     {}
+Gen version:            {}
+First non book index:   {}
+Name:                   {}
+Name offset:            {}
+Name length:            {}
+Language:               {}
+Input language:         {}
+Output language:        {}
+Format version:         {}
+First image index:      {}
+First huff record:      {}
+Huff record count:      {}
+First data record:      {}
+Data record count:      {}
+Exth flags:             {}
+Has Exth header:        {}
+Drm offset:             {}
+Drm count:              {}
+Drm size:               {}
+Drm flags:              {}
+Last image record:      {}
+Fcis record:            {}
+Flis record:            {}",       
+        self.identifier,
+        self.header_length,
+        self.mobi_type,
+        self.text_encoding,
+        self.id,
+        self.gen_version,
+        self.first_non_book_index,
+        self.name,
+        self.name_offset,
+        self.name_length,
+        self.language,
+        self.input_language,
+        self.output_language,
+        self.format_version,
+        self.first_image_index,
+        self.first_huff_record,
+        self.huff_record_count,
+        self.first_data_record,
+        self.data_record_count,
+        self.exth_flags,
+        self.has_exth_header,
+        self.drm_offset,
+        self.drm_count,
+        self.drm_size,
+        self.drm_flags,
+        self.last_image_record,
+        self.fcis_record,
+        self.flis_record,
+        )
+    }
 }
 impl MobiHeader {
     /// Parse a Mobi header from the content
@@ -493,6 +620,21 @@ pub struct ExtHeader {
     pub header_length: u32,
     pub record_count: u32,
     pub records: HashMap<u32, String>,
+}
+impl fmt::Display for ExtHeader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,
+"EXTHEADER
+Identifier:             {}
+Header_length:          {}
+Record_count:           {}
+Records:                {:#?}",
+        self.identifier,
+        self.header_length,
+        self.record_count,
+        self.records,
+        )
+    }
 }
 impl ExtHeader {
     /// Parse a Exth header from the content
