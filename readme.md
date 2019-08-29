@@ -34,6 +34,26 @@ Houghton Mifflin
 SUMMARY: For over fifty years, J.R.R. Tolkienâs peerless fantasy has accumulated worldwide acclaim as the greatest adventure tale ever written.No other writer has created a world as distinct as Middle-earth, complete with its own geography, history, languages, and legends. And no one has created characters as endearing as Tolkienâs large-hearted, hairy-footed hobbits. Tolkienâs The Lord of the Rings continues to seize the imaginations of readers of all ages, and this new three-volume paperback edition is designed to appeal to the youngest of them.In ancient times the Rings of Power were crafted by the Elvensmiths, and Sauron, the Dark Lord, forged the One Ring, filling it with his own power so that he could rule all others. But the One Ring was taken from him, and though he sought it throughout Middle-earth, still it remained lost to him . . .
 calibre (0.7.23) [http://calibre-ebook.com]
 ```
+### Print nice summary
+```rust
+use mobi::Mobi;
+fn main() {
+    let m = Mobi::init(Path::new("/home/wojtek/Downloads/lotr.mobi")).unwrap();
+    m.print_book_info();
+}
+```
+yields:
+```
+----------------------------------------------------------
+Title:          The Fellowship of the Ring
+Author:         J. R. R. Tolkien
+Publisher:      Houghton Mifflin
+Description:    SUMMARY: For over fifty years, J.R.R. Tolkien’s peerless fantasy has accumulated worldwide acclaim as the greatest adventure tale ever written.No other writer has created a world as distinct as Middle-earth, complete with its own geography, history, languages, and legends. And no one has created characters as endearing as Tolkien’s large-hearted, hairy-footed hobbits. Tolkien’s The Lord of the Rings continues to seize the imaginations of readers of all ages, and this new three-volume paperback edition is designed to appeal to the youngest of them.In ancient times the Rings of Power were crafted by the Elvensmiths, and Sauron, the Dark Lord, forged the One Ring, filling it with his own power so that he could rule all others. But the One Ring was taken from him, and though he sought it throughout Middle-earth, still it remained lost to him . . .
+ISBN:           9780618574940
+Publish Date:   2005-07-15T07:00:00+00:00
+Contributor:    calibre (0.7.23) [http://calibre-ebook.com]
+----------------------------------------------------------
+```
 ### Print headers
 - `src/main.rs`
 ```rust
