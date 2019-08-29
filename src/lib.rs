@@ -228,9 +228,9 @@ impl Header {
     /// Creates a string based on header bytes from specific location
     fn get_headers_string(content: &[u8], header: HeaderData) -> String {
         match header {
-            HeaderData::Name => utils::u8_as_string(&content[0..32]),
-            HeaderData::TypE => utils::u8_as_string(&content[60..64]),
-            HeaderData::Creator => utils::u8_as_string(&content[64..68]),
+            HeaderData::Name => String::from_utf8_lossy(&content[0..32]).to_owned().to_string(),
+            HeaderData::TypE => String::from_utf8_lossy(&content[60..64]).to_owned().to_string(),
+            HeaderData::Creator => String::from_utf8_lossy(&content[64..68]).to_owned().to_string(),
             _ => String::new(),
         }
     }
@@ -498,16 +498,8 @@ impl MobiHeader {
             MobiHeaderData::NameLength,
             num_of_records
         ));
-        let mut name = String::new();
-        let mut count = 0;
-        for byte in &content[name_offset as usize + (num_of_records * 8) as usize + 80..] {
-            if count == name_length {
-                break;
-            }
-            name.push(*byte as char);
-            count += 1;
-        }
-        Ok(name)
+        let offset = name_offset as usize + (num_of_records * 8) as usize + 80;
+        Ok(String::from_utf8_lossy(&content[offset..offset + name_length as usize]).to_owned().to_string())
     }
     /// Checks if there is a Exth Header and changes the parameter
     fn exth_header(exth_flags: u32) -> bool {
@@ -586,13 +578,13 @@ impl ExtHeader {
         let position: u64 = 340 + u64::from(num_of_records * 8);
         reader.set_position(position);
         for _i in 0..self.record_count {
-            let mut record_data = String::new();
+            let mut record_data = vec![];
             let record_type = reader.read_u32::<BigEndian>().unwrap_or(0);
             let record_len = reader.read_u32::<BigEndian>().unwrap_or(0);
             for _j in 0..record_len - 8 {
-                record_data.push(reader.read_u8().unwrap_or(0) as char);
+                record_data.push(reader.read_u8().unwrap_or(0));
             }
-            records.insert(record_type, record_data);
+            records.insert(record_type, String::from_utf8_lossy(&record_data[..]).to_owned().to_string());
         }
         self.records = records;
     }
@@ -629,9 +621,8 @@ impl Record {
     /// Reads into a string the record data based on record_data_offset
     fn record_data(&mut self, content: &[u8]) {
         if self.record_data_offset + 8 < content.len() as u32 {
-            let string =
-                &content[self.record_data_offset as usize..(self.record_data_offset + 8) as usize];
-            self.record_data = utils::u8_as_string(string);
+            let s = &content[self.record_data_offset as usize..(self.record_data_offset + 8) as usize];
+            self.record_data = String::from_utf8_lossy(s).to_owned().to_string();
         }
     }
     /// Parses a record from the reader at current position
