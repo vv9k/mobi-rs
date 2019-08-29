@@ -4,7 +4,6 @@
 //!
 //! License: [*Apache-2.0*](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
 //!
-mod utils;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::collections::HashMap;
 use std::fs;
@@ -627,7 +626,7 @@ impl Record {
     }
     /// Parses a record from the reader at current position
     fn parse_record(reader: &mut Cursor<&[u8]>) -> Result<Record, std::io::Error> {
-        let record_data_offset = return_or_err!(reader.read_u32::<BigEndian>());;
+        let record_data_offset = return_or_err!(reader.read_u32::<BigEndian>());
         let id = return_or_err!(reader.read_u32::<BigEndian>());
         let mut record = Record {
             record_data_offset,
@@ -647,13 +646,12 @@ impl Record {
         }
         Ok(records)
     }
-    #[allow(dead_code)]
-    fn read(&self, content: &[u8], record_num: usize, records: &[Record]) -> String {
-        let next_record = &records[record_num + 1];
-        println!("{}", self.record_data_offset);
-        println!("{}", next_record.record_data_offset);
-        utils::u8_as_string(
-            &content[self.record_data_offset as usize..next_record.record_data_offset as usize],
-        )
-    }
+    // fn read(&self, content: &[u8], record_num: usize, records: &[Record]) -> String {
+    //     let next_record = &records[record_num + 1];
+    //     println!("{}", self.record_data_offset);
+    //     println!("{}", next_record.record_data_offset);
+    //     utils::u8_as_string(
+    //         &content[self.record_data_offset as usize..next_record.record_data_offset as usize],
+    //     )
+    // }
 }
