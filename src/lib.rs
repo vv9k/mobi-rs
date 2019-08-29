@@ -79,6 +79,28 @@ impl Mobi {
         self.exth.get_book_info(BookInfo::Title)
     }
     /// Prints basic information about the book into stdout
+    /// 
+    /// # Example
+    /// ```rust
+    /// use mobi::Mobi;
+    /// 
+    /// fn main() {
+    ///     let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi");
+    ///     m.print_book_info();
+    /// }
+    /// ```
+    /// yields:
+    /// ~~~
+    /// ----------------------------------------------------------
+    /// Title:          The Fellowship of the Ring
+    /// Author:         J. R. R. Tolkien
+    /// Publisher:      Houghton Mifflin
+    /// Description:    SUMMARY: For over fifty years, J.R.R. Tolkien’s peerless fantasy has accumulated worldwide acclaim as the greatest adventure tale ever written.No other writer has created a world as distinct as Middle-earth, complete with its own geography, history, languages, and legends. And no one has created characters as endearing as Tolkien’s large-hearted, hairy-footed hobbits. Tolkien’s The Lord of the Rings continues to seize the imaginations of readers of all ages, and this new three-volume paperback edition is designed to appeal to the youngest of them.In ancient times the Rings of Power were crafted by the Elvensmiths, and Sauron, the Dark Lord, forged the One Ring, filling it with his own power so that he could rule all others. But the One Ring was taken from him, and though he sought it throughout Middle-earth, still it remained lost to him . . .
+    /// ISBN:           9780618574940
+    /// Publish Date:   2005-07-15T07:00:00+00:00
+    /// Contributor:    calibre (0.7.23) [http://calibre-ebook.com]
+    /// ----------------------------------------------------------
+    /// ~~~
     pub fn print_book_info(&self) {
         let empty_str = String::from("");
         println!(
@@ -155,35 +177,21 @@ impl Header {
                 return_or_err!(Header::$method(content, HeaderData::$type))
             };
         }
-        let name = Header::get_headers_string(content, HeaderData::Name);
-        let attributes = header!(get_headers_i16(Attributes));
-        let version = header!(get_headers_i16(Version));
-        let created = header!(get_headers_u32(Created));
-        let modified = header!(get_headers_u32(Modified));
-        let backup = header!(get_headers_u32(Backup));
-        let modnum = header!(get_headers_u32(Modnum));
-        let app_info_id = header!(get_headers_u32(AppInfoId));
-        let sort_info_id = header!(get_headers_u32(SortInfoId));
-        let typ_e = Header::get_headers_string(content, HeaderData::TypE);
-        let creator = Header::get_headers_string(content, HeaderData::Creator);
-        let unique_id_seed = header!(get_headers_u32(UniqueIdSeed));
-        let next_record_list_id = header!(get_headers_u32(NextRecordListId));
-        let num_of_records = header!(get_headers_u16(NumOfRecords));
         Ok(Header {
-            name,
-            attributes,
-            version,
-            created,
-            modified,
-            backup,
-            modnum,
-            app_info_id,
-            sort_info_id,
-            typ_e,
-            creator,
-            unique_id_seed,
-            next_record_list_id,
-            num_of_records,
+            name: Header::get_headers_string(content, HeaderData::Name),
+            attributes: header!(get_headers_i16(Attributes)),
+            version: header!(get_headers_i16(Version)),
+            created: header!(get_headers_u32(Created)),
+            modified: header!(get_headers_u32(Modified)),
+            backup: header!(get_headers_u32(Backup)),
+            modnum: header!(get_headers_u32(Modnum)),
+            app_info_id: header!(get_headers_u32(AppInfoId)),
+            sort_info_id: header!(get_headers_u32(SortInfoId)),
+            typ_e: Header::get_headers_string(content, HeaderData::TypE),
+            creator: Header::get_headers_string(content, HeaderData::Creator),
+            unique_id_seed: header!(get_headers_u32(UniqueIdSeed)),
+            next_record_list_id: header!(get_headers_u32(NextRecordListId)),
+            num_of_records: header!(get_headers_u16(NumOfRecords)),
         })
     }
     /// Gets i16 header value from specific location
@@ -255,17 +263,12 @@ impl PalmDocHeader {
                 ))
             };
         }
-        let compression = pdheader!(get_headers_u16(Compression));
-        let text_length = pdheader!(get_headers_u32(TextLength));
-        let record_count = pdheader!(get_headers_u16(RecordCount));
-        let record_size = pdheader!(get_headers_u16(RecordSize));
-        let encryption_type = pdheader!(get_headers_u16(EncryptionType));
         Ok(PalmDocHeader {
-            compression,
-            text_length,
-            record_count,
-            record_size,
-            encryption_type,
+            compression: pdheader!(get_headers_u16(Compression)),
+            text_length: pdheader!(get_headers_u32(TextLength)),
+            record_count: pdheader!(get_headers_u16(RecordCount)),
+            record_size: pdheader!(get_headers_u16(RecordSize)),
+            encryption_type: pdheader!(get_headers_u16(EncryptionType)),
         })
     }
     /// Gets u16 header value from specific location
@@ -374,63 +377,35 @@ impl MobiHeader {
                 ))
             };
         }
-        let identifier = mobiheader!(get_headers_u32(Identifier));
-        let header_length = mobiheader!(get_headers_u32(HeaderLength));
-        let mobi_type = mobiheader!(get_headers_u32(MobiType));
-        let text_encoding = mobiheader!(get_headers_u32(TextEncoding));
-        let id = mobiheader!(get_headers_u32(Id));
-        let gen_version = mobiheader!(get_headers_u32(GenVersion));
-        let first_non_book_index = mobiheader!(get_headers_u32(FirstNonBookIndex));
-        let name = return_or_err!(MobiHeader::name(content, num_of_records));
-        let name_offset = mobiheader!(get_headers_u32(NameOffset));
-        let name_length = mobiheader!(get_headers_u32(NameLength));
-        let language = mobiheader!(get_headers_u32(Language));
-        let input_language = mobiheader!(get_headers_u32(InputLanguage));
-        let output_language = mobiheader!(get_headers_u32(OutputLanguage));
-        let format_version = mobiheader!(get_headers_u32(FormatVersion));
-        let first_image_index = mobiheader!(get_headers_u32(FirstImageIndex));
-        let first_huff_record = mobiheader!(get_headers_u32(FirstHuffRecord));
-        let huff_record_count = mobiheader!(get_headers_u32(HuffRecordCount));
-        let first_data_record = mobiheader!(get_headers_u32(FirstDataRecord));
-        let data_record_count = mobiheader!(get_headers_u32(DataRecordCount));
-        let exth_flags = mobiheader!(get_headers_u32(ExthFlags));
-        let has_exth_header = MobiHeader::exth_header(exth_flags);
-        let drm_offset = mobiheader!(get_headers_u32(DrmOffset));
-        let drm_count = mobiheader!(get_headers_u32(DrmCount));
-        let drm_size = mobiheader!(get_headers_u32(DrmSize));
-        let drm_flags = mobiheader!(get_headers_u32(DrmFlags));
-        let last_image_record = mobiheader!(get_headers_u16(LastImageRecord));
-        let fcis_record = mobiheader!(get_headers_u32(FcisRecord));
-        let flis_record = mobiheader!(get_headers_u32(FlisRecord));
         Ok(MobiHeader {
-            identifier,
-            header_length,
-            mobi_type,
-            text_encoding,
-            id,
-            gen_version,
-            first_non_book_index,
-            name,
-            name_offset,
-            name_length,
-            language,
-            input_language,
-            output_language,
-            format_version,
-            first_image_index,
-            first_huff_record,
-            huff_record_count,
-            first_data_record,
-            data_record_count,
-            exth_flags,
-            has_exth_header,
-            drm_offset,
-            drm_count,
-            drm_size,
-            drm_flags,
-            last_image_record,
-            fcis_record,
-            flis_record,
+            identifier: mobiheader!(get_headers_u32(Identifier)),
+            header_length: mobiheader!(get_headers_u32(HeaderLength)),
+            mobi_type: mobiheader!(get_headers_u32(MobiType)),
+            text_encoding: mobiheader!(get_headers_u32(TextEncoding)),
+            id: mobiheader!(get_headers_u32(Id)),
+            gen_version: mobiheader!(get_headers_u32(GenVersion)),
+            first_non_book_index: mobiheader!(get_headers_u32(FirstNonBookIndex)),
+            name: return_or_err!(MobiHeader::name(content, num_of_records)),
+            name_offset: mobiheader!(get_headers_u32(NameOffset)),
+            name_length: mobiheader!(get_headers_u32(NameLength)),
+            language: mobiheader!(get_headers_u32(Language)),
+            input_language: mobiheader!(get_headers_u32(InputLanguage)),
+            output_language: mobiheader!(get_headers_u32(OutputLanguage)),
+            format_version: mobiheader!(get_headers_u32(FormatVersion)),
+            first_image_index: mobiheader!(get_headers_u32(FirstImageIndex)),
+            first_huff_record: mobiheader!(get_headers_u32(FirstHuffRecord)),
+            huff_record_count: mobiheader!(get_headers_u32(HuffRecordCount)),
+            first_data_record: mobiheader!(get_headers_u32(FirstDataRecord)),
+            data_record_count: mobiheader!(get_headers_u32(DataRecordCount)),
+            exth_flags: mobiheader!(get_headers_u32(ExthFlags)),
+            has_exth_header: MobiHeader::exth_header(mobiheader!(get_headers_u32(ExthFlags))),
+            drm_offset: mobiheader!(get_headers_u32(DrmOffset)),
+            drm_count: mobiheader!(get_headers_u32(DrmCount)),
+            drm_size: mobiheader!(get_headers_u32(DrmSize)),
+            drm_flags: mobiheader!(get_headers_u32(DrmFlags)),
+            last_image_record: mobiheader!(get_headers_u16(LastImageRecord)),
+            fcis_record: mobiheader!(get_headers_u32(FcisRecord)),
+            flis_record: mobiheader!(get_headers_u32(FlisRecord)),
         })
     }
     /// Gets u32 header value from specific location
@@ -646,12 +621,4 @@ impl Record {
         }
         Ok(records)
     }
-    // fn read(&self, content: &[u8], record_num: usize, records: &[Record]) -> String {
-    //     let next_record = &records[record_num + 1];
-    //     println!("{}", self.record_data_offset);
-    //     println!("{}", next_record.record_data_offset);
-    //     utils::u8_as_string(
-    //         &content[self.record_data_offset as usize..next_record.record_data_offset as usize],
-    //     )
-    // }
 }
