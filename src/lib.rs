@@ -37,10 +37,13 @@ impl Mobi {
         let records = return_or_err!(Record::parse_records(&contents, header.num_of_records));
         let palmdoc = return_or_err!(PalmDocHeader::parse(&contents, header.num_of_records));
         let mobi = return_or_err!(MobiHeader::parse(&contents, header.num_of_records));
-        let mut exth = ExtHeader::default();
-        if mobi.has_exth_header {
-            exth = return_or_err!(ExtHeader::parse(&contents, header.num_of_records));
-        }
+        let exth = {
+            if mobi.has_exth_header {
+                return_or_err!(ExtHeader::parse(&contents, header.num_of_records))
+            } else {
+                ExtHeader::default()
+            }
+        };
         Ok(Mobi {
             contents,
             header,
@@ -79,28 +82,6 @@ impl Mobi {
         self.exth.get_book_info(BookInfo::Title)
     }
     /// Prints basic information about the book into stdout
-    /// 
-    /// # Example
-    /// ```rust
-    /// use mobi::Mobi;
-    /// 
-    /// fn main() {
-    ///     let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi");
-    ///     m.print_book_info();
-    /// }
-    /// ```
-    /// yields:
-    /// ~~~
-    /// ----------------------------------------------------------
-    /// Title:          The Fellowship of the Ring
-    /// Author:         J. R. R. Tolkien
-    /// Publisher:      Houghton Mifflin
-    /// Description:    SUMMARY: For over fifty years, J.R.R. Tolkien’s peerless fantasy has accumulated worldwide acclaim as the greatest adventure tale ever written.No other writer has created a world as distinct as Middle-earth, complete with its own geography, history, languages, and legends. And no one has created characters as endearing as Tolkien’s large-hearted, hairy-footed hobbits. Tolkien’s The Lord of the Rings continues to seize the imaginations of readers of all ages, and this new three-volume paperback edition is designed to appeal to the youngest of them.In ancient times the Rings of Power were crafted by the Elvensmiths, and Sauron, the Dark Lord, forged the One Ring, filling it with his own power so that he could rule all others. But the One Ring was taken from him, and though he sought it throughout Middle-earth, still it remained lost to him . . .
-    /// ISBN:           9780618574940
-    /// Publish Date:   2005-07-15T07:00:00+00:00
-    /// Contributor:    calibre (0.7.23) [http://calibre-ebook.com]
-    /// ----------------------------------------------------------
-    /// ~~~
     pub fn print_book_info(&self) {
         let empty_str = String::from("");
         println!(
@@ -235,9 +216,15 @@ impl Header {
     /// Creates a string based on header bytes from specific location
     fn get_headers_string(content: &[u8], header: HeaderData) -> String {
         match header {
-            HeaderData::Name => String::from_utf8_lossy(&content[0..32]).to_owned().to_string(),
-            HeaderData::TypE => String::from_utf8_lossy(&content[60..64]).to_owned().to_string(),
-            HeaderData::Creator => String::from_utf8_lossy(&content[64..68]).to_owned().to_string(),
+            HeaderData::Name => String::from_utf8_lossy(&content[0..32])
+                .to_owned()
+                .to_string(),
+            HeaderData::TypE => String::from_utf8_lossy(&content[60..64])
+                .to_owned()
+                .to_string(),
+            HeaderData::Creator => String::from_utf8_lossy(&content[64..68])
+                .to_owned()
+                .to_string(),
             _ => String::new(),
         }
     }
@@ -473,7 +460,11 @@ impl MobiHeader {
             num_of_records
         ));
         let offset = name_offset as usize + (num_of_records * 8) as usize + 80;
-        Ok(String::from_utf8_lossy(&content[offset..offset + name_length as usize]).to_owned().to_string())
+        Ok(
+            String::from_utf8_lossy(&content[offset..offset + name_length as usize])
+                .to_owned()
+                .to_string(),
+        )
     }
     /// Checks if there is a Exth Header and changes the parameter
     fn exth_header(exth_flags: u32) -> bool {
@@ -558,7 +549,12 @@ impl ExtHeader {
             for _j in 0..record_len - 8 {
                 record_data.push(reader.read_u8().unwrap_or(0));
             }
-            records.insert(record_type, String::from_utf8_lossy(&record_data[..]).to_owned().to_string());
+            records.insert(
+                record_type,
+                String::from_utf8_lossy(&record_data[..])
+                    .to_owned()
+                    .to_string(),
+            );
         }
         self.records = records;
     }
@@ -595,7 +591,8 @@ impl Record {
     /// Reads into a string the record data based on record_data_offset
     fn record_data(&mut self, content: &[u8]) {
         if self.record_data_offset + 8 < content.len() as u32 {
-            let s = &content[self.record_data_offset as usize..(self.record_data_offset + 8) as usize];
+            let s =
+                &content[self.record_data_offset as usize..(self.record_data_offset + 8) as usize];
             self.record_data = String::from_utf8_lossy(s).to_owned().to_string();
         }
     }
