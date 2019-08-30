@@ -24,7 +24,6 @@ macro_rules! return_or_err {
 pub struct Mobi {
     pub contents: Vec<u8>,
     pub header: Header,
-    pub records: Vec<Record>,
     pub palmdoc: PalmDocHeader,
     pub mobi: MobiHeader,
     pub exth: ExtHeader,
@@ -35,7 +34,6 @@ impl Mobi {
     pub fn init<P: AsRef<Path>>(file_path: P) -> Result<Mobi, std::io::Error> {
         let contents = return_or_err!(fs::read(file_path));
         let header = return_or_err!(Header::parse(&contents));
-        let records = return_or_err!(Record::parse_records(&contents, header.num_of_records));
         let palmdoc = return_or_err!(PalmDocHeader::parse(&contents, header.num_of_records));
         let mobi = return_or_err!(MobiHeader::parse(&contents, header.num_of_records));
         let exth = {
@@ -48,7 +46,6 @@ impl Mobi {
         Ok(Mobi {
             contents,
             header,
-            records,
             palmdoc,
             mobi,
             exth,
@@ -878,50 +875,3 @@ impl ExtHeader {
     }
 }
 
-#[derive(Debug)]
-/// A "cell" in the whole books content
-pub struct Record {
-    record_data_offset: u32,
-    id: u32,
-    record_data: String,
-}
-impl Record {
-    #[allow(dead_code)]
-    fn new() -> Record {
-        Record {
-            record_data_offset: 0,
-            id: 0,
-            record_data: String::new(),
-        }
-    }
-    /// Reads into a string the record data based on record_data_offset
-    fn record_data(&mut self, content: &[u8]) {
-        if self.record_data_offset + 8 < content.len() as u32 {
-            let s =
-                &content[self.record_data_offset as usize..(self.record_data_offset + 8) as usize];
-            self.record_data = String::from_utf8_lossy(s).to_owned().to_string();
-        }
-    }
-    /// Parses a record from the reader at current position
-    fn parse_record(reader: &mut Cursor<&[u8]>) -> Result<Record, std::io::Error> {
-        let record_data_offset = return_or_err!(reader.read_u32::<BigEndian>());
-        let id = return_or_err!(reader.read_u32::<BigEndian>());
-        let mut record = Record {
-            record_data_offset,
-            id,
-            record_data: String::new(),
-        };
-        record.record_data(*reader.get_ref());
-        Ok(record)
-    }
-    /// Gets all records in the specified content
-    fn parse_records(content: &[u8], num_of_records: u16) -> Result<Vec<Record>, std::io::Error> {
-        let mut reader = Cursor::new(content);
-        let mut records = vec![];
-        for _i in 0..num_of_records {
-            let record = return_or_err!(Record::parse_record(&mut reader));
-            records.push(record);
-        }
-        Ok(records)
-    }
-}
