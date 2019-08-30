@@ -82,8 +82,25 @@ impl Mobi {
     pub fn title(&self) -> Option<&String> {
         self.exth.get_book_info(BookInfo::Title)
     }
+    /// Returns text encoding used in ebook
     pub fn text_encoding(&self) -> Option<String> {
         self.mobi.text_encoding()
+    }
+    /// Returns type of this ebook
+    pub fn mobi_type(&self) -> Option<String> {
+        self.mobi.mobi_type()
+    }
+    /// Returns language of the ebook
+    pub fn language(&self) -> Option<String> {
+        self.mobi.language()
+    }
+    /// Returns creation datetime
+    pub fn created_datetime(&self) -> NaiveDateTime {
+        self.header.created_datetime()
+    }
+    /// Returns modification datetime
+    pub fn mod_datetime(&self) -> NaiveDateTime {
+        self.header.mod_datetime()
     }
 }
 impl fmt::Display for Mobi {
