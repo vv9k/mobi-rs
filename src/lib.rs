@@ -5,6 +5,7 @@
 //! License: [*Apache-2.0*](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
 //!
 use byteorder::{BigEndian, ReadBytesExt};
+use chrono::prelude::*;
 use std::collections::HashMap;
 use std::fmt;
 use std::fs;
@@ -80,6 +81,9 @@ impl Mobi {
     /// Returns title record if such exists
     pub fn title(&self) -> Option<&String> {
         self.exth.get_book_info(BookInfo::Title)
+    }
+    pub fn text_encoding(&self) -> Option<String> {
+        self.mobi.text_encoding()
     }
 }
 impl fmt::Display for Mobi {
@@ -185,8 +189,8 @@ Num_of_records:         {}",
             self.name,
             self.attributes,
             self.version,
-            self.created,
-            self.modified,
+            self.created_datetime(),
+            self.mod_datetime(),
             self.backup,
             self.modnum,
             self.app_info_id,
@@ -276,6 +280,14 @@ impl Header {
                 .to_string(),
             _ => String::new(),
         }
+    }
+    /// Returns a chrono::NaiveDateTime timestamp of file creation
+    fn created_datetime(&self) -> NaiveDateTime {
+        NaiveDateTime::from_timestamp(i64::from(self.created), 0)
+    }
+    /// Returns a chrono::NaiveDateTime timestamp of file modification
+    fn mod_datetime(&self) -> NaiveDateTime {
+        NaiveDateTime::from_timestamp(i64::from(self.modified), 0)
     }
 }
 #[derive(Debug, PartialEq)]
@@ -371,7 +383,7 @@ pub struct MobiHeader {
     pub name: String,
     pub name_offset: u32,
     pub name_length: u32,
-    pub language: u32,
+    pub language_code: u16,
     pub input_language: u32,
     pub output_language: u32,
     pub format_version: u32,
@@ -382,6 +394,7 @@ pub struct MobiHeader {
     pub data_record_count: u32,
     pub exth_flags: u32,
     pub has_exth_header: bool,
+    pub has_drm: bool,
     pub drm_offset: u32,
     pub drm_count: u32,
     pub drm_size: u32,
@@ -401,7 +414,7 @@ pub enum MobiHeaderData {
     FirstNonBookIndex,
     NameOffset,
     NameLength,
-    Language,
+    LanguageCode,
     InputLanguage,
     OutputLanguage,
     FormatVersion,
@@ -411,6 +424,7 @@ pub enum MobiHeaderData {
     FirstDataRecord,
     DataRecordCount,
     ExthFlags,
+    HasDrm,
     DrmOffset,
     DrmCount,
     DrmSize,
@@ -429,7 +443,7 @@ HeaderLength:           {}
 Mobi type:              {}
 Text encoding:          {}
 Id:                     {}
-Gen version:            {}
+Gen version:            v{}
 First non book index:   {}
 Name:                   {}
 Name offset:            {}
@@ -445,24 +459,25 @@ First data record:      {}
 Data record count:      {}
 Exth flags:             {}
 Has Exth header:        {}
-Drm offset:             {}
-Drm count:              {}
-Drm size:               {}
-Drm flags:              {}
+Has DRM:                {}
+DRM offset:             {}
+DRM count:              {}
+DRM size:               {}
+DRM flags:              {}
 Last image record:      {}
 Fcis record:            {}
 Flis record:            {}",
             self.identifier,
             self.header_length,
-            self.mobi_type,
-            self.text_encoding,
+            self.mobi_type().unwrap_or(String::from("")),
+            self.text_encoding().unwrap_or(String::from("")),
             self.id,
             self.gen_version,
             self.first_non_book_index,
             self.name,
             self.name_offset,
             self.name_length,
-            self.language,
+            self.language().unwrap_or(String::from("")),
             self.input_language,
             self.output_language,
             self.format_version,
@@ -473,6 +488,7 @@ Flis record:            {}",
             self.data_record_count,
             self.exth_flags,
             self.has_exth_header,
+            self.has_drm,
             self.drm_offset,
             self.drm_count,
             self.drm_size,
@@ -506,7 +522,7 @@ impl MobiHeader {
             name: return_or_err!(MobiHeader::name(content, num_of_records)),
             name_offset: mobiheader!(get_headers_u32(NameOffset)),
             name_length: mobiheader!(get_headers_u32(NameLength)),
-            language: mobiheader!(get_headers_u32(Language)),
+            language_code: MobiHeader::lang_code(mobiheader!(get_headers_u32(LanguageCode))),
             input_language: mobiheader!(get_headers_u32(InputLanguage)),
             output_language: mobiheader!(get_headers_u32(OutputLanguage)),
             format_version: mobiheader!(get_headers_u32(FormatVersion)),
@@ -516,11 +532,12 @@ impl MobiHeader {
             first_data_record: mobiheader!(get_headers_u32(FirstDataRecord)),
             data_record_count: mobiheader!(get_headers_u32(DataRecordCount)),
             exth_flags: mobiheader!(get_headers_u32(ExthFlags)),
-            has_exth_header: MobiHeader::exth_header(mobiheader!(get_headers_u32(ExthFlags))),
+            has_exth_header: MobiHeader::has_exth_header(mobiheader!(get_headers_u32(ExthFlags))),
             drm_offset: mobiheader!(get_headers_u32(DrmOffset)),
             drm_count: mobiheader!(get_headers_u32(DrmCount)),
             drm_size: mobiheader!(get_headers_u32(DrmSize)),
             drm_flags: mobiheader!(get_headers_u32(DrmFlags)),
+            has_drm: MobiHeader::has_drm(mobiheader!(get_headers_u32(DrmOffset))),
             last_image_record: mobiheader!(get_headers_u16(LastImageRecord)),
             fcis_record: mobiheader!(get_headers_u32(FcisRecord)),
             flis_record: mobiheader!(get_headers_u32(FlisRecord)),
@@ -543,7 +560,7 @@ impl MobiHeader {
             MobiHeaderData::FirstNonBookIndex => 160,
             MobiHeaderData::NameOffset => 164,
             MobiHeaderData::NameLength => 168,
-            MobiHeaderData::Language => 172,
+            MobiHeaderData::LanguageCode => 172,
             MobiHeaderData::InputLanguage => 176,
             MobiHeaderData::OutputLanguage => 180,
             MobiHeaderData::FormatVersion => 184,
@@ -598,8 +615,136 @@ impl MobiHeader {
         )
     }
     /// Checks if there is a Exth Header and changes the parameter
-    fn exth_header(exth_flags: u32) -> bool {
+    fn has_exth_header(exth_flags: u32) -> bool {
         (exth_flags & 0x40) != 0
+    }
+    /// Checks if there is DRM on this book
+    fn has_drm(drm_offset: u32) -> bool {
+        drm_offset != 0xFFFF_FFFF
+    }
+    /// Converts numerical value into a type
+    fn mobi_type(&self) -> Option<String> {
+        macro_rules! mtype {
+            ($s:expr) => {
+                Some(String::from($s))
+            };
+        }
+        match self.mobi_type {
+            2 => mtype!("Mobipocket Book"),
+            3 => mtype!("PalmDoc Book"),
+            4 => mtype!("Audio"),
+            257 => mtype!("News"),
+            258 => mtype!("News Feed"),
+            259 => mtype!("News Magazine"),
+            513 => mtype!("PICS"),
+            514 => mtype!("WORD"),
+            515 => mtype!("XLS"),
+            516 => mtype!("PPT"),
+            517 => mtype!("TEXT"),
+            518 => mtype!("HTML"),
+            _ => None,
+        }
+    }
+    fn text_encoding(&self) -> Option<String> {
+        macro_rules! encoding {
+            ($s:expr) => {
+                Some(String::from($s))
+            };
+        }
+        match self.text_encoding {
+            1252 => encoding!("CP1252 (WinLatin1)"),
+            65001 => encoding!("UTF-8"),
+            _ => None,
+        }
+    }
+    fn lang_code(code: u32) -> u16 {
+        (code & 0xFF) as u16
+    }
+    fn language(&self) -> Option<String> {
+        macro_rules! lang {
+            ($s:expr) => {
+                Some(String::from($s))
+            };
+        }
+        match self.language_code {
+            0 => lang!("NEUTRAL"),
+            54 => lang!("AFRIKAANS"),
+            28 => lang!("ALBANIAN"),
+            1 => lang!("ARABIC"),
+            43 => lang!("ARMENIAN"),
+            77 => lang!("ASSAMESE"),
+            44 => lang!("AZERI"),
+            45 => lang!("BASQUE"),
+            35 => lang!("BELARUSIAN"),
+            69 => lang!("BENGALI"),
+            2 => lang!("BULGARIAN"),
+            3 => lang!("CATALAN"),
+            4 => lang!("CHINESE"),
+            5 => lang!("CZECH"),
+            6 => lang!("DANISH"),
+            19 => lang!("DUTCH"),
+            9 => lang!("ENGLISH"),
+            37 => lang!("ESTONIAN"),
+            56 => lang!("FAEROESE"),
+            41 => lang!("FARSI"),
+            11 => lang!("FINNISH"),
+            12 => lang!("FRENCH"),
+            55 => lang!("GEORGIAN"),
+            7 => lang!("GERMAN"),
+            8 => lang!("GREEK"),
+            71 => lang!("GUJARATI"),
+            13 => lang!("HEBREW"),
+            57 => lang!("HINDI"),
+            14 => lang!("HUNGARIAN"),
+            15 => lang!("ICELANDIC"),
+            33 => lang!("INDONESIAN"),
+            16 => lang!("ITALIAN"),
+            17 => lang!("JAPANESE"),
+            75 => lang!("KANNADA"),
+            63 => lang!("KAZAK"),
+            87 => lang!("KONKANI"),
+            18 => lang!("KOREAN"),
+            38 => lang!("LATVIAN"),
+            39 => lang!("LITHUANIAN"),
+            47 => lang!("MACEDONIAN"),
+            62 => lang!("MALAY"),
+            76 => lang!("MALAYALAM"),
+            58 => lang!("MALTESE"),
+            78 => lang!("MARATHI"),
+            97 => lang!("NEPALI"),
+            20 => lang!("NORWEGIAN"),
+            72 => lang!("ORIYA"),
+            21 => lang!("POLISH"),
+            22 => lang!("PORTUGUESE"),
+            70 => lang!("PUNJABI"),
+            23 => lang!("RHAETOROMANIC"),
+            24 => lang!("ROMANIAN"),
+            25 => lang!("RUSSIAN"),
+            59 => lang!("SAMI"),
+            79 => lang!("SANSKRIT"),
+            26 => lang!("SERBIAN"),
+            27 => lang!("SLOVAK"),
+            36 => lang!("SLOVENIAN"),
+            46 => lang!("SORBIAN"),
+            10 => lang!("SPANISH"),
+            48 => lang!("SUTU"),
+            65 => lang!("SWAHILI"),
+            29 => lang!("SWEDISH"),
+            73 => lang!("TAMIL"),
+            68 => lang!("TATAR"),
+            74 => lang!("TELUGU"),
+            30 => lang!("THAI"),
+            49 => lang!("TSONGA"),
+            50 => lang!("TSWANA"),
+            31 => lang!("TURKISH"),
+            34 => lang!("UKRAINIAN"),
+            32 => lang!("URDU"),
+            67 => lang!("UZBEK"),
+            42 => lang!("VIETNAMESE"),
+            52 => lang!("XHOSA"),
+            53 => lang!("ZULU"),
+            _ => None,
+        }
     }
 }
 pub enum BookInfo {
