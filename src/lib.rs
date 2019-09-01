@@ -120,7 +120,9 @@ impl Mobi {
     pub fn content_raw(&self) -> Option<String> {
         let mut content = String::new();
         for i in 1..self.palmdoc.record_count - 1 {
-            content.push_str(&self.records[i as usize].to_string());
+            let s = &self.records[i as usize].to_string().replace("â", "").replace("", "");
+
+            content.push_str(s);
         }
         Some(content)
     }
