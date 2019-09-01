@@ -5,7 +5,7 @@ use mobi::{Header, HeaderData, MobiHeader};
 mod mobi_header {
     use super::*;
     #[test]
-    fn has_exth_header(){
+    fn has_exth_header() {
         assert_eq!(true, MobiHeader::has_exth_header(80));
     }
     #[test]
@@ -40,6 +40,7 @@ mod mobi_header {
             last_image_record: 288,
             fcis_record: 290,
             flis_record: 289,
+            extra_bytes: 22,
         };
         let parsed_header = MobiHeader::parse(
             BOOK,

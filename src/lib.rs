@@ -4,6 +4,7 @@
 //!
 //! License: [*Apache-2.0*](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
 //!
+mod lz77;
 use byteorder::{BigEndian, ReadBytesExt};
 use chrono::prelude::*;
 use std::collections::HashMap;
@@ -27,6 +28,7 @@ pub struct Mobi {
     pub palmdoc: PalmDocHeader,
     pub mobi: MobiHeader,
     pub exth: ExtHeader,
+    pub records: Vec<Record>,
 }
 impl Mobi {
     /// Construct a Mobi object from passed file path
@@ -43,12 +45,19 @@ impl Mobi {
                 ExtHeader::default()
             }
         };
+        let records = return_or_err!(Record::parse_records(
+            &contents,
+            header.num_of_records,
+            mobi.extra_bytes,
+            palmdoc.compression_en()
+        ));
         Ok(Mobi {
             contents,
             header,
             palmdoc,
             mobi,
             exth,
+            records,
         })
     }
     /// Returns author record if such exists
@@ -106,6 +115,25 @@ impl Mobi {
     /// Returns encryption method used on this file
     pub fn encryption(&self) -> Option<String> {
         self.palmdoc.encryption()
+    }
+    /// Returns the whole content as String
+    pub fn content_raw(&self) -> Option<String> {
+        let mut content = String::new();
+        for i in 1..self.palmdoc.record_count - 1 {
+            content.push_str(&self.records[i as usize].to_string());
+        }
+        Some(content)
+    }
+    /// Returns a slice of the content where b is beginning index and e is ending index.
+    /// Usually readable indexes are between 1-300(+-50)
+    pub fn content_slice(&self, b: usize, e: usize) -> Option<String> {
+        let mut content = String::new();
+        if (b >= 1) && (b <= e) && (e < (self.palmdoc.record_count - 1) as usize) {
+            for i in b..e {
+                content.push_str(&self.records[i as usize].to_string());
+            }
+        }
+        Some(content)
     }
 }
 impl fmt::Display for Mobi {
@@ -406,6 +434,13 @@ impl PalmDocHeader {
             _ => None,
         }
     }
+    fn compression_en(&self) -> Compression {
+        match self.compression {
+            2 => Compression::PalmDoc,
+            17480 => Compression::Huff,
+            _ => Compression::No,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Default)]
@@ -440,6 +475,7 @@ pub struct MobiHeader {
     pub last_image_record: u16,
     pub fcis_record: u32,
     pub flis_record: u32,
+    pub extra_bytes: u32,
 }
 /// Parameters of Mobi Header
 pub enum MobiHeaderData {
@@ -470,6 +506,7 @@ pub enum MobiHeaderData {
     LastImageRecord,
     FcisRecord,
     FlisRecord,
+    ExtraBytes,
 }
 impl fmt::Display for MobiHeader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -579,6 +616,7 @@ impl MobiHeader {
             last_image_record: mobiheader!(get_headers_u16(LastImageRecord)),
             fcis_record: mobiheader!(get_headers_u32(FcisRecord)),
             flis_record: mobiheader!(get_headers_u32(FlisRecord)),
+            extra_bytes: return_or_err!(MobiHeader::extra_bytes(content, num_of_records)),
         })
     }
     /// Gets u32 header value from specific location
@@ -659,6 +697,15 @@ impl MobiHeader {
     /// Checks if there is DRM on this book
     fn has_drm(drm_offset: u32) -> bool {
         drm_offset != 0xFFFF_FFFF
+    }
+    /// Returns extra bytes for reading records
+    fn extra_bytes(content: &[u8], num_of_records: u16) -> Result<u32, std::io::Error> {
+        let ex_bytes = return_or_err!(MobiHeader::get_headers_u16(
+            content,
+            MobiHeaderData::ExtraBytes,
+            num_of_records
+        ));
+        Ok(2 * (ex_bytes & 0xFFFE).count_ones())
     }
     /// Converts numerical value into a type
     pub fn mobi_type(&self) -> Option<String> {
@@ -891,5 +938,110 @@ impl ExtHeader {
             BookInfo::Title => 503,
         };
         self.records.get(&record)
+    }
+}
+enum Compression {
+    No,
+    PalmDoc,
+    Huff,
+}
+#[derive(Debug, Clone)]
+/// A "cell" in the whole books content
+pub struct Record {
+    record_data_offset: u32,
+    id: u32,
+    pub record_data: String,
+}
+impl fmt::Display for Record {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.record_data)
+    }
+}
+impl Record {
+    #[allow(dead_code)]
+    fn new() -> Record {
+        Record {
+            record_data_offset: 0,
+            id: 0,
+            record_data: String::new(),
+        }
+    }
+    /// Reads into a string the record data based on record_data_offset
+    fn record_data(
+        record_data_offset: u32,
+        next_record_data_offset: u32,
+        extra_bytes: u32,
+        compression_type: &Compression,
+        content: &[u8],
+    ) -> Result<String, std::io::Error> {
+        match compression_type {
+            Compression::No => Ok(String::from_utf8_lossy(
+                &content
+                    [record_data_offset as usize..(next_record_data_offset - extra_bytes) as usize],
+            )
+            .to_owned()
+            .to_string()),
+            Compression::PalmDoc => {
+                if record_data_offset < content.len() as u32 {
+                    if record_data_offset < next_record_data_offset - extra_bytes {
+                        let s = &content[record_data_offset as usize
+                            ..(next_record_data_offset - extra_bytes) as usize];
+                        lz77::decompress_lz77(s)
+                    } else {
+                        Ok(String::from(""))
+                    }
+                } else {
+                    Ok(String::from(""))
+                }
+            }
+            Compression::Huff => Ok(String::from("")),
+        }
+    }
+    /// Parses a record from the reader at current position
+    fn parse_record(reader: &mut Cursor<&[u8]>) -> Result<Record, std::io::Error> {
+        let record_data_offset = return_or_err!(reader.read_u32::<BigEndian>());
+        let id = return_or_err!(reader.read_u32::<BigEndian>());
+        let record = Record {
+            record_data_offset,
+            id,
+            record_data: String::new(),
+        };
+        Ok(record)
+    }
+    /// Gets all records in the specified content
+    fn parse_records(
+        content: &[u8],
+        num_of_records: u16,
+        _extra_bytes: u32,
+        compression_type: Compression,
+    ) -> Result<Vec<Record>, std::io::Error> {
+        let mut records_content = vec![];
+        let mut reader = Cursor::new(content);
+        reader.set_position(78);
+        for _i in 0..num_of_records {
+            let record = return_or_err!(Record::parse_record(&mut reader));
+            records_content.push(record);
+        }
+        for i in 0..records_content.len() {
+            let mut current_rec = records_content[i].clone();
+            if i != records_content.len() - 1 {
+                let next_offset = records_content[i + 1].record_data_offset;
+                if _extra_bytes < next_offset {
+                    current_rec.record_data = match Record::record_data(
+                        current_rec.record_data_offset,
+                        next_offset,
+                        _extra_bytes,
+                        &compression_type,
+                        content,
+                    ) {
+                        Ok(n) => n,
+                        Err(e) => panic!(e),
+                    };
+                }
+                records_content.insert(i, current_rec);
+                records_content.remove(i + 1);
+            }
+        }
+        Ok(records_content)
     }
 }
