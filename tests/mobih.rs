@@ -5,6 +5,10 @@ use mobi::{Header, HeaderData, MobiHeader};
 mod mobi_header {
     use super::*;
     #[test]
+    fn has_exth_header(){
+        assert_eq!(true, MobiHeader::has_exth_header(80));
+    }
+    #[test]
     fn parse() {
         let mobiheader = MobiHeader {
             identifier: 1297039945,

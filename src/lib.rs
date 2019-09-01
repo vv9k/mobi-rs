@@ -653,7 +653,7 @@ impl MobiHeader {
         )
     }
     /// Checks if there is a Exth Header and changes the parameter
-    fn has_exth_header(exth_flags: u32) -> bool {
+    pub fn has_exth_header(exth_flags: u32) -> bool {
         (exth_flags & 0x40) != 0
     }
     /// Checks if there is DRM on this book

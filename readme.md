@@ -1,6 +1,7 @@
 # mobi-rs
 A library written in rust to extract data from `.mobi` format ebooks It's purely for the sake of learning. 
-[Crates.io](https://crates.io/crates/mobi)
+- [Crates.io](https://crates.io/crates/mobi)
+- [Documentation](https://docs.rs/mobi)
 ## Usage
 - add to `Cargo.toml`
 ```toml
