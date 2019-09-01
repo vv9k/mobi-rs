@@ -19,7 +19,7 @@ macro_rules! return_or_err {
         }
     };
 }
-#[derive(Debug)]
+#[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
 pub struct Mobi {
     pub contents: Vec<u8>,
@@ -99,6 +99,14 @@ impl Mobi {
     pub fn mod_datetime(&self) -> NaiveDateTime {
         self.header.mod_datetime()
     }
+    /// Returns compression method used on this file
+    pub fn compression(&self) -> Option<String> {
+        self.palmdoc.compression()
+    }
+    /// Returns encryption method used on this file
+    pub fn encryption(&self) -> Option<String> {
+        self.palmdoc.encryption()
+    }
 }
 impl fmt::Display for Mobi {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -163,7 +171,7 @@ pub enum PalmDocHeaderData {
     EncryptionType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 /// Strcture that holds header information
 pub struct Header {
     pub name: String,
@@ -304,7 +312,7 @@ impl Header {
         NaiveDateTime::from_timestamp(i64::from(self.modified), 0)
     }
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 /// Strcture that holds PalmDOC header information
 pub struct PalmDocHeader {
     pub compression: u16,
@@ -323,11 +331,11 @@ Text length:            {}
 Record count:           {}
 Record size:            {}
 Encryption type:        {}",
-            self.compression,
+            self.compression().unwrap_or_default(),
             self.text_length,
             self.record_count,
             self.record_size,
-            self.encryption_type,
+            self.encryption().unwrap_or_default(),
         )
     }
 }
@@ -382,9 +390,25 @@ impl PalmDocHeader {
         reader.set_position(position + u64::from(num_of_records * 8));
         reader.read_u32::<BigEndian>()
     }
+    pub fn compression(&self) -> Option<String> {
+        match self.compression {
+            1 => Some(String::from("No Compression")),
+            2 => Some(String::from("PalmDOC Compression")),
+            17480 => Some(String::from("HUFF/CFIC Compression")),
+            _ => None,
+        }
+    }
+    pub fn encryption(&self) -> Option<String> {
+        match self.encryption_type {
+            0 => Some(String::from("No Encryption")),
+            1 => Some(String::from("Old Mobipocket Encryption")),
+            2 => Some(String::from("Mobipocket Encryption")),
+            _ => None,
+        }
+    }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 /// Strcture that holds Mobi header information
 pub struct MobiHeader {
     pub identifier: u32,
@@ -637,7 +661,7 @@ impl MobiHeader {
         drm_offset != 0xFFFF_FFFF
     }
     /// Converts numerical value into a type
-    fn mobi_type(&self) -> Option<String> {
+    pub fn mobi_type(&self) -> Option<String> {
         macro_rules! mtype {
             ($s:expr) => {
                 Some(String::from($s))
@@ -659,22 +683,17 @@ impl MobiHeader {
             _ => None,
         }
     }
-    fn text_encoding(&self) -> Option<String> {
-        macro_rules! encoding {
-            ($s:expr) => {
-                Some(String::from($s))
-            };
-        }
+    pub fn text_encoding(&self) -> Option<String> {
         match self.text_encoding {
-            1252 => encoding!("CP1252 (WinLatin1)"),
-            65001 => encoding!("UTF-8"),
+            1252 => Some(String::from("CP1252 (WinLatin1)")),
+            65001 => Some(String::from("UTF-8")),
             _ => None,
         }
     }
     fn lang_code(code: u32) -> u16 {
         (code & 0xFF) as u16
     }
-    fn language(&self) -> Option<String> {
+    pub fn language(&self) -> Option<String> {
         macro_rules! lang {
             ($s:expr) => {
                 Some(String::from($s))
@@ -874,4 +893,3 @@ impl ExtHeader {
         self.records.get(&record)
     }
 }
-
