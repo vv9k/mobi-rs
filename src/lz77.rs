@@ -18,7 +18,7 @@ pub fn decompress_lz77(data: &[u8]) -> Result<String, std::io::Error> {
                 offset += u64::from(byte);
             }
         } else if byte <= 0x7f {
-            text.push(byte as char)
+            text.push(byte as char);
         } else if byte <= 0xbf {
             offset += 1;
             if offset > length as u64 {

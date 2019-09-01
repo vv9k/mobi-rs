@@ -6,9 +6,17 @@ A library written in rust to extract data from `.mobi` format ebooks It's purely
 - add to `Cargo.toml`
 ```toml
 [dependencies]
-mobi = "0.1.7"
+mobi = "0.2.0"
 ```
 ## Examples
+### Print the whole book into stdout
+```rust
+use mobi::Mobi;
+fn main() {
+    let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi").unwrap();
+    println!("{}", m.book_content_raw().unwrap());
+}
+```
 ### Access basic info
 - `src/main.rs`
 ```rust
@@ -135,9 +143,12 @@ Records:                {
 
 ```
 ## TODO:
-- [X] Implement lz77 decompression (almost done)
-- [ ] Implement reading records
+- [X] Implement lz77 decompression
+- [X] Implement reading records
 - [ ] Comments!
+- [ ] format the content
+- [ ] into PDF
+- [ ] into epub
 ## License
                                  Apache License
                            Version 2.0, January 2004
