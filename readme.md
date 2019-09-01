@@ -6,7 +6,7 @@ A library written in rust to extract data from `.mobi` format ebooks It's purely
 - add to `Cargo.toml`
 ```toml
 [dependencies]
-mobi = "0.2.0"
+mobi = "0.2.1"
 ```
 ## Examples
 ### Print the whole book into stdout
@@ -14,7 +14,7 @@ mobi = "0.2.0"
 use mobi::Mobi;
 fn main() {
     let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi").unwrap();
-    println!("{}", m.book_content_raw().unwrap());
+    println!("{}", m.content_raw().unwrap());
 }
 ```
 ### Access basic info
