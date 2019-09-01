@@ -977,7 +977,7 @@ impl Record {
         match compression_type {
             Compression::No => Ok(String::from_utf8_lossy(
                 &content
-                    [record_data_offset as usize..(next_record_data_offset - extra_bytes) as usize],
+                    [record_data_offset as usize..next_record_data_offset as usize],
             )
             .to_owned()
             .to_string()),
