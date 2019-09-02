@@ -208,7 +208,10 @@ impl Mobi {
         if (b >= 1) && (b <= e) && (e < (self.palmdoc.record_count - 1) as usize) {
             let mut content = String::new();
             for i in b..e {
-                content.push_str(&self.records[i as usize].to_string());
+                content.push_str(&self.records[i as usize]
+                    .to_string()
+                    .replace("â", "")
+                    .replace("", ""));
             }
             Some(content)
         } else {
