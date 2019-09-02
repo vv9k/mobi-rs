@@ -1,4 +1,4 @@
-use mobi::Header;
+use mobi::header::Header;
 mod book;
 use book::BOOK;
 #[cfg(test)]

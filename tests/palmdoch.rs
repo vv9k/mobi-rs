@@ -1,6 +1,7 @@
 mod book;
 use book::BOOK;
-use mobi::{Header, HeaderData, PalmDocHeader};
+use mobi::header::{Header, HeaderData};
+use mobi::palmdoch::PalmDocHeader;
 
 #[cfg(test)]
 mod palmdoc_header {
