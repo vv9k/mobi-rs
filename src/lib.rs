@@ -44,21 +44,22 @@
 //!    println!("{}", m)
 //!}
 //!```
-mod lz77;
 pub mod exth;
+pub mod header;
+mod lz77;
 pub mod mobih;
 pub mod palmdoch;
-pub mod header;
+use crate::exth::{BookInfo, ExtHeader};
 use crate::header::Header;
-use crate::palmdoch::{Compression, PalmDocHeader};
-use crate::exth::{ExtHeader, BookInfo};
 use crate::mobih::MobiHeader;
+use crate::palmdoch::{Compression, PalmDocHeader};
 use byteorder::{BigEndian, ReadBytesExt};
 use chrono::prelude::*;
 use std::collections::HashMap;
 use std::fmt;
 use std::fs;
 use std::io::Cursor;
+use std::io::Read;
 use std::path::Path;
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
@@ -72,7 +73,6 @@ pub struct Mobi {
 }
 impl Mobi {
     /// Construct a Mobi object from passed file path
-    /// Returns std::io::Error if there is a problem with the provided path
     pub fn init<P: AsRef<Path>>(file_path: P) -> Result<Mobi, std::io::Error> {
         let contents = fs::read(file_path)?;
         let header = Header::parse(&contents)?;
@@ -191,7 +191,10 @@ impl Mobi {
     pub fn content_raw(&self) -> Option<String> {
         let mut content = String::new();
         for i in 1..self.palmdoc.record_count - 1 {
-            let s = &self.records[i as usize].to_string().replace("â", "").replace("", "");
+            let s = &self.records[i as usize]
+                .to_string()
+                .replace("â", "")
+                .replace("", "");
 
             content.push_str(s);
         }
@@ -277,8 +280,7 @@ impl Record {
     ) -> Result<String, std::io::Error> {
         match compression_type {
             Compression::No => Ok(String::from_utf8_lossy(
-                &content
-                    [record_data_offset as usize..next_record_data_offset as usize],
+                &content[record_data_offset as usize..next_record_data_offset as usize],
             )
             .to_owned()
             .to_string()),

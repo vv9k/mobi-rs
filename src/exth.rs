@@ -39,21 +39,12 @@ Records:                {:#?}",
 impl ExtHeader {
     /// Parse a Exth header from the content
     pub fn parse(content: &[u8], num_of_records: u16) -> Result<ExtHeader, std::io::Error> {
-        let identifier = ExtHeader::get_headers_u32(
-            content,
-            ExtHeaderData::Identifier,
-            num_of_records
-        )?;
-        let header_length = ExtHeader::get_headers_u32(
-            content,
-            ExtHeaderData::HeaderLength,
-            num_of_records
-        )?;
-        let record_count = ExtHeader::get_headers_u32(
-            content,
-            ExtHeaderData::RecordCount,
-            num_of_records
-        )?;
+        let identifier =
+            ExtHeader::get_headers_u32(content, ExtHeaderData::Identifier, num_of_records)?;
+        let header_length =
+            ExtHeader::get_headers_u32(content, ExtHeaderData::HeaderLength, num_of_records)?;
+        let record_count =
+            ExtHeader::get_headers_u32(content, ExtHeaderData::RecordCount, num_of_records)?;
         let mut extheader = ExtHeader {
             identifier,
             header_length,
