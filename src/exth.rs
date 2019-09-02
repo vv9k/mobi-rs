@@ -1,13 +1,5 @@
 //! A module about ext header
 use super::*;
-macro_rules! return_or_err {
-    ($x:expr) => {
-        match $x {
-            Ok(data) => data,
-            Err(e) => return Err(e),
-        }
-    };
-}
 pub enum BookInfo {
     Author,
     Publisher,
@@ -47,21 +39,21 @@ Records:                {:#?}",
 impl ExtHeader {
     /// Parse a Exth header from the content
     pub fn parse(content: &[u8], num_of_records: u16) -> Result<ExtHeader, std::io::Error> {
-        let identifier = return_or_err!(ExtHeader::get_headers_u32(
+        let identifier = ExtHeader::get_headers_u32(
             content,
             ExtHeaderData::Identifier,
             num_of_records
-        ));
-        let header_length = return_or_err!(ExtHeader::get_headers_u32(
+        )?;
+        let header_length = ExtHeader::get_headers_u32(
             content,
             ExtHeaderData::HeaderLength,
             num_of_records
-        ));
-        let record_count = return_or_err!(ExtHeader::get_headers_u32(
+        )?;
+        let record_count = ExtHeader::get_headers_u32(
             content,
             ExtHeaderData::RecordCount,
             num_of_records
-        ));
+        )?;
         let mut extheader = ExtHeader {
             identifier,
             header_length,

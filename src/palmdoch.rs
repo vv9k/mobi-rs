@@ -1,13 +1,5 @@
 //! A module about palmdoc header
 use super::*;
-macro_rules! return_or_err {
-    ($x:expr) => {
-        match $x {
-            Ok(data) => data,
-            Err(e) => return Err(e),
-        }
-    };
-}
 pub enum Compression {
     No,
     PalmDoc,
@@ -54,11 +46,11 @@ impl PalmDocHeader {
     pub fn parse(content: &[u8], num_of_records: u16) -> Result<PalmDocHeader, std::io::Error> {
         macro_rules! pdheader {
             ($method:ident($type:ident)) => {
-                return_or_err!(PalmDocHeader::$method(
+                PalmDocHeader::$method(
                     content,
                     PalmDocHeaderData::$type,
                     num_of_records
-                ))
+                )?
             };
         }
         Ok(PalmDocHeader {

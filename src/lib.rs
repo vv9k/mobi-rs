@@ -60,14 +60,6 @@ use std::fmt;
 use std::fs;
 use std::io::Cursor;
 use std::path::Path;
-macro_rules! return_or_err {
-    ($x:expr) => {
-        match $x {
-            Ok(data) => data,
-            Err(e) => return Err(e),
-        }
-    };
-}
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
 pub struct Mobi {
@@ -82,23 +74,23 @@ impl Mobi {
     /// Construct a Mobi object from passed file path
     /// Returns std::io::Error if there is a problem with the provided path
     pub fn init<P: AsRef<Path>>(file_path: P) -> Result<Mobi, std::io::Error> {
-        let contents = return_or_err!(fs::read(file_path));
-        let header = return_or_err!(Header::parse(&contents));
-        let palmdoc = return_or_err!(PalmDocHeader::parse(&contents, header.num_of_records));
-        let mobi = return_or_err!(MobiHeader::parse(&contents, header.num_of_records));
+        let contents = fs::read(file_path)?;
+        let header = Header::parse(&contents)?;
+        let palmdoc = PalmDocHeader::parse(&contents, header.num_of_records)?;
+        let mobi = MobiHeader::parse(&contents, header.num_of_records)?;
         let exth = {
             if mobi.has_exth_header {
-                return_or_err!(ExtHeader::parse(&contents, header.num_of_records))
+                ExtHeader::parse(&contents, header.num_of_records)?
             } else {
                 ExtHeader::default()
             }
         };
-        let records = return_or_err!(Record::parse_records(
+        let records = Record::parse_records(
             &contents,
             header.num_of_records,
             mobi.extra_bytes,
             palmdoc.compression_en()
-        ));
+        )?;
         Ok(Mobi {
             contents,
             header,
@@ -277,8 +269,8 @@ impl Record {
     }
     /// Parses a record from the reader at current position
     fn parse_record(reader: &mut Cursor<&[u8]>) -> Result<Record, std::io::Error> {
-        let record_data_offset = return_or_err!(reader.read_u32::<BigEndian>());
-        let id = return_or_err!(reader.read_u32::<BigEndian>());
+        let record_data_offset = reader.read_u32::<BigEndian>()?;
+        let id = reader.read_u32::<BigEndian>()?;
         let record = Record {
             record_data_offset,
             id,
@@ -297,7 +289,7 @@ impl Record {
         let mut reader = Cursor::new(content);
         reader.set_position(78);
         for _i in 0..num_of_records {
-            let record = return_or_err!(Record::parse_record(&mut reader));
+            let record = Record::parse_record(&mut reader)?;
             records_content.push(record);
         }
         for i in 0..records_content.len() {

@@ -1,13 +1,5 @@
 //! A module about palmdoc header
 use super::*;
-macro_rules! return_or_err {
-    ($x:expr) => {
-        match $x {
-            Ok(data) => data,
-            Err(e) => return Err(e),
-        }
-    };
-}
 /// Parameters of Header
 pub enum HeaderData {
     Name,
@@ -84,7 +76,7 @@ impl Header {
     pub fn parse(content: &[u8]) -> Result<Header, std::io::Error> {
         macro_rules! header {
             ($method:ident($type:ident)) => {
-                return_or_err!(Header::$method(content, HeaderData::$type))
+                Header::$method(content, HeaderData::$type)?
             };
         }
         Ok(Header {
