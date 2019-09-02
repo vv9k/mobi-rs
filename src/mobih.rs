@@ -1,13 +1,5 @@
 //! A module about mobi header
 use super::*;
-macro_rules! return_or_err {
-    ($x:expr) => {
-        match $x {
-            Ok(data) => data,
-            Err(e) => return Err(e),
-        }
-    };
-}
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds Mobi header information
 pub struct MobiHeader {
@@ -144,11 +136,11 @@ impl MobiHeader {
     pub fn parse(content: &[u8], num_of_records: u16) -> Result<MobiHeader, std::io::Error> {
         macro_rules! mobiheader {
             ($method:ident($enum:ident)) => {
-                return_or_err!(MobiHeader::$method(
+                MobiHeader::$method(
                     content,
                     MobiHeaderData::$enum,
                     num_of_records
-                ))
+                )?
             };
         }
         Ok(MobiHeader {
@@ -159,7 +151,7 @@ impl MobiHeader {
             id: mobiheader!(get_headers_u32(Id)),
             gen_version: mobiheader!(get_headers_u32(GenVersion)),
             first_non_book_index: mobiheader!(get_headers_u32(FirstNonBookIndex)),
-            name: return_or_err!(MobiHeader::name(content, num_of_records)),
+            name: MobiHeader::name(content, num_of_records)?,
             name_offset: mobiheader!(get_headers_u32(NameOffset)),
             name_length: mobiheader!(get_headers_u32(NameLength)),
             language_code: MobiHeader::lang_code(mobiheader!(get_headers_u32(LanguageCode))),
@@ -181,7 +173,7 @@ impl MobiHeader {
             last_image_record: mobiheader!(get_headers_u16(LastImageRecord)),
             fcis_record: mobiheader!(get_headers_u32(FcisRecord)),
             flis_record: mobiheader!(get_headers_u32(FlisRecord)),
-            extra_bytes: return_or_err!(MobiHeader::extra_bytes(content, num_of_records)),
+            extra_bytes: MobiHeader::extra_bytes(content, num_of_records)?,
         })
     }
     /// Gets u32 header value from specific location
@@ -238,16 +230,16 @@ impl MobiHeader {
     }
     /// Returns the book name
     pub fn name(content: &[u8], num_of_records: u16) -> Result<String, std::io::Error> {
-        let name_offset = return_or_err!(MobiHeader::get_headers_u32(
+        let name_offset = MobiHeader::get_headers_u32(
             content,
             MobiHeaderData::NameOffset,
             num_of_records
-        ));
-        let name_length = return_or_err!(MobiHeader::get_headers_u32(
+        )?;
+        let name_length = MobiHeader::get_headers_u32(
             content,
             MobiHeaderData::NameLength,
             num_of_records
-        ));
+        )?;
         let offset = name_offset as usize + (num_of_records * 8) as usize + 80;
         Ok(
             String::from_utf8_lossy(&content[offset..offset + name_length as usize])
@@ -265,11 +257,11 @@ impl MobiHeader {
     }
     /// Returns extra bytes for reading records
     fn extra_bytes(content: &[u8], num_of_records: u16) -> Result<u32, std::io::Error> {
-        let ex_bytes = return_or_err!(MobiHeader::get_headers_u16(
+        let ex_bytes = MobiHeader::get_headers_u16(
             content,
             MobiHeaderData::ExtraBytes,
             num_of_records
-        ));
+        )?;
         Ok(2 * (ex_bytes & 0xFFFE).count_ones())
     }
     /// Converts numerical value into a type
