@@ -203,13 +203,15 @@ impl Mobi {
     /// Returns a slice of the content where b is beginning index and e is ending index.
     /// Usually readable indexes are between 1-300(+-50)
     pub fn content_slice(&self, b: usize, e: usize) -> Option<String> {
-        let mut content = String::new();
         if (b >= 1) && (b <= e) && (e < (self.palmdoc.record_count - 1) as usize) {
+            let mut content = String::new();
             for i in b..e {
                 content.push_str(&self.records[i as usize].to_string());
             }
+            Some(content)
+        } else {
+            None
         }
-        Some(content)
     }
 }
 impl fmt::Display for Mobi {
