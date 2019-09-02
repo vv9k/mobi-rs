@@ -136,11 +136,7 @@ impl MobiHeader {
     pub fn parse(content: &[u8], num_of_records: u16) -> Result<MobiHeader, std::io::Error> {
         macro_rules! mobiheader {
             ($method:ident($enum:ident)) => {
-                MobiHeader::$method(
-                    content,
-                    MobiHeaderData::$enum,
-                    num_of_records
-                )?
+                MobiHeader::$method(content, MobiHeaderData::$enum, num_of_records)?
             };
         }
         Ok(MobiHeader {
@@ -230,16 +226,10 @@ impl MobiHeader {
     }
     /// Returns the book name
     pub fn name(content: &[u8], num_of_records: u16) -> Result<String, std::io::Error> {
-        let name_offset = MobiHeader::get_headers_u32(
-            content,
-            MobiHeaderData::NameOffset,
-            num_of_records
-        )?;
-        let name_length = MobiHeader::get_headers_u32(
-            content,
-            MobiHeaderData::NameLength,
-            num_of_records
-        )?;
+        let name_offset =
+            MobiHeader::get_headers_u32(content, MobiHeaderData::NameOffset, num_of_records)?;
+        let name_length =
+            MobiHeader::get_headers_u32(content, MobiHeaderData::NameLength, num_of_records)?;
         let offset = name_offset as usize + (num_of_records * 8) as usize + 80;
         Ok(
             String::from_utf8_lossy(&content[offset..offset + name_length as usize])
@@ -257,11 +247,8 @@ impl MobiHeader {
     }
     /// Returns extra bytes for reading records
     fn extra_bytes(content: &[u8], num_of_records: u16) -> Result<u32, std::io::Error> {
-        let ex_bytes = MobiHeader::get_headers_u16(
-            content,
-            MobiHeaderData::ExtraBytes,
-            num_of_records
-        )?;
+        let ex_bytes =
+            MobiHeader::get_headers_u16(content, MobiHeaderData::ExtraBytes, num_of_records)?;
         Ok(2 * (ex_bytes & 0xFFFE).count_ones())
     }
     /// Converts numerical value into a type

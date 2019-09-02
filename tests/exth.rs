@@ -2,8 +2,8 @@ mod book;
 use book::BOOK;
 mod exth_header {
     use super::*;
+    use mobi::exth::{BookInfo, ExtHeader};
     use mobi::header::{Header, HeaderData};
-    use mobi::exth::{ExtHeader, BookInfo};
     use std::collections::HashMap;
     #[test]
     fn parse() {

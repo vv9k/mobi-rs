@@ -46,11 +46,7 @@ impl PalmDocHeader {
     pub fn parse(content: &[u8], num_of_records: u16) -> Result<PalmDocHeader, std::io::Error> {
         macro_rules! pdheader {
             ($method:ident($type:ident)) => {
-                PalmDocHeader::$method(
-                    content,
-                    PalmDocHeaderData::$type,
-                    num_of_records
-                )?
+                PalmDocHeader::$method(content, PalmDocHeaderData::$type, num_of_records)?
             };
         }
         Ok(PalmDocHeader {
