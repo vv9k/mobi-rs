@@ -5,6 +5,7 @@ pub struct Record {
     record_data_offset: u32,
     id: u32,
     pub record_data: String,
+    pub length: usize,
 }
 impl fmt::Display for Record {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -18,6 +19,7 @@ impl Record {
             record_data_offset: 0,
             id: 0,
             record_data: String::new(),
+            length: 0,
         }
     }
     /// Reads into a string the record data based on record_data_offset
@@ -58,6 +60,7 @@ impl Record {
             record_data_offset,
             id,
             record_data: String::new(),
+            length: 0,
         };
         Ok(record)
     }
@@ -87,6 +90,7 @@ impl Record {
                         &compression_type,
                         content,
                     )?;
+                    current_rec.length = current_rec.record_data.len();
                 }
                 records_content.insert(i, current_rec);
                 records_content.remove(i + 1);
