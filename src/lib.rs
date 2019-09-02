@@ -89,7 +89,38 @@ impl Mobi {
             &contents,
             header.num_of_records,
             mobi.extra_bytes,
-            palmdoc.compression_en()
+            palmdoc.compression_en(),
+        )?;
+        Ok(Mobi {
+            contents,
+            header,
+            palmdoc,
+            mobi,
+            exth,
+            records,
+        })
+    }
+    /// Construct a Mobi object from an object that implements a Read trait
+    pub fn from_reader<R: Read>(reader: R) -> Result<Mobi, std::io::Error> {
+        let mut contents = vec![];
+        for byte in reader.bytes() {
+            contents.push(byte?);
+        }
+        let header = Header::parse(&contents)?;
+        let palmdoc = PalmDocHeader::parse(&contents, header.num_of_records)?;
+        let mobi = MobiHeader::parse(&contents, header.num_of_records)?;
+        let exth = {
+            if mobi.has_exth_header {
+                ExtHeader::parse(&contents, header.num_of_records)?
+            } else {
+                ExtHeader::default()
+            }
+        };
+        let records = Record::parse_records(
+            &contents,
+            header.num_of_records,
+            mobi.extra_bytes,
+            palmdoc.compression_en(),
         )?;
         Ok(Mobi {
             contents,
