@@ -4,6 +4,46 @@
 //!
 //! License: [*Apache-2.0*](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
 //!
+//!## Examples
+//!### Print the whole book into stdout
+//!```rust,ignore
+//!use mobi::Mobi;
+//!fn main() {
+//!    let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi").unwrap();
+//!    println!("{}", m.content_raw().unwrap());
+//!}
+//!```
+//!### Access basic info
+//!- `src/main.rs`
+//!```rust,ignore
+//!use mobi::Mobi;
+//!fn main() {
+//!    let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi").unwrap();
+//!    let title = m.title().unwrap();
+//!    let author = m.author().unwrap();
+//!    let publisher = m.publisher().unwrap();
+//!    let desc = m.description().unwrap();
+//!    let isbn = m.isbn().unwrap();
+//!    let pub_date = m.publish_date().unwrap();
+//!    let contributor = m.contributor().unwrap();
+//!    println!("{}\n{}\n{}\n{}\n{}\n{}\n{}\n", title, author, publisher, isbn, pub_date, desc, contributor);
+//!    // Access Headers
+//!    let header = m.header; // Normal Header
+//!    let pdheader = m.palmdoc; // PalmDOC Header
+//!    let mheader = m.mobi; // MOBI Header
+//!    let exth = m.exth // Extra Header
+//!}
+//!```
+//!### Print all info
+//!- `src/main.rs`
+//!```rust,ignore
+//!use mobi::Mobi;
+//!
+//!fn main() {
+//!    let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi").unwrap();
+//!    println!("{}", m)
+//!}
+//!```
 mod lz77;
 pub mod exth;
 pub mod mobih;
