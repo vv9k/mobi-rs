@@ -6,7 +6,7 @@ A library written in rust to extract data from `.mobi` format ebooks It's purely
 - add to `Cargo.toml`
 ```toml
 [dependencies]
-mobi = "0.2.3"
+mobi = "0.2.4"
 ```
 ## Examples
 ### Print the whole book into stdout
