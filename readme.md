@@ -150,8 +150,6 @@ Records:                {
 - [ ] into PDF
 - [ ] into epub
 ## License
-                                 Apache License
-                           Version 2.0, January 2004
-                        http://www.apache.org/licenses/
+[**The MIT License (MIT)**](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
 ## Thanks to
 [kroo](https://github.com/kroo/mobi-python) for inspiration and idea.
