@@ -1,6 +1,7 @@
 mod book;
 use book::BOOK;
-use mobi::{Header, HeaderData, MobiHeader};
+use mobi::header::{Header, HeaderData};
+use mobi::mobih::MobiHeader;
 #[cfg(test)]
 mod mobi_header {
     use super::*;

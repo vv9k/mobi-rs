@@ -1,10 +1,9 @@
-// mod tests;
-// use tests::BOOK;
 mod book;
 use book::BOOK;
 mod exth_header {
     use super::*;
-    use mobi::{BookInfo, ExtHeader, Header, HeaderData};
+    use mobi::header::{Header, HeaderData};
+    use mobi::exth::{ExtHeader, BookInfo};
     use std::collections::HashMap;
     #[test]
     fn parse() {
