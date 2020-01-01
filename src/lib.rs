@@ -44,19 +44,22 @@
 //!    println!("{}", m)
 //!}
 //!```
-pub mod exth;
-pub mod header;
-mod lz77;
-pub mod mobih;
-pub mod palmdoch;
-pub mod record;
-use crate::exth::{BookInfo, ExtHeader};
-use crate::header::Header;
-use crate::mobih::MobiHeader;
-use crate::palmdoch::{Compression, PalmDocHeader};
-use crate::record::Record;
+pub(crate) mod book;
+pub(crate) mod exth;
+pub(crate) mod header;
+pub(crate) mod lz77;
+pub(crate) mod mobih;
+pub(crate) mod palmdoch;
+pub(crate) mod record;
 use byteorder::{BigEndian, ReadBytesExt};
 use chrono::prelude::*;
+use exth::BookInfo;
+pub use exth::ExtHeader;
+pub use header::Header;
+pub use mobih::MobiHeader;
+use palmdoch::Compression;
+pub use palmdoch::PalmDocHeader;
+pub use record::Record;
 use std::collections::HashMap;
 use std::fmt;
 use std::fs;
