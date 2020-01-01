@@ -190,30 +190,22 @@ impl Mobi {
         self.palmdoc.encryption()
     }
     /// Returns the whole content as String
-    pub fn content_raw(&self) -> Option<String> {
-        let mut content = String::new();
-        for i in 1..self.palmdoc.record_count - 1 {
-            let s = &self.records[i as usize]
-                .to_string()
-                .replace("â", "")
-                .replace("", "");
-
-            content.push_str(s);
-        }
-        Some(content)
+    pub fn content_as_string(&self) -> String {
+        (1..self.palmdoc.record_count - 1)
+            .into_iter()
+            .map(|i| self.records[i as usize].to_string())
+            .collect()
     }
     /// Returns a slice of the content where b is beginning index and e is ending index.
     /// Usually readable indexes are between 1-300(+-50)
     pub fn content_slice(&self, b: usize, e: usize) -> Option<String> {
         if (b >= 1) && (b <= e) && (e < (self.palmdoc.record_count - 1) as usize) {
-            let mut content = String::new();
-            for i in b..e {
-                content.push_str(&self.records[i as usize]
-                    .to_string()
-                    .replace("â", "")
-                    .replace("", ""));
-            }
-            Some(content)
+            Some(
+                (b..e)
+                    .into_iter()
+                    .map(|i| self.records[i as usize].to_string())
+                    .collect(),
+            )
         } else {
             None
         }
