@@ -1,7 +1,6 @@
-//! A module about palmdoc header
 use super::*;
 /// Parameters of Header
-pub enum HeaderData {
+pub(crate) enum HeaderData {
     Name,
     Attributes,
     Version,
@@ -73,7 +72,7 @@ Num_of_records:         {}",
 }
 impl Header {
     /// Parse a header from the content
-    pub fn parse(content: &[u8]) -> Result<Header, std::io::Error> {
+    pub(crate) fn parse(content: &[u8]) -> Result<Header, std::io::Error> {
         macro_rules! header {
             ($method:ident($type:ident)) => {
                 Header::$method(content, HeaderData::$type)?
@@ -108,7 +107,10 @@ impl Header {
         reader.read_i16::<BigEndian>()
     }
     /// Gets u16 header value from specific location
-    pub fn get_headers_u16(content: &[u8], header: HeaderData) -> Result<u16, std::io::Error> {
+    pub(crate) fn get_headers_u16(
+        content: &[u8],
+        header: HeaderData,
+    ) -> Result<u16, std::io::Error> {
         let mut reader = Cursor::new(content);
         let position = match header {
             HeaderData::NumOfRecords => 76,
@@ -150,11 +152,11 @@ impl Header {
         }
     }
     /// Returns a chrono::NaiveDateTime timestamp of file creation
-    pub fn created_datetime(&self) -> NaiveDateTime {
+    pub(crate) fn created_datetime(&self) -> NaiveDateTime {
         NaiveDateTime::from_timestamp(i64::from(self.created), 0)
     }
     /// Returns a chrono::NaiveDateTime timestamp of file modification
-    pub fn mod_datetime(&self) -> NaiveDateTime {
+    pub(crate) fn mod_datetime(&self) -> NaiveDateTime {
         NaiveDateTime::from_timestamp(i64::from(self.modified), 0)
     }
 }

@@ -39,9 +39,10 @@ impl Record {
             Compression::PalmDoc => {
                 if record_data_offset < content.len() as u32 {
                     if record_data_offset < next_record_data_offset - extra_bytes {
-                        let s = &content[record_data_offset as usize
-                            ..(next_record_data_offset - extra_bytes) as usize];
-                        lz77::decompress_lz77(s)
+                        lz77::decompress_lz77(
+                            &content[record_data_offset as usize
+                                ..(next_record_data_offset - extra_bytes) as usize],
+                        )
                     } else {
                         Ok(String::from(""))
                     }
@@ -65,7 +66,7 @@ impl Record {
         Ok(record)
     }
     /// Gets all records in the specified content
-    pub fn parse_records(
+    pub(crate) fn parse_records(
         content: &[u8],
         num_of_records: u16,
         _extra_bytes: u32,
@@ -75,8 +76,7 @@ impl Record {
         let mut reader = Cursor::new(content);
         reader.set_position(78);
         for _i in 0..num_of_records {
-            let record = Record::parse_record(&mut reader)?;
-            records_content.push(record);
+            records_content.push(Record::parse_record(&mut reader)?);
         }
         for i in 0..records_content.len() {
             let mut current_rec = records_content[i].clone();

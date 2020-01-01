@@ -1,6 +1,6 @@
 //! A module about ext header
 use super::*;
-pub enum BookInfo {
+pub(crate) enum BookInfo {
     Author,
     Publisher,
     Description,
@@ -10,7 +10,7 @@ pub enum BookInfo {
     Title,
 }
 /// Parameters of Exth Header
-pub enum ExtHeaderData {
+pub(crate) enum ExtHeaderData {
     Identifier,
     HeaderLength,
     RecordCount,
@@ -38,7 +38,7 @@ Records:                {:#?}",
 }
 impl ExtHeader {
     /// Parse a Exth header from the content
-    pub fn parse(content: &[u8], num_of_records: u16) -> Result<ExtHeader, std::io::Error> {
+    pub(crate) fn parse(content: &[u8], num_of_records: u16) -> Result<ExtHeader, std::io::Error> {
         let identifier =
             ExtHeader::get_headers_u32(content, ExtHeaderData::Identifier, num_of_records)?;
         let header_length =
@@ -91,7 +91,7 @@ impl ExtHeader {
         }
         self.records = records;
     }
-    pub fn get_book_info(&self, info: BookInfo) -> Option<&String> {
+    pub(crate) fn get_book_info(&self, info: BookInfo) -> Option<&String> {
         let record: u32 = match info {
             BookInfo::Author => 100,
             BookInfo::Publisher => 101,
