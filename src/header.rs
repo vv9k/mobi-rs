@@ -162,7 +162,7 @@ impl Header {
 }
 
 #[cfg(test)]
-mod header {
+mod tests {
     use super::*;
     use book::BOOK;
     use header::Header;

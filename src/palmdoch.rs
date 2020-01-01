@@ -116,7 +116,7 @@ impl PalmDocHeader {
 }
 
 #[cfg(test)]
-mod palmdoc_header {
+mod tests {
     use super::*;
     use book::BOOK;
     use header::HeaderData;

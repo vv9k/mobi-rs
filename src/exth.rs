@@ -105,7 +105,7 @@ impl ExtHeader {
 }
 
 #[cfg(test)]
-mod exth_header {
+mod tests {
     use super::*;
     use book::BOOK;
     use exth::{BookInfo, ExtHeader};

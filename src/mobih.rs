@@ -371,7 +371,7 @@ impl MobiHeader {
     }
 }
 #[cfg(test)]
-mod mobi_header {
+mod tests {
     use super::*;
     use book::BOOK;
     use header::{Header, HeaderData};
