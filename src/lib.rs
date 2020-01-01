@@ -195,7 +195,6 @@ impl Mobi {
     /// Returns the whole content as String
     pub fn content_as_string(&self) -> String {
         (1..self.palmdoc.record_count - 1)
-            .into_iter()
             .map(|i| self.records[i as usize].to_string())
             .collect()
     }
@@ -205,7 +204,6 @@ impl Mobi {
         if (b >= 1) && (b <= e) && (e < (self.palmdoc.record_count - 1) as usize) {
             Some(
                 (b..e)
-                    .into_iter()
                     .map(|i| self.records[i as usize].to_string())
                     .collect(),
             )

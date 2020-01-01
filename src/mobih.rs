@@ -54,7 +54,6 @@ pub(crate) enum MobiHeaderData {
     FirstDataRecord,
     DataRecordCount,
     ExthFlags,
-    HasDrm,
     DrmOffset,
     DrmCount,
     DrmSize,
@@ -65,6 +64,7 @@ pub(crate) enum MobiHeaderData {
     ExtraBytes,
 }
 impl fmt::Display for MobiHeader {
+    #[allow(clippy::or_fun_call)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
