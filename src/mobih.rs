@@ -1,4 +1,3 @@
-//! A module about mobi header
 use super::*;
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds Mobi header information
@@ -35,7 +34,7 @@ pub struct MobiHeader {
     pub extra_bytes: u32,
 }
 /// Parameters of Mobi Header
-pub enum MobiHeaderData {
+pub(crate) enum MobiHeaderData {
     Identifier,
     HeaderLength,
     MobiType,
@@ -133,7 +132,7 @@ Flis record:            {}",
 }
 impl MobiHeader {
     /// Parse a Mobi header from the content
-    pub fn parse(content: &[u8], num_of_records: u16) -> Result<MobiHeader, std::io::Error> {
+    pub(crate) fn parse(content: &[u8], num_of_records: u16) -> Result<MobiHeader, std::io::Error> {
         macro_rules! mobiheader {
             ($method:ident($enum:ident)) => {
                 MobiHeader::$method(content, MobiHeaderData::$enum, num_of_records)?
@@ -225,7 +224,7 @@ impl MobiHeader {
         reader.read_u16::<BigEndian>()
     }
     /// Returns the book name
-    pub fn name(content: &[u8], num_of_records: u16) -> Result<String, std::io::Error> {
+    pub(crate) fn name(content: &[u8], num_of_records: u16) -> Result<String, std::io::Error> {
         let name_offset =
             MobiHeader::get_headers_u32(content, MobiHeaderData::NameOffset, num_of_records)?;
         let name_length =
@@ -238,7 +237,7 @@ impl MobiHeader {
         )
     }
     /// Checks if there is a Exth Header and changes the parameter
-    pub fn has_exth_header(exth_flags: u32) -> bool {
+    pub(crate) fn has_exth_header(exth_flags: u32) -> bool {
         (exth_flags & 0x40) != 0
     }
     /// Checks if there is DRM on this book
@@ -252,7 +251,7 @@ impl MobiHeader {
         Ok(2 * (ex_bytes & 0xFFFE).count_ones())
     }
     /// Converts numerical value into a type
-    pub fn mobi_type(&self) -> Option<String> {
+    pub(crate) fn mobi_type(&self) -> Option<String> {
         macro_rules! mtype {
             ($s:expr) => {
                 Some(String::from($s))
@@ -274,7 +273,7 @@ impl MobiHeader {
             _ => None,
         }
     }
-    pub fn text_encoding(&self) -> Option<String> {
+    pub(crate) fn text_encoding(&self) -> Option<String> {
         match self.text_encoding {
             1252 => Some(String::from("CP1252 (WinLatin1)")),
             65001 => Some(String::from("UTF-8")),
@@ -284,7 +283,7 @@ impl MobiHeader {
     fn lang_code(code: u32) -> u16 {
         (code & 0xFF) as u16
     }
-    pub fn language(&self) -> Option<String> {
+    pub(crate) fn language(&self) -> Option<String> {
         macro_rules! lang {
             ($s:expr) => {
                 Some(String::from($s))

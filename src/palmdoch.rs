@@ -1,12 +1,11 @@
-//! A module about palmdoc header
 use super::*;
-pub enum Compression {
+pub(crate) enum Compression {
     No,
     PalmDoc,
     Huff,
 }
 /// Parameters of PalmDOC Header
-pub enum PalmDocHeaderData {
+pub(crate) enum PalmDocHeaderData {
     Compression,
     TextLength,
     RecordCount,
@@ -43,7 +42,10 @@ Encryption type:        {}",
 }
 impl PalmDocHeader {
     /// Parse a PalmDOC header from the content
-    pub fn parse(content: &[u8], num_of_records: u16) -> Result<PalmDocHeader, std::io::Error> {
+    pub(crate) fn parse(
+        content: &[u8],
+        num_of_records: u16,
+    ) -> Result<PalmDocHeader, std::io::Error> {
         macro_rules! pdheader {
             ($method:ident($type:ident)) => {
                 PalmDocHeader::$method(content, PalmDocHeaderData::$type, num_of_records)?
@@ -88,7 +90,7 @@ impl PalmDocHeader {
         reader.set_position(position + u64::from(num_of_records * 8));
         reader.read_u32::<BigEndian>()
     }
-    pub fn compression(&self) -> Option<String> {
+    pub(crate) fn compression(&self) -> Option<String> {
         match self.compression {
             1 => Some(String::from("No Compression")),
             2 => Some(String::from("PalmDOC Compression")),
@@ -96,7 +98,7 @@ impl PalmDocHeader {
             _ => None,
         }
     }
-    pub fn encryption(&self) -> Option<String> {
+    pub(crate) fn encryption(&self) -> Option<String> {
         match self.encryption_type {
             0 => Some(String::from("No Encryption")),
             1 => Some(String::from("Old Mobipocket Encryption")),
@@ -104,7 +106,7 @@ impl PalmDocHeader {
             _ => None,
         }
     }
-    pub fn compression_en(&self) -> Compression {
+    pub(crate) fn compression_en(&self) -> Compression {
         match self.compression {
             2 => Compression::PalmDoc,
             17480 => Compression::Huff,
