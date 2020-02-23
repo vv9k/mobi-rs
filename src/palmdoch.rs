@@ -12,6 +12,18 @@ pub(crate) enum PalmDocHeaderData {
     RecordSize,
     EncryptionType,
 }
+impl FieldHeaderEnum for PalmDocHeaderData {}
+impl HeaderField<PalmDocHeaderData> for PalmDocHeaderData {
+    fn position(self) -> Option<u16> {
+        match self {
+            PalmDocHeaderData::Compression => Some(80),
+            PalmDocHeaderData::RecordCount => Some(88),
+            PalmDocHeaderData::RecordSize => Some(90),
+            PalmDocHeaderData::EncryptionType => Some(92),
+            PalmDocHeaderData::TextLength => Some(84),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds PalmDOC header information
@@ -47,48 +59,15 @@ impl PalmDocHeader {
         content: &[u8],
         num_of_records: u16,
     ) -> Result<PalmDocHeader, std::io::Error> {
-        macro_rules! pdheader {
-            ($method:ident($type:ident,$cursor:expr)) => {
-                PalmDocHeader::$method($cursor, PalmDocHeaderData::$type, num_of_records)?
-            };
-        }
-        let mut reader = Cursor::new(content);
+        let mut reader = Reader::new(&content, num_of_records);
+        use PalmDocHeaderData::*;
         Ok(PalmDocHeader {
-            compression: pdheader!(get_headers_u16(Compression, &mut reader)),
-            text_length: pdheader!(get_headers_u32(TextLength, &mut reader)),
-            record_count: pdheader!(get_headers_u16(RecordCount, &mut reader)),
-            record_size: pdheader!(get_headers_u16(RecordSize, &mut reader)),
-            encryption_type: pdheader!(get_headers_u16(EncryptionType, &mut reader)),
+            compression: reader.read_u16_header(Compression)?,
+            text_length: reader.read_u32_header(TextLength)?,
+            record_count: reader.read_u16_header(RecordCount)?,
+            record_size: reader.read_u16_header(RecordSize)?,
+            encryption_type: reader.read_u16_header(EncryptionType)?,
         })
-    }
-    /// Gets u16 header value from specific location
-    fn get_headers_u16(
-        reader: &mut Cursor<&[u8]>,
-        pdheader: PalmDocHeaderData,
-        num_of_records: u16,
-    ) -> Result<u16, std::io::Error> {
-        let position = match pdheader {
-            PalmDocHeaderData::Compression => 80,
-            PalmDocHeaderData::RecordCount => 88,
-            PalmDocHeaderData::RecordSize => 90,
-            PalmDocHeaderData::EncryptionType => 92,
-            _ => 0,
-        };
-        reader.set_position(position + u64::from(num_of_records * 8));
-        reader.read_u16::<BigEndian>()
-    }
-    /// Gets u32 header value from specific location
-    fn get_headers_u32(
-        reader: &mut Cursor<&[u8]>,
-        pdheader: PalmDocHeaderData,
-        num_of_records: u16,
-    ) -> Result<u32, std::io::Error> {
-        let position = match pdheader {
-            PalmDocHeaderData::TextLength => 84,
-            _ => 0,
-        };
-        reader.set_position(position + u64::from(num_of_records * 8));
-        reader.read_u32::<BigEndian>()
     }
     pub(crate) fn compression(&self) -> Option<String> {
         match self.compression {
