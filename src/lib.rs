@@ -178,14 +178,19 @@ impl Mobi {
         self.mobi.language()
     }
     /// Returns creation datetime
+    /// This field is only available using `chrono` feature
     pub fn created_datetime(&self) -> NaiveDateTime {
         self.header.created_datetime()
     }
+    #[cfg(feature = "chrono")]
     /// Returns modification datetime
+    /// This field is only available using `chrono` feature
     pub fn mod_datetime(&self) -> NaiveDateTime {
         self.header.mod_datetime()
     }
+    #[cfg(feature = "chrono")]
     /// Returns compression method used on this file
+    /// This field is only available using `chrono` feature
     pub fn compression(&self) -> Option<String> {
         self.palmdoc.compression()
     }
