@@ -278,7 +278,7 @@ impl<'r> Reader<'r> {
         field: F,
     ) -> Result<i16, std::io::Error> {
         self.cursor
-            .set_position(field.position().unwrap() as u64 + u64::from(self.num_of_records * 8));
+            .set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.cursor.read_i16::<BigEndian>()
     }
     pub(crate) fn read_u16_header<T: FieldHeaderEnum, F: HeaderField<T>>(
@@ -286,7 +286,7 @@ impl<'r> Reader<'r> {
         field: F,
     ) -> Result<u16, std::io::Error> {
         self.cursor
-            .set_position(field.position().unwrap() as u64 + u64::from(self.num_of_records * 8));
+            .set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.cursor.read_u16::<BigEndian>()
     }
     pub(crate) fn read_u32_header<T: FieldHeaderEnum, F: HeaderField<T>>(
@@ -294,7 +294,19 @@ impl<'r> Reader<'r> {
         field: F,
     ) -> Result<u32, std::io::Error> {
         self.cursor
-            .set_position(field.position().unwrap() as u64 + u64::from(self.num_of_records * 8));
+            .set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.cursor.read_u32::<BigEndian>()
+    }
+    pub(crate) fn read_string_header<T: FieldHeaderEnum, F: HeaderField<T>>(
+        &mut self,
+        field: F,
+        len: u64,
+    ) -> String {
+        let position = field.position();
+        String::from_utf8_lossy(
+            &self.cursor.get_ref()[position as usize..(position as u64 + len) as usize],
+        )
+        .to_owned()
+        .to_string()
     }
 }
