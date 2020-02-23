@@ -34,6 +34,7 @@ pub struct Header {
     pub next_record_list_id: u32,
     pub num_of_records: u16,
 }
+#[cfg(feature = "fmt")]
 impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(

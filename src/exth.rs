@@ -22,6 +22,7 @@ pub struct ExtHeader {
     pub record_count: u32,
     pub records: HashMap<u32, String>,
 }
+#[cfg(feature = "fmt")]
 impl fmt::Display for ExtHeader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(

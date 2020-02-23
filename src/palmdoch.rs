@@ -22,6 +22,7 @@ pub struct PalmDocHeader {
     pub record_size: u16,
     pub encryption_type: u16,
 }
+#[cfg(feature = "fmt")]
 impl fmt::Display for PalmDocHeader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
