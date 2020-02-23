@@ -75,30 +75,30 @@ impl Header {
     /// Parse a header from the content
     pub(crate) fn parse(content: &[u8]) -> Result<Header, std::io::Error> {
         macro_rules! header {
-            ($method:ident($type:ident)) => {
-                Header::$method(content, HeaderData::$type)?
+            ($method:ident($type:ident,$cursor:expr)) => {
+                Header::$method($cursor, HeaderData::$type)?
             };
         }
+        let mut reader = Cursor::new(content);
         Ok(Header {
             name: Header::get_headers_string(content, HeaderData::Name),
-            attributes: header!(get_headers_i16(Attributes)),
-            version: header!(get_headers_i16(Version)),
-            created: header!(get_headers_u32(Created)),
-            modified: header!(get_headers_u32(Modified)),
-            backup: header!(get_headers_u32(Backup)),
-            modnum: header!(get_headers_u32(Modnum)),
-            app_info_id: header!(get_headers_u32(AppInfoId)),
-            sort_info_id: header!(get_headers_u32(SortInfoId)),
+            attributes: header!(get_headers_i16(Attributes, &mut reader)),
+            version: header!(get_headers_i16(Version, &mut reader)),
+            created: header!(get_headers_u32(Created, &mut reader)),
+            modified: header!(get_headers_u32(Modified, &mut reader)),
+            backup: header!(get_headers_u32(Backup, &mut reader)),
+            modnum: header!(get_headers_u32(Modnum, &mut reader)),
+            app_info_id: header!(get_headers_u32(AppInfoId, &mut reader)),
+            sort_info_id: header!(get_headers_u32(SortInfoId, &mut reader)),
             typ_e: Header::get_headers_string(content, HeaderData::TypE),
             creator: Header::get_headers_string(content, HeaderData::Creator),
-            unique_id_seed: header!(get_headers_u32(UniqueIdSeed)),
-            next_record_list_id: header!(get_headers_u32(NextRecordListId)),
-            num_of_records: header!(get_headers_u16(NumOfRecords)),
+            unique_id_seed: header!(get_headers_u32(UniqueIdSeed, &mut reader)),
+            next_record_list_id: header!(get_headers_u32(NextRecordListId, &mut reader)),
+            num_of_records: header!(get_headers_u16(NumOfRecords, &mut reader)),
         })
     }
     /// Gets i16 header value from specific location
-    fn get_headers_i16(content: &[u8], header: HeaderData) -> Result<i16, std::io::Error> {
-        let mut reader = Cursor::new(content);
+    fn get_headers_i16(reader: &mut Cursor<&[u8]>, header: HeaderData) -> Result<i16, std::io::Error> {
         let position = match header {
             HeaderData::Attributes => 32,
             HeaderData::Version => 34,
@@ -109,10 +109,9 @@ impl Header {
     }
     /// Gets u16 header value from specific location
     pub(crate) fn get_headers_u16(
-        content: &[u8],
+        reader: &mut Cursor<&[u8]>,
         header: HeaderData,
     ) -> Result<u16, std::io::Error> {
-        let mut reader = Cursor::new(content);
         let position = match header {
             HeaderData::NumOfRecords => 76,
             _ => 0,
@@ -121,8 +120,7 @@ impl Header {
         reader.read_u16::<BigEndian>()
     }
     /// Gets u32 header value from specific location
-    fn get_headers_u32(content: &[u8], header: HeaderData) -> Result<u32, std::io::Error> {
-        let mut reader = Cursor::new(content);
+    fn get_headers_u32(reader: &mut Cursor<&[u8]>, header: HeaderData) -> Result<u32, std::io::Error> {
         let position = match header {
             HeaderData::Created => 36,
             HeaderData::Modified => 40,

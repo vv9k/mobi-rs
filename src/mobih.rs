@@ -135,50 +135,50 @@ impl MobiHeader {
     /// Parse a Mobi header from the content
     pub(crate) fn parse(content: &[u8], num_of_records: u16) -> Result<MobiHeader, std::io::Error> {
         macro_rules! mobiheader {
-            ($method:ident($enum:ident)) => {
-                MobiHeader::$method(content, MobiHeaderData::$enum, num_of_records)?
+            ($method:ident($enum:ident,$cursor:expr)) => {
+                MobiHeader::$method($cursor, MobiHeaderData::$enum, num_of_records)?
             };
         }
+        let mut reader = Cursor::new(content);
         Ok(MobiHeader {
-            identifier: mobiheader!(get_headers_u32(Identifier)),
-            header_length: mobiheader!(get_headers_u32(HeaderLength)),
-            mobi_type: mobiheader!(get_headers_u32(MobiType)),
-            text_encoding: mobiheader!(get_headers_u32(TextEncoding)),
-            id: mobiheader!(get_headers_u32(Id)),
-            gen_version: mobiheader!(get_headers_u32(GenVersion)),
-            first_non_book_index: mobiheader!(get_headers_u32(FirstNonBookIndex)),
-            name: MobiHeader::name(content, num_of_records)?,
-            name_offset: mobiheader!(get_headers_u32(NameOffset)),
-            name_length: mobiheader!(get_headers_u32(NameLength)),
-            language_code: MobiHeader::lang_code(mobiheader!(get_headers_u32(LanguageCode))),
-            input_language: mobiheader!(get_headers_u32(InputLanguage)),
-            output_language: mobiheader!(get_headers_u32(OutputLanguage)),
-            format_version: mobiheader!(get_headers_u32(FormatVersion)),
-            first_image_index: mobiheader!(get_headers_u32(FirstImageIndex)),
-            first_huff_record: mobiheader!(get_headers_u32(FirstHuffRecord)),
-            huff_record_count: mobiheader!(get_headers_u32(HuffRecordCount)),
-            first_data_record: mobiheader!(get_headers_u32(FirstDataRecord)),
-            data_record_count: mobiheader!(get_headers_u32(DataRecordCount)),
-            exth_flags: mobiheader!(get_headers_u32(ExthFlags)),
-            has_exth_header: MobiHeader::has_exth_header(mobiheader!(get_headers_u32(ExthFlags))),
-            drm_offset: mobiheader!(get_headers_u32(DrmOffset)),
-            drm_count: mobiheader!(get_headers_u32(DrmCount)),
-            drm_size: mobiheader!(get_headers_u32(DrmSize)),
-            drm_flags: mobiheader!(get_headers_u32(DrmFlags)),
-            has_drm: MobiHeader::has_drm(mobiheader!(get_headers_u32(DrmOffset))),
-            last_image_record: mobiheader!(get_headers_u16(LastImageRecord)),
-            fcis_record: mobiheader!(get_headers_u32(FcisRecord)),
-            flis_record: mobiheader!(get_headers_u32(FlisRecord)),
-            extra_bytes: MobiHeader::extra_bytes(content, num_of_records)?,
+            identifier: mobiheader!(get_headers_u32(Identifier, &mut reader)),
+            header_length: mobiheader!(get_headers_u32(HeaderLength, &mut reader)),
+            mobi_type: mobiheader!(get_headers_u32(MobiType, &mut reader)),
+            text_encoding: mobiheader!(get_headers_u32(TextEncoding, &mut reader)),
+            id: mobiheader!(get_headers_u32(Id, &mut reader)),
+            gen_version: mobiheader!(get_headers_u32(GenVersion, &mut reader)),
+            first_non_book_index: mobiheader!(get_headers_u32(FirstNonBookIndex, &mut reader)),
+            name: MobiHeader::name(&mut reader, num_of_records)?,
+            name_offset: mobiheader!(get_headers_u32(NameOffset, &mut reader)),
+            name_length: mobiheader!(get_headers_u32(NameLength, &mut reader)),
+            language_code: MobiHeader::lang_code(mobiheader!(get_headers_u32(LanguageCode, &mut reader))),
+            input_language: mobiheader!(get_headers_u32(InputLanguage, &mut reader)),
+            output_language: mobiheader!(get_headers_u32(OutputLanguage, &mut reader)),
+            format_version: mobiheader!(get_headers_u32(FormatVersion, &mut reader)),
+            first_image_index: mobiheader!(get_headers_u32(FirstImageIndex, &mut reader)),
+            first_huff_record: mobiheader!(get_headers_u32(FirstHuffRecord, &mut reader)),
+            huff_record_count: mobiheader!(get_headers_u32(HuffRecordCount, &mut reader)),
+            first_data_record: mobiheader!(get_headers_u32(FirstDataRecord, &mut reader)),
+            data_record_count: mobiheader!(get_headers_u32(DataRecordCount, &mut reader)),
+            exth_flags: mobiheader!(get_headers_u32(ExthFlags, &mut reader)),
+            has_exth_header: MobiHeader::has_exth_header(mobiheader!(get_headers_u32(ExthFlags, &mut reader))),
+            drm_offset: mobiheader!(get_headers_u32(DrmOffset, &mut reader)),
+            drm_count: mobiheader!(get_headers_u32(DrmCount, &mut reader)),
+            drm_size: mobiheader!(get_headers_u32(DrmSize, &mut reader)),
+            drm_flags: mobiheader!(get_headers_u32(DrmFlags, &mut reader)),
+            has_drm: MobiHeader::has_drm(mobiheader!(get_headers_u32(DrmOffset, &mut reader))),
+            last_image_record: mobiheader!(get_headers_u16(LastImageRecord, &mut reader)),
+            fcis_record: mobiheader!(get_headers_u32(FcisRecord, &mut reader)),
+            flis_record: mobiheader!(get_headers_u32(FlisRecord, &mut reader)),
+            extra_bytes: MobiHeader::extra_bytes(&mut reader, num_of_records)?,
         })
     }
     /// Gets u32 header value from specific location
     fn get_headers_u32(
-        content: &[u8],
+        reader: &mut Cursor<&[u8]>,
         mheader: MobiHeaderData,
         num_of_records: u16,
     ) -> Result<u32, std::io::Error> {
-        let mut reader = Cursor::new(content);
         let position = match mheader {
             MobiHeaderData::Identifier => 96,
             MobiHeaderData::HeaderLength => 100,
@@ -212,11 +212,10 @@ impl MobiHeader {
     }
     /// Gets u16 header value from specific location
     fn get_headers_u16(
-        content: &[u8],
+        reader: &mut Cursor<&[u8]>,
         mheader: MobiHeaderData,
         num_of_records: u16,
     ) -> Result<u16, std::io::Error> {
-        let mut reader = Cursor::new(content);
         let position = match mheader {
             MobiHeaderData::LastImageRecord => 274,
             _ => 0,
@@ -225,14 +224,14 @@ impl MobiHeader {
         reader.read_u16::<BigEndian>()
     }
     /// Returns the book name
-    pub(crate) fn name(content: &[u8], num_of_records: u16) -> Result<String, std::io::Error> {
+    pub(crate) fn name(mut reader: &mut Cursor<&[u8]>, num_of_records: u16) -> Result<String, std::io::Error> {
         let name_offset =
-            MobiHeader::get_headers_u32(content, MobiHeaderData::NameOffset, num_of_records)?;
+            MobiHeader::get_headers_u32(&mut reader, MobiHeaderData::NameOffset, num_of_records)?;
         let name_length =
-            MobiHeader::get_headers_u32(content, MobiHeaderData::NameLength, num_of_records)?;
+            MobiHeader::get_headers_u32(&mut reader, MobiHeaderData::NameLength, num_of_records)?;
         let offset = name_offset as usize + (num_of_records * 8) as usize + 80;
         Ok(
-            String::from_utf8_lossy(&content[offset..offset + name_length as usize])
+            String::from_utf8_lossy(&reader.get_mut()[offset..offset + name_length as usize])
                 .to_owned()
                 .to_string(),
         )
@@ -246,9 +245,9 @@ impl MobiHeader {
         drm_offset != 0xFFFF_FFFF
     }
     /// Returns extra bytes for reading records
-    fn extra_bytes(content: &[u8], num_of_records: u16) -> Result<u32, std::io::Error> {
+    fn extra_bytes(mut reader: &mut Cursor<&[u8]>, num_of_records: u16) -> Result<u32, std::io::Error> {
         let ex_bytes =
-            MobiHeader::get_headers_u16(content, MobiHeaderData::ExtraBytes, num_of_records)?;
+            MobiHeader::get_headers_u16(&mut reader, MobiHeaderData::ExtraBytes, num_of_records)?;
         Ok(2 * (ex_bytes & 0xFFFE).count_ones())
     }
     /// Converts numerical value into a type
@@ -416,9 +415,10 @@ mod tests {
             flis_record: 289,
             extra_bytes: 22,
         };
+        let mut reader = Cursor::new(BOOK);
         let parsed_header = MobiHeader::parse(
             BOOK,
-            Header::get_headers_u16(BOOK, HeaderData::NumOfRecords).unwrap(),
+            Header::get_headers_u16(&mut reader, HeaderData::NumOfRecords).unwrap(),
         )
         .unwrap();
         assert_eq!(mobiheader, parsed_header);

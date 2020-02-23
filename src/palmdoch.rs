@@ -48,25 +48,25 @@ impl PalmDocHeader {
         num_of_records: u16,
     ) -> Result<PalmDocHeader, std::io::Error> {
         macro_rules! pdheader {
-            ($method:ident($type:ident)) => {
-                PalmDocHeader::$method(content, PalmDocHeaderData::$type, num_of_records)?
+            ($method:ident($type:ident,$cursor:expr)) => {
+                PalmDocHeader::$method($cursor, PalmDocHeaderData::$type, num_of_records)?
             };
         }
+        let mut reader = Cursor::new(content);
         Ok(PalmDocHeader {
-            compression: pdheader!(get_headers_u16(Compression)),
-            text_length: pdheader!(get_headers_u32(TextLength)),
-            record_count: pdheader!(get_headers_u16(RecordCount)),
-            record_size: pdheader!(get_headers_u16(RecordSize)),
-            encryption_type: pdheader!(get_headers_u16(EncryptionType)),
+            compression: pdheader!(get_headers_u16(Compression, &mut reader)),
+            text_length: pdheader!(get_headers_u32(TextLength, &mut reader)),
+            record_count: pdheader!(get_headers_u16(RecordCount, &mut reader)),
+            record_size: pdheader!(get_headers_u16(RecordSize, &mut reader)),
+            encryption_type: pdheader!(get_headers_u16(EncryptionType, &mut reader)),
         })
     }
     /// Gets u16 header value from specific location
     fn get_headers_u16(
-        content: &[u8],
+        reader: &mut Cursor<&[u8]>,
         pdheader: PalmDocHeaderData,
         num_of_records: u16,
     ) -> Result<u16, std::io::Error> {
-        let mut reader = Cursor::new(content);
         let position = match pdheader {
             PalmDocHeaderData::Compression => 80,
             PalmDocHeaderData::RecordCount => 88,
@@ -79,11 +79,10 @@ impl PalmDocHeader {
     }
     /// Gets u32 header value from specific location
     fn get_headers_u32(
-        content: &[u8],
+        reader: &mut Cursor<&[u8]>,
         pdheader: PalmDocHeaderData,
         num_of_records: u16,
     ) -> Result<u32, std::io::Error> {
-        let mut reader = Cursor::new(content);
         let position = match pdheader {
             PalmDocHeaderData::TextLength => 84,
             _ => 0,
@@ -130,9 +129,10 @@ mod tests {
             record_size: 4096,
             encryption_type: 0,
         };
+        let mut reader = Cursor::new(BOOK);
         let parsed_header = PalmDocHeader::parse(
             BOOK,
-            Header::get_headers_u16(BOOK, HeaderData::NumOfRecords).unwrap(),
+            Header::get_headers_u16(&mut reader, HeaderData::NumOfRecords).unwrap(),
         )
         .unwrap();
         assert_eq!(pdheader, parsed_header);
