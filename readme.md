@@ -1,8 +1,8 @@
 # mobi-rs
 [![GitHub Actions](https://github.com/wojciechkepka/mobi-rs/workflows/Rust/badge.svg)](https://github.com/wojciechkepka/mobi-rs/actions)
 [![crates.io](https://img.shields.io/crates/v/mobi)](https://crates.io/cratesmobi)
-[![crates.io](https://img.shields.io/crates/l/mobi)](https://github.com/wojciechkepka/mobi/blob/master/license)
-[![Docs](https://img.shields.io/badge/docs-master-brightgreen)](https://docs.rs/mobi)
+[![crates.io](https://img.shields.io/crates/l/mobi)](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
+[![Docs](https://img.shields.io/badge/docs-master-brightgreen)](https://docs.rs/mobi)  
 A library written in rust to extract data from `.mobi` format ebooks.
 ## Usage
 - add to `Cargo.toml`
