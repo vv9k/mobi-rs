@@ -13,7 +13,7 @@ mobi = "0.2.4"
 ```rust
 use mobi::Mobi;
 fn main() {
-    let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi").unwrap();
+    let m = Mobi::new("/home/wojtek/Downloads/lotr.mobi").unwrap();
     println!("{}", m.content_raw().unwrap());
 }
 ```
@@ -22,7 +22,7 @@ fn main() {
 ```rust
 use mobi::Mobi;
 fn main() {
-    let m = Mobi::init(Path::new("/home/wojtek/Downloads/lotr.mobi")).unwrap();
+    let m = Mobi::new(Path::new("/home/wojtek/Downloads/lotr.mobi")).unwrap();
     let title = m.title().unwrap();
     let author = m.author().unwrap();
     let publisher = m.publisher().unwrap();
@@ -49,12 +49,13 @@ SUMMARY: For over fifty years, J.R.R. Tolkienâs peerless fantasy has accumulate
 calibre (0.7.23) [http://calibre-ebook.com]
 ```
 ### Print all info
+*Only available with feature `fmt`*
 - `src/main.rs`
 ```rust
 use mobi::Mobi;
 
 fn main() {
-    let m = Mobi::init(Path::new("/home/wojtek/Downloads/lotr.mobi"));
+    let m = Mobi::new(Path::new("/home/wojtek/Downloads/lotr.mobi"));
     println!("{}", m)
 }
 ```
