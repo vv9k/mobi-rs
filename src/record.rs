@@ -50,20 +50,17 @@ impl Record {
                     Ok(String::from(""))
                 }
             }
-            Compression::Huff => Ok(String::from("")),
+            Compression::Huff => panic!("Huff compression is currently not supported"),
         }
     }
     /// Parses a record from the reader at current position
     fn parse_record(reader: &mut Cursor<&[u8]>) -> Result<Record, std::io::Error> {
-        let record_data_offset = reader.read_u32::<BigEndian>()?;
-        let id = reader.read_u32::<BigEndian>()?;
-        let record = Record {
-            record_data_offset,
-            id,
+        Ok(Record {
+            record_data_offset: reader.read_u32::<BigEndian>()?,
+            id: reader.read_u32::<BigEndian>()?,
             record_data: String::new(),
             length: 0,
-        };
-        Ok(record)
+        })
     }
     /// Gets all records in the specified content
     pub(crate) fn parse_records(
