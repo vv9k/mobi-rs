@@ -65,35 +65,35 @@ pub(crate) enum MobiHeaderData {
 }
 impl FieldHeaderEnum for MobiHeaderData {}
 impl HeaderField<MobiHeaderData> for MobiHeaderData {
-    fn position(self) -> Option<u16> {
+    fn position(self) -> u16 {
         match self {
-            MobiHeaderData::Identifier => Some(96),
-            MobiHeaderData::HeaderLength => Some(100),
-            MobiHeaderData::MobiType => Some(104),
-            MobiHeaderData::TextEncoding => Some(108),
-            MobiHeaderData::Id => Some(112),
-            MobiHeaderData::GenVersion => Some(116),
-            MobiHeaderData::FirstNonBookIndex => Some(160),
-            MobiHeaderData::NameOffset => Some(164),
-            MobiHeaderData::NameLength => Some(168),
-            MobiHeaderData::LanguageCode => Some(172),
-            MobiHeaderData::InputLanguage => Some(176),
-            MobiHeaderData::OutputLanguage => Some(180),
-            MobiHeaderData::FormatVersion => Some(184),
-            MobiHeaderData::FirstImageIndex => Some(188),
-            MobiHeaderData::FirstHuffRecord => Some(192),
-            MobiHeaderData::HuffRecordCount => Some(196),
-            MobiHeaderData::FirstDataRecord => Some(200),
-            MobiHeaderData::DataRecordCount => Some(204),
-            MobiHeaderData::ExthFlags => Some(208),
-            MobiHeaderData::DrmOffset => Some(248),
-            MobiHeaderData::DrmCount => Some(252),
-            MobiHeaderData::DrmSize => Some(256),
-            MobiHeaderData::DrmFlags => Some(260),
-            MobiHeaderData::LastImageRecord => Some(274),
-            MobiHeaderData::FcisRecord => Some(280),
-            MobiHeaderData::FlisRecord => Some(288),
-            MobiHeaderData::ExtraBytes => Some(0),
+            MobiHeaderData::ExtraBytes => 0,
+            MobiHeaderData::Identifier => 96,
+            MobiHeaderData::HeaderLength => 100,
+            MobiHeaderData::MobiType => 104,
+            MobiHeaderData::TextEncoding => 108,
+            MobiHeaderData::Id => 112,
+            MobiHeaderData::GenVersion => 116,
+            MobiHeaderData::FirstNonBookIndex => 160,
+            MobiHeaderData::NameOffset => 164,
+            MobiHeaderData::NameLength => 168,
+            MobiHeaderData::LanguageCode => 172,
+            MobiHeaderData::InputLanguage => 176,
+            MobiHeaderData::OutputLanguage => 180,
+            MobiHeaderData::FormatVersion => 184,
+            MobiHeaderData::FirstImageIndex => 188,
+            MobiHeaderData::FirstHuffRecord => 192,
+            MobiHeaderData::HuffRecordCount => 196,
+            MobiHeaderData::FirstDataRecord => 200,
+            MobiHeaderData::DataRecordCount => 204,
+            MobiHeaderData::ExthFlags => 208,
+            MobiHeaderData::DrmOffset => 248,
+            MobiHeaderData::DrmCount => 252,
+            MobiHeaderData::DrmSize => 256,
+            MobiHeaderData::DrmFlags => 260,
+            MobiHeaderData::LastImageRecord => 274,
+            MobiHeaderData::FcisRecord => 280,
+            MobiHeaderData::FlisRecord => 288,
         }
     }
 }
@@ -353,7 +353,7 @@ impl MobiHeader {
 mod tests {
     use super::*;
     use book::BOOK;
-    use header::{Header, HeaderData};
+    use header::HeaderData;
     use mobih::MobiHeader;
 
     #[test]

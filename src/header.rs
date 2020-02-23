@@ -18,20 +18,22 @@ pub(crate) enum HeaderData {
 }
 impl FieldHeaderEnum for HeaderData {}
 impl HeaderField<HeaderData> for HeaderData {
-    fn position(self) -> Option<u16> {
+    fn position(self) -> u16 {
         match self {
-            HeaderData::Attributes => Some(32),
-            HeaderData::Version => Some(34),
-            HeaderData::Created => Some(36),
-            HeaderData::Modified => Some(40),
-            HeaderData::Backup => Some(44),
-            HeaderData::Modnum => Some(48),
-            HeaderData::AppInfoId => Some(52),
-            HeaderData::SortInfoId => Some(56),
-            HeaderData::UniqueIdSeed => Some(68),
-            HeaderData::NextRecordListId => Some(72),
-            HeaderData::NumOfRecords => Some(76),
-            _ => None,
+            HeaderData::Name => 0,
+            HeaderData::Attributes => 32,
+            HeaderData::Version => 34,
+            HeaderData::Created => 36,
+            HeaderData::Modified => 40,
+            HeaderData::Backup => 44,
+            HeaderData::Modnum => 48,
+            HeaderData::AppInfoId => 52,
+            HeaderData::SortInfoId => 56,
+            HeaderData::TypE => 60,
+            HeaderData::Creator => 64,
+            HeaderData::UniqueIdSeed => 68,
+            HeaderData::NextRecordListId => 72,
+            HeaderData::NumOfRecords => 76,
         }
     }
 }
