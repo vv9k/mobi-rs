@@ -18,9 +18,9 @@ impl FieldHeaderEnum for ExtHeaderData {}
 impl HeaderField<ExtHeaderData> for ExtHeaderData {
     fn position(self) -> Option<u16> {
         match self {
-            ExtHeaderData::Identifier => Some(28),
-            ExtHeaderData::HeaderLength => Some(32),
-            ExtHeaderData::RecordCount => Some(36),
+            ExtHeaderData::Identifier => Some(328),
+            ExtHeaderData::HeaderLength => Some(332),
+            ExtHeaderData::RecordCount => Some(336),
         }
     }
 }
@@ -125,10 +125,10 @@ mod tests {
             record_count: 11,
             records,
         };
-        let mut reader = Cursor::new(BOOK);
+        let mut reader = Reader::new(&BOOK, 0);
         let parsed_header = ExtHeader::parse(
             BOOK,
-            Header::get_headers_u16(&mut reader, HeaderData::NumOfRecords).unwrap(),
+            reader.read_u16_header(HeaderData::NumOfRecords).unwrap(),
         )
         .unwrap();
         assert_eq!(extheader, parsed_header);

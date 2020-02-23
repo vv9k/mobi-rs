@@ -93,7 +93,7 @@ impl HeaderField<MobiHeaderData> for MobiHeaderData {
             MobiHeaderData::LastImageRecord => Some(274),
             MobiHeaderData::FcisRecord => Some(280),
             MobiHeaderData::FlisRecord => Some(288),
-            _ => None,
+            MobiHeaderData::ExtraBytes => Some(0),
         }
     }
 }
@@ -394,10 +394,12 @@ mod tests {
             flis_record: 289,
             extra_bytes: 22,
         };
-        let mut reader = Cursor::new(BOOK);
+        let mut reader = Reader::new(&BOOK, 0);
         let parsed_header = MobiHeader::parse(
             BOOK,
-            Header::get_headers_u16(&mut reader, HeaderData::NumOfRecords).unwrap(),
+            reader
+                .read_u16_header(HeaderData::NumOfRecords)
+                .expect("failed to read number of records"),
         )
         .unwrap();
         assert_eq!(mobiheader, parsed_header);

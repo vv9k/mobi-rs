@@ -108,10 +108,10 @@ mod tests {
             record_size: 4096,
             encryption_type: 0,
         };
-        let mut reader = Cursor::new(BOOK);
+        let mut reader = Reader::new(&BOOK, 0);
         let parsed_header = PalmDocHeader::parse(
             BOOK,
-            Header::get_headers_u16(&mut reader, HeaderData::NumOfRecords).unwrap(),
+            reader.read_u16_header(HeaderData::NumOfRecords).unwrap(),
         )
         .unwrap();
         assert_eq!(pdheader, parsed_header);
