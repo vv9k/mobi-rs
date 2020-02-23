@@ -9,7 +9,7 @@
 //!```rust,ignore
 //!use mobi::Mobi;
 //!fn main() {
-//!    let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi").unwrap();
+//!    let m = Mobi::new("/home/wojtek/Downloads/lotr.mobi").unwrap();
 //!    println!("{}", m.content_raw().unwrap());
 //!}
 //!```
@@ -18,7 +18,7 @@
 //!```rust,ignore
 //!use mobi::Mobi;
 //!fn main() {
-//!    let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi").unwrap();
+//!    let m = Mobi::new("/home/wojtek/Downloads/lotr.mobi").unwrap();
 //!    let title = m.title().unwrap();
 //!    let author = m.author().unwrap();
 //!    let publisher = m.publisher().unwrap();
@@ -41,7 +41,7 @@
 //!use mobi::Mobi;
 //!
 //!fn main() {
-//!    let m = Mobi::init("/home/wojtek/Downloads/lotr.mobi").unwrap();
+//!    let m = Mobi::new("/home/wojtek/Downloads/lotr.mobi").unwrap();
 //!    println!("{}", m)
 //!}
 //!```
@@ -79,7 +79,7 @@ pub struct Mobi {
 }
 impl Mobi {
     /// Construct a Mobi object from passed file path
-    pub fn init<P: AsRef<Path>>(file_path: P) -> Result<Mobi, std::io::Error> {
+    pub fn new<P: AsRef<Path>>(file_path: P) -> Result<Mobi, std::io::Error> {
         let contents = fs::read(file_path)?;
         let header = Header::parse(&contents)?;
         let palmdoc = PalmDocHeader::parse(&contents, header.num_of_records)?;
