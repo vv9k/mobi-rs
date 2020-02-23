@@ -14,6 +14,16 @@ pub(crate) enum ExtHeaderData {
     HeaderLength,
     RecordCount,
 }
+impl FieldHeaderEnum for ExtHeaderData {}
+impl HeaderField<ExtHeaderData> for ExtHeaderData {
+    fn position(self) -> Option<u16> {
+        match self {
+            ExtHeaderData::Identifier => Some(28),
+            ExtHeaderData::HeaderLength => Some(32),
+            ExtHeaderData::RecordCount => Some(36),
+        }
+    }
+}
 #[derive(Debug, Default, PartialEq)]
 /// Strcture that holds Exth header information
 pub struct ExtHeader {
@@ -39,30 +49,17 @@ Records:                {:#?}",
 impl ExtHeader {
     /// Parse a Exth header from the content
     pub(crate) fn parse(content: &[u8], num_of_records: u16) -> Result<ExtHeader, std::io::Error> {
-        let mut reader = Cursor::new(content);
+        use ExtHeaderData::*;
+        let mut reader = Reader::new(&content, num_of_records);
 
         let mut extheader = ExtHeader {
-            identifier: ExtHeader::get_headers_u32(&mut reader, ExtHeaderData::Identifier, num_of_records)?,
-            header_length: ExtHeader::get_headers_u32(&mut reader, ExtHeaderData::HeaderLength, num_of_records)?,
-            record_count: ExtHeader::get_headers_u32(&mut reader, ExtHeaderData::RecordCount, num_of_records)?,
+            identifier: reader.read_u32_header(Identifier)?,
+            header_length: reader.read_u32_header(HeaderLength)?,
+            record_count: reader.read_u32_header(RecordCount)?,
             records: HashMap::new(),
         };
-        extheader.get_records(&mut reader, num_of_records);
+        extheader.get_records(&mut reader.cursor, num_of_records);
         Ok(extheader)
-    }
-    /// Gets u32 header value from specific location
-    fn get_headers_u32(
-        reader: &mut Cursor<&[u8]>,
-        extheader: ExtHeaderData,
-        num_of_records: u16,
-    ) -> Result<u32, std::io::Error> {
-        let position = match extheader {
-            ExtHeaderData::Identifier => 328,
-            ExtHeaderData::HeaderLength => 332,
-            ExtHeaderData::RecordCount => 336,
-        };
-        reader.set_position(position + u64::from(num_of_records * 8));
-        reader.read_u32::<BigEndian>()
     }
     /// Gets header records
     fn get_records(&mut self, reader: &mut Cursor<&[u8]>, num_of_records: u16) {
