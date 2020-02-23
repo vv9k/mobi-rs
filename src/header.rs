@@ -96,7 +96,7 @@ impl Header {
         use HeaderData::*;
         let mut reader = Reader::new(&content, 0);
         Ok(Header {
-            name: Header::get_headers_string(content, HeaderData::Name),
+            name: reader.read_string_header(Name, 32),
             attributes: reader.read_i16_header(Attributes)?,
             version: reader.read_i16_header(Version)?,
             created: reader.read_u32_header(Created)?,
@@ -105,27 +105,12 @@ impl Header {
             modnum: reader.read_u32_header(Modnum)?,
             app_info_id: reader.read_u32_header(AppInfoId)?,
             sort_info_id: reader.read_u32_header(SortInfoId)?,
-            typ_e: Header::get_headers_string(content, HeaderData::TypE),
-            creator: Header::get_headers_string(content, HeaderData::Creator),
+            typ_e: reader.read_string_header(TypE, 4),
+            creator: reader.read_string_header(Creator, 4),
             unique_id_seed: reader.read_u32_header(UniqueIdSeed)?,
             next_record_list_id: reader.read_u32_header(NextRecordListId)?,
             num_of_records: reader.read_u16_header(NumOfRecords)?,
         })
-    }
-    /// Creates a string based on header bytes from specific location
-    fn get_headers_string(content: &[u8], header: HeaderData) -> String {
-        match header {
-            HeaderData::Name => String::from_utf8_lossy(&content[0..32])
-                .to_owned()
-                .to_string(),
-            HeaderData::TypE => String::from_utf8_lossy(&content[60..64])
-                .to_owned()
-                .to_string(),
-            HeaderData::Creator => String::from_utf8_lossy(&content[64..68])
-                .to_owned()
-                .to_string(),
-            _ => String::new(),
-        }
     }
     #[cfg(feature = "chrono")]
     /// Returns a chrono::NaiveDateTime timestamp of file creation
