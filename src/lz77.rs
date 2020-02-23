@@ -22,8 +22,7 @@ pub fn decompress_lz77(data: &[u8]) -> Result<String, std::io::Error> {
         } else if byte <= 0xbf {
             offset += 1;
             if offset > length as u64 {
-                let t: String = text.iter().collect();
-                return Ok(t);
+                return Ok(text.iter().collect::<String>());
             }
             reader.set_position(offset - 2);
             let mut lz77 = reader.read_u16::<BigEndian>().unwrap();
@@ -32,8 +31,7 @@ pub fn decompress_lz77(data: &[u8]) -> Result<String, std::io::Error> {
             let lz77offset = lz77 >> 3;
 
             if lz77offset < 1 {
-                let t: String = text.iter().collect();
-                return Ok(t);
+                return Ok(text.iter().collect::<String>());
             }
             for _lz77pos in 0..lz77length {
                 let text_length = text.len();
@@ -53,6 +51,5 @@ pub fn decompress_lz77(data: &[u8]) -> Result<String, std::io::Error> {
             text.push((byte ^ 0x80) as char);
         }
     }
-    let t: String = text.iter().collect();
-    Ok(t)
+    Ok(text.iter().collect::<String>())
 }
