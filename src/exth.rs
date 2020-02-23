@@ -39,28 +39,23 @@ Records:                {:#?}",
 impl ExtHeader {
     /// Parse a Exth header from the content
     pub(crate) fn parse(content: &[u8], num_of_records: u16) -> Result<ExtHeader, std::io::Error> {
-        let identifier =
-            ExtHeader::get_headers_u32(content, ExtHeaderData::Identifier, num_of_records)?;
-        let header_length =
-            ExtHeader::get_headers_u32(content, ExtHeaderData::HeaderLength, num_of_records)?;
-        let record_count =
-            ExtHeader::get_headers_u32(content, ExtHeaderData::RecordCount, num_of_records)?;
+        let mut reader = Cursor::new(content);
+
         let mut extheader = ExtHeader {
-            identifier,
-            header_length,
-            record_count,
+            identifier: ExtHeader::get_headers_u32(&mut reader, ExtHeaderData::Identifier, num_of_records)?,
+            header_length: ExtHeader::get_headers_u32(&mut reader, ExtHeaderData::HeaderLength, num_of_records)?,
+            record_count: ExtHeader::get_headers_u32(&mut reader, ExtHeaderData::RecordCount, num_of_records)?,
             records: HashMap::new(),
         };
-        extheader.get_records(content, num_of_records);
+        extheader.get_records(&mut reader, num_of_records);
         Ok(extheader)
     }
     /// Gets u32 header value from specific location
     fn get_headers_u32(
-        content: &[u8],
+        reader: &mut Cursor<&[u8]>,
         extheader: ExtHeaderData,
         num_of_records: u16,
     ) -> Result<u32, std::io::Error> {
-        let mut reader = Cursor::new(content);
         let position = match extheader {
             ExtHeaderData::Identifier => 328,
             ExtHeaderData::HeaderLength => 332,
@@ -70,9 +65,8 @@ impl ExtHeader {
         reader.read_u32::<BigEndian>()
     }
     /// Gets header records
-    fn get_records(&mut self, content: &[u8], num_of_records: u16) {
+    fn get_records(&mut self, reader: &mut Cursor<&[u8]>, num_of_records: u16) {
         let mut records = HashMap::new();
-        let mut reader = Cursor::new(content);
         let position: u64 = 340 + u64::from(num_of_records * 8);
         reader.set_position(position);
         for _i in 0..self.record_count {
@@ -134,9 +128,10 @@ mod tests {
             record_count: 11,
             records,
         };
+        let mut reader = Cursor::new(BOOK);
         let parsed_header = ExtHeader::parse(
             BOOK,
-            Header::get_headers_u16(BOOK, HeaderData::NumOfRecords).unwrap(),
+            Header::get_headers_u16(&mut reader, HeaderData::NumOfRecords).unwrap(),
         )
         .unwrap();
         assert_eq!(extheader, parsed_header);

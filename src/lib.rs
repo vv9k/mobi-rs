@@ -2,7 +2,7 @@
 //!
 //! The code is available on [GitHub](https://github.com/wojciechkepka/mobi-rs)
 //!
-//! License: [*Apache-2.0*](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
+//! License: [*MIT*](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
 //!
 //!## Examples
 //!### Print the whole book into stdout
