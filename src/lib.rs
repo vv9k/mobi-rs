@@ -259,7 +259,7 @@ Contributor:            {}
 
 pub(crate) trait FieldHeaderEnum {}
 pub(crate) trait HeaderField<T: FieldHeaderEnum> {
-    fn position(self) -> Option<u16>;
+    fn position(self) -> u16;
 }
 
 pub(crate) struct Reader<'r> {

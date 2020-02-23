@@ -14,13 +14,13 @@ pub(crate) enum PalmDocHeaderData {
 }
 impl FieldHeaderEnum for PalmDocHeaderData {}
 impl HeaderField<PalmDocHeaderData> for PalmDocHeaderData {
-    fn position(self) -> Option<u16> {
+    fn position(self) -> u16 {
         match self {
-            PalmDocHeaderData::Compression => Some(80),
-            PalmDocHeaderData::RecordCount => Some(88),
-            PalmDocHeaderData::RecordSize => Some(90),
-            PalmDocHeaderData::EncryptionType => Some(92),
-            PalmDocHeaderData::TextLength => Some(84),
+            PalmDocHeaderData::Compression => 80,
+            PalmDocHeaderData::RecordCount => 88,
+            PalmDocHeaderData::RecordSize => 90,
+            PalmDocHeaderData::EncryptionType => 92,
+            PalmDocHeaderData::TextLength => 84,
         }
     }
 }

@@ -16,11 +16,11 @@ pub(crate) enum ExtHeaderData {
 }
 impl FieldHeaderEnum for ExtHeaderData {}
 impl HeaderField<ExtHeaderData> for ExtHeaderData {
-    fn position(self) -> Option<u16> {
+    fn position(self) -> u16 {
         match self {
-            ExtHeaderData::Identifier => Some(328),
-            ExtHeaderData::HeaderLength => Some(332),
-            ExtHeaderData::RecordCount => Some(336),
+            ExtHeaderData::Identifier => 328,
+            ExtHeaderData::HeaderLength => 332,
+            ExtHeaderData::RecordCount => 336,
         }
     }
 }
@@ -101,7 +101,7 @@ mod tests {
     use super::*;
     use book::BOOK;
     use exth::{BookInfo, ExtHeader};
-    use header::{Header, HeaderData};
+    use header::HeaderData;
     use std::collections::HashMap;
     #[test]
     fn parse() {
