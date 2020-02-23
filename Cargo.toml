@@ -1,6 +1,6 @@
 [package]
 name = "mobi"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["wojciechkepka <wojtek.kepka@protonmail.com>"]
 edition = "2018"
 license = "MIT"
