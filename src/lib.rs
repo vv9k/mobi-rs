@@ -35,6 +35,7 @@
 //!}
 //!```
 //!### Print all info
+//!This feature is only available with `features = ["fmt"]`
 //!- `src/main.rs`
 //!```rust,ignore
 //!use mobi::Mobi;
@@ -199,7 +200,6 @@ impl Mobi {
             .collect()
     }
     /// Returns a slice of the content where b is beginning index and e is ending index.
-    /// Usually readable indexes are between 1-300(+-50)
     pub fn content_slice(&self, b: usize, e: usize) -> Option<String> {
         if (b >= 1) && (b <= e) && (e < (self.palmdoc.record_count - 1) as usize) {
             Some(
@@ -212,6 +212,7 @@ impl Mobi {
         }
     }
 }
+#[cfg(feature = "fmt")]
 impl fmt::Display for Mobi {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let empty_str = String::from("");

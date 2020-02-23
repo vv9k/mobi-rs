@@ -63,6 +63,7 @@ pub(crate) enum MobiHeaderData {
     FlisRecord,
     ExtraBytes,
 }
+#[cfg(feature = "fmt")]
 impl fmt::Display for MobiHeader {
     #[allow(clippy::or_fun_call)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
