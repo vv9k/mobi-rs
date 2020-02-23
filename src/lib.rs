@@ -256,3 +256,38 @@ Contributor:            {}
         )
     }
 }
+
+pub(crate) trait FieldHeaderEnum {}
+pub(crate) trait HeaderField<T: FieldHeaderEnum> {
+    fn position(self) -> Option<u16>;
+}
+
+pub(crate) struct Reader<'r> {
+    cursor: Cursor<&'r [u8]>,
+    num_of_records: u16,
+}
+impl<'r> Reader<'r> {
+    pub(crate) fn new(content: &[u8], num_of_records: u16) -> Reader {
+        Reader {
+            cursor: Cursor::new(content),
+            num_of_records,
+        }
+    }
+    pub(crate) fn read_u16_header<T: FieldHeaderEnum, F: HeaderField<T>>(
+        &mut self,
+        field: F,
+    ) -> Result<u16, std::io::Error> {
+        self.cursor
+            .set_position(field.position().unwrap() as u64 + u64::from(self.num_of_records * 8));
+        self.cursor.read_u16::<BigEndian>()
+    }
+
+    pub(crate) fn read_u32_header<T: FieldHeaderEnum, F: HeaderField<T>>(
+        &mut self,
+        field: F,
+    ) -> Result<u32, std::io::Error> {
+        self.cursor
+            .set_position(field.position().unwrap() as u64 + u64::from(self.num_of_records * 8));
+        self.cursor.read_u32::<BigEndian>()
+    }
+}
