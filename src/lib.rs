@@ -273,6 +273,14 @@ impl<'r> Reader<'r> {
             num_of_records,
         }
     }
+    pub(crate) fn read_i16_header<T: FieldHeaderEnum, F: HeaderField<T>>(
+        &mut self,
+        field: F,
+    ) -> Result<i16, std::io::Error> {
+        self.cursor
+            .set_position(field.position().unwrap() as u64 + u64::from(self.num_of_records * 8));
+        self.cursor.read_i16::<BigEndian>()
+    }
     pub(crate) fn read_u16_header<T: FieldHeaderEnum, F: HeaderField<T>>(
         &mut self,
         field: F,
@@ -281,7 +289,6 @@ impl<'r> Reader<'r> {
             .set_position(field.position().unwrap() as u64 + u64::from(self.num_of_records * 8));
         self.cursor.read_u16::<BigEndian>()
     }
-
     pub(crate) fn read_u32_header<T: FieldHeaderEnum, F: HeaderField<T>>(
         &mut self,
         field: F,
