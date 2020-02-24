@@ -152,7 +152,6 @@ impl Mobi {
         self.header.mod_datetime()
     }
     /// Returns compression method used on this file
-    /// This field is only available using `time` feature
     pub fn compression(&self) -> Option<String> {
         self.palmdoc.compression()
     }
@@ -166,9 +165,14 @@ impl Mobi {
             .map(|i| self.records[i as usize].to_string())
             .collect()
     }
+    /// Returns last readable index of the book
+    pub fn last_index(&self) -> usize {
+        (self.palmdoc.record_count - 1) as usize
+    }
     /// Returns a slice of the content where b is beginning index and e is ending index.
+    /// Use `last_index` function to find out the last readable index
     pub fn content_slice(&self, b: usize, e: usize) -> Option<String> {
-        if (b >= 1) && (b <= e) && (e < (self.palmdoc.record_count - 1) as usize) {
+        if (b >= 1) && (b <= e) && (e < self.last_index()) {
             Some(
                 (b..e)
                     .map(|i| self.records[i as usize].to_string())
@@ -218,11 +222,16 @@ Contributor:            {}
     }
 }
 
+/// Helper trait to group all enums containing header fields corresponding to each possible header
+/// (MobiHeaderData, ExtHeaderData, PalmDocHeaderData, HeaderData)
 pub(crate) trait FieldHeaderEnum {}
+/// Trait allowing generic reading of header fields
 pub(crate) trait HeaderField<T: FieldHeaderEnum> {
+    /// Returns a position in the text where this field can be read
     fn position(self) -> u16;
 }
 
+/// Helper struct for reading header values from content
 pub(crate) struct Reader<'r> {
     cursor: Cursor<&'r [u8]>,
     num_of_records: u16,

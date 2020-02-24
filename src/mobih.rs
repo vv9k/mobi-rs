@@ -1,4 +1,9 @@
 use super::*;
+
+const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
+const EXTH_ON_FLAG: u32 = 0x40;
+const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
+
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds Mobi header information
 pub struct MobiHeader {
@@ -67,6 +72,7 @@ impl FieldHeaderEnum for MobiHeaderData {}
 impl HeaderField<MobiHeaderData> for MobiHeaderData {
     fn position(self) -> u16 {
         match self {
+            // TODO: Check if this field is actually on position 0
             MobiHeaderData::ExtraBytes => 0,
             MobiHeaderData::Identifier => 96,
             MobiHeaderData::HeaderLength => 100,
@@ -135,15 +141,15 @@ Fcis record:            {}
 Flis record:            {}",
             self.identifier,
             self.header_length,
-            self.mobi_type().unwrap_or(String::from("")),
-            self.text_encoding().unwrap_or(String::from("")),
+            self.mobi_type().unwrap_or_default(),
+            self.text_encoding().unwrap_or_default(),
             self.id,
             self.gen_version,
             self.first_non_book_index,
             self.name,
             self.name_offset,
             self.name_length,
-            self.language().unwrap_or(String::from("")),
+            self.language().unwrap_or_default(),
             self.input_language,
             self.output_language,
             self.format_version,
@@ -207,6 +213,7 @@ impl MobiHeader {
     pub(crate) fn name(reader: &mut Reader) -> Result<String, std::io::Error> {
         let name_offset = reader.read_u32_header(MobiHeaderData::NameOffset)?;
         let name_length = reader.read_u32_header(MobiHeaderData::NameLength)?;
+        // TODO: figure out why is this exactly `+ 80` and it works?
         let offset = name_offset as usize + (reader.num_of_records * 8) as usize + 80;
         Ok(
             String::from_utf8_lossy(
@@ -218,16 +225,16 @@ impl MobiHeader {
     }
     /// Checks if there is a Exth Header and changes the parameter
     pub(crate) fn has_exth_header(exth_flags: u32) -> bool {
-        (exth_flags & 0x40) != 0
+        (exth_flags & EXTH_ON_FLAG) != 0
     }
     /// Checks if there is DRM on this book
     fn has_drm(drm_offset: u32) -> bool {
-        drm_offset != 0xFFFF_FFFF
+        drm_offset != DRM_ON_FLAG
     }
     /// Returns extra bytes for reading records
     fn extra_bytes(reader: &mut Reader) -> Result<u32, std::io::Error> {
         let ex_bytes = reader.read_u16_header(MobiHeaderData::ExtraBytes)?;
-        Ok(2 * (ex_bytes & 0xFFFE).count_ones())
+        Ok(2 * (ex_bytes & EXTRA_BYTES_FLAG).count_ones())
     }
     /// Converts numerical value into a type
     pub(crate) fn mobi_type(&self) -> Option<String> {
