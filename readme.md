@@ -14,9 +14,10 @@ mobi = "0.3.0"
 ### Print the whole book into stdout
 ```rust
 use mobi::Mobi;
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), std::io::Error> {
     let m = Mobi::new("/home/wojtek/Downloads/lotr.mobi")?;
-    println!("{}", m.content_raw()?);
+    println!("{}", m.content_as_string());
+    Ok(())
 }
 ```
 ### Access basic info
@@ -58,9 +59,10 @@ calibre (0.7.23) [http://calibre-ebook.com]
 ```rust
 use mobi::Mobi;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), std::io::Error> {
     let m = Mobi::new(Path::new("/home/wojtek/Downloads/lotr.mobi"))?;
     println!("{}", m)
+    Ok(())
 }
 ```
 Running `cargo run` would yield (different data based on the file ofcourse):
