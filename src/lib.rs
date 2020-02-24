@@ -53,7 +53,7 @@ pub(crate) mod mobih;
 pub(crate) mod palmdoch;
 pub(crate) mod record;
 use byteorder::{BigEndian, ReadBytesExt};
-#[cfg(feature = "chrono")]
+#[cfg(feature = "time")]
 use chrono::prelude::*;
 use exth::BookInfo;
 pub use exth::ExtHeader;
@@ -178,20 +178,20 @@ impl Mobi {
     pub fn language(&self) -> Option<String> {
         self.mobi.language()
     }
-    #[cfg(feature = "chrono")]
+    #[cfg(feature = "time")]
     /// Returns creation datetime
-    /// This field is only available using `chrono` feature
+    /// This field is only available using `time` feature
     pub fn created_datetime(&self) -> NaiveDateTime {
         self.header.created_datetime()
     }
-    #[cfg(feature = "chrono")]
+    #[cfg(feature = "time")]
     /// Returns modification datetime
-    /// This field is only available using `chrono` feature
+    /// This field is only available using `time` feature
     pub fn mod_datetime(&self) -> NaiveDateTime {
         self.header.mod_datetime()
     }
     /// Returns compression method used on this file
-    /// This field is only available using `chrono` feature
+    /// This field is only available using `time` feature
     pub fn compression(&self) -> Option<String> {
         self.palmdoc.compression()
     }
