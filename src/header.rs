@@ -92,7 +92,7 @@ Num_of_records:         {}",
             self.num_of_records,
         )
     }
-    #[cfg(no(feature = "time"))]
+    #[cfg(not(feature = "time"))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
