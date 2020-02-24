@@ -78,7 +78,9 @@ Num_of_records:         {}",
             self.name,
             self.attributes,
             self.version,
+            #[cfg(feature = "time")]
             self.created_datetime(),
+            #[cfg(feature = "time")]
             self.mod_datetime(),
             self.backup,
             self.modnum,
