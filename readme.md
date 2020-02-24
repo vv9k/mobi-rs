@@ -24,15 +24,15 @@ fn main() -> Result<(), std::io::Error> {
 - `src/main.rs`
 ```rust
 use mobi::Mobi;
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), std::io::Error> {
     let m = Mobi::new(Path::new("/home/wojtek/Downloads/lotr.mobi"))?;
-    let title = m.title()?;
-    let author = m.author()?;
-    let publisher = m.publisher()?;
-    let desc = m.description()?;
-    let isbn = m.isbn()?;
-    let pub_date = m.publish_date()?;
-    let contributor = m.contributor()?;
+    let title = m.title().unwrap_or_default();
+    let author = m.author().unwrap_or_default();
+    let publisher = m.publisher().unwrap_or_default();
+    let desc = m.description().unwrap_or_default();
+    let isbn = m.isbn().unwrap_or_default();
+    let pub_date = m.publish_date().unwrap_or_default();
+    let contributor = m.contributor().unwrap_or_default();
     println!("{}\n{}\n{}\n{}\n{}\n{}\n{}\n", title, author, publisher, isbn, pub_date, desc, contributor);
     // Access Headers
     let header = m.header; // Normal Header
