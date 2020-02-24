@@ -8,36 +8,38 @@ A library written in rust to extract data from `.mobi` format ebooks.
 - add to `Cargo.toml`
 ```toml
 [dependencies]
-mobi = "0.2.5"
+mobi = "0.3.0"
 ```
 ## Examples
 ### Print the whole book into stdout
 ```rust
 use mobi::Mobi;
-fn main() {
-    let m = Mobi::new("/home/wojtek/Downloads/lotr.mobi").unwrap();
-    println!("{}", m.content_raw().unwrap());
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let m = Mobi::new("/home/wojtek/Downloads/lotr.mobi")?;
+    println!("{}", m.content_raw()?);
 }
 ```
 ### Access basic info
 - `src/main.rs`
 ```rust
 use mobi::Mobi;
-fn main() {
-    let m = Mobi::new(Path::new("/home/wojtek/Downloads/lotr.mobi")).unwrap();
-    let title = m.title().unwrap();
-    let author = m.author().unwrap();
-    let publisher = m.publisher().unwrap();
-    let desc = m.description().unwrap();
-    let isbn = m.isbn().unwrap();
-    let pub_date = m.publish_date().unwrap();
-    let contributor = m.contributor().unwrap();
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let m = Mobi::new(Path::new("/home/wojtek/Downloads/lotr.mobi"))?;
+    let title = m.title()?;
+    let author = m.author()?;
+    let publisher = m.publisher()?;
+    let desc = m.description()?;
+    let isbn = m.isbn()?;
+    let pub_date = m.publish_date()?;
+    let contributor = m.contributor()?;
     println!("{}\n{}\n{}\n{}\n{}\n{}\n{}\n", title, author, publisher, isbn, pub_date, desc, contributor);
     // Access Headers
     let header = m.header; // Normal Header
     let pdheader = m.palmdoc; // PalmDOC Header
     let mheader = m.mobi; // MOBI Header
     let exth = m.exth // Extra Header
+
+    Ok(())
 }
 ```
 Output:
@@ -56,8 +58,8 @@ calibre (0.7.23) [http://calibre-ebook.com]
 ```rust
 use mobi::Mobi;
 
-fn main() {
-    let m = Mobi::new(Path::new("/home/wojtek/Downloads/lotr.mobi"));
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let m = Mobi::new(Path::new("/home/wojtek/Downloads/lotr.mobi"))?;
     println!("{}", m)
 }
 ```
@@ -146,12 +148,7 @@ Records:                {
 
 ```
 ## TODO:
-- [X] Implement lz77 decompression
-- [X] Implement reading records
 - [ ] Comments!
-- [ ] format the content
-- [ ] into PDF
-- [ ] into epub
 ## License
 [**The MIT License (MIT)**](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
 ## Thanks to
