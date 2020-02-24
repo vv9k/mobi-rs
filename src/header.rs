@@ -57,6 +57,7 @@ pub struct Header {
 }
 #[cfg(feature = "fmt")]
 impl fmt::Display for Header {
+    #[cfg(feature = "time")]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -78,10 +79,39 @@ Num_of_records:         {}",
             self.name,
             self.attributes,
             self.version,
-            #[cfg(feature = "time")]
             self.created_datetime(),
-            #[cfg(feature = "time")]
             self.mod_datetime(),
+            self.backup,
+            self.modnum,
+            self.app_info_id,
+            self.sort_info_id,
+            self.typ_e,
+            self.creator,
+            self.unique_id_seed,
+            self.next_record_list_id,
+            self.num_of_records,
+        )
+    }
+    #[cfg(no(feature = "time"))]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "HEADER
+Name:                   {}
+Attributes:             {}
+Version:                {}
+Backup:                 {}
+Modnum:                 {}
+App_info_id:            {}
+Sort_info_id:           {}
+Typ_e:                  {}
+Creator:                {}
+Unique_id_seed:         {}
+Next_record_list_id:    {}
+Num_of_records:         {}",
+            self.name,
+            self.attributes,
+            self.version,
             self.backup,
             self.modnum,
             self.app_info_id,
