@@ -1,4 +1,7 @@
 use super::*;
+
+const RECORDS_OFFSET: u16 = 340;
+
 pub(crate) enum BookInfo {
     Author,
     Publisher,
@@ -64,7 +67,7 @@ impl ExtHeader {
     /// Gets header records
     fn get_records(&mut self, reader: &mut Cursor<&[u8]>, num_of_records: u16) {
         let mut records = HashMap::new();
-        let position: u64 = 340 + u64::from(num_of_records * 8);
+        let position: u64 = RECORDS_OFFSET as u64 + u64::from(num_of_records * 8);
         reader.set_position(position);
         for _i in 0..self.record_count {
             let mut record_data = vec![];

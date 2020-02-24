@@ -13,7 +13,7 @@ description = "An implementation of .mobi format"
 [features]
 default = []
 fmt = []
-chrono = ["chrono"]
+time = ["chrono"]
 
 [lib]
 name = "mobi"

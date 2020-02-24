@@ -114,15 +114,15 @@ impl Header {
             num_of_records: reader.read_u16_header(NumOfRecords)?,
         })
     }
-    #[cfg(feature = "chrono")]
+    #[cfg(feature = "time")]
     /// Returns a chrono::NaiveDateTime timestamp of file creation
-    /// This field is only available using `chrono` feature
+    /// This field is only available using `time` feature
     pub(crate) fn created_datetime(&self) -> NaiveDateTime {
         NaiveDateTime::from_timestamp(i64::from(self.created), 0)
     }
-    #[cfg(feature = "chrono")]
+    #[cfg(feature = "time")]
     /// Returns a chrono::NaiveDateTime timestamp of file modification
-    /// This field is only available using `chrono` feature
+    /// This field is only available using `time` feature
     pub(crate) fn mod_datetime(&self) -> NaiveDateTime {
         NaiveDateTime::from_timestamp(i64::from(self.modified), 0)
     }
