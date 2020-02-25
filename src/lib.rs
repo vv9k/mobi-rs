@@ -32,7 +32,7 @@ use std::path::Path;
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
 pub struct Mobi {
-    pub contents: Vec<u8>,
+    pub content: Vec<u8>,
     pub header: Header,
     pub palmdoc: PalmDocHeader,
     pub mobi: MobiHeader,
@@ -40,28 +40,26 @@ pub struct Mobi {
     pub records: Vec<Record>,
 }
 impl Mobi {
-    /// Construct a Mobi object from passed file path
-    pub fn new<P: AsRef<Path>>(file_path: P) -> Result<Mobi, std::io::Error> {
-        let contents = fs::read(file_path)?;
-        let header = Header::parse(&contents)?;
-        let palmdoc = PalmDocHeader::parse(&contents, header.num_of_records)?;
-        let mobi = MobiHeader::parse(&contents, header.num_of_records)?;
+    pub fn new(bytes: &[u8]) -> Result<Mobi, std::io::Error> {
+        let header = Header::parse(&bytes)?;
+        let palmdoc = PalmDocHeader::parse(&bytes, header.num_of_records)?;
+        let mobi = MobiHeader::parse(&bytes, header.num_of_records)?;
         let exth = {
             if mobi.has_exth_header {
-                ExtHeader::parse(&contents, header.num_of_records)?
+                ExtHeader::parse(&bytes, header.num_of_records)?
             } else {
                 ExtHeader::default()
             }
         };
         let records = Record::parse_records(
-            &contents,
+            &bytes,
             header.num_of_records,
             mobi.extra_bytes,
             palmdoc.compression_en(),
             mobi.text_encoding(),
         )?;
         Ok(Mobi {
-            contents,
+            content: bytes.to_vec(),
             header,
             palmdoc,
             mobi,
@@ -69,37 +67,17 @@ impl Mobi {
             records,
         })
     }
+    /// Construct a Mobi object from passed file path
+    pub fn from_path<P: AsRef<Path>>(file_path: P) -> Result<Mobi, std::io::Error> {
+        Self::new(&fs::read(file_path)?)
+    }
     /// Construct a Mobi object from an object that implements a Read trait
     pub fn from_reader<R: Read>(reader: R) -> Result<Mobi, std::io::Error> {
-        let mut contents = vec![];
+        let mut content = Vec::new();
         for byte in reader.bytes() {
-            contents.push(byte?);
+            content.push(byte?);
         }
-        let header = Header::parse(&contents)?;
-        let palmdoc = PalmDocHeader::parse(&contents, header.num_of_records)?;
-        let mobi = MobiHeader::parse(&contents, header.num_of_records)?;
-        let exth = {
-            if mobi.has_exth_header {
-                ExtHeader::parse(&contents, header.num_of_records)?
-            } else {
-                ExtHeader::default()
-            }
-        };
-        let records = Record::parse_records(
-            &contents,
-            header.num_of_records,
-            mobi.extra_bytes,
-            palmdoc.compression_en(),
-            mobi.text_encoding(),
-        )?;
-        Ok(Mobi {
-            contents,
-            header,
-            palmdoc,
-            mobi,
-            exth,
-            records,
-        })
+        Self::new(&content)
     }
     /// Returns author record if such exists
     pub fn author(&self) -> Option<&String> {
