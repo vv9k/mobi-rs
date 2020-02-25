@@ -24,10 +24,11 @@ use palmdoch::Compression;
 pub use palmdoch::PalmDocHeader;
 pub use record::Record;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::fmt;
 use std::fs;
-use std::io::Cursor;
-use std::io::Read;
+use std::io;
+use std::io::{Cursor, Read};
 use std::path::Path;
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
@@ -39,8 +40,15 @@ pub struct Mobi {
     pub exth: ExtHeader,
     pub records: Vec<Record>,
 }
+impl TryFrom<&[u8]> for Mobi {
+    type Error = io::Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        Self::new(&bytes)
+    }
+}
 impl Mobi {
-    pub fn new(bytes: &[u8]) -> Result<Mobi, std::io::Error> {
+    pub fn new(bytes: &[u8]) -> Result<Mobi, io::Error> {
         let header = Header::parse(&bytes)?;
         let palmdoc = PalmDocHeader::parse(&bytes, header.num_of_records)?;
         let mobi = MobiHeader::parse(&bytes, header.num_of_records)?;
@@ -68,11 +76,11 @@ impl Mobi {
         })
     }
     /// Construct a Mobi object from passed file path
-    pub fn from_path<P: AsRef<Path>>(file_path: P) -> Result<Mobi, std::io::Error> {
+    pub fn from_path<P: AsRef<Path>>(file_path: P) -> Result<Mobi, io::Error> {
         Self::new(&fs::read(file_path)?)
     }
     /// Construct a Mobi object from an object that implements a Read trait
-    pub fn from_reader<R: Read>(reader: R) -> Result<Mobi, std::io::Error> {
+    pub fn from_reader<R: Read>(reader: R) -> Result<Mobi, io::Error> {
         let mut content = Vec::new();
         for byte in reader.bytes() {
             content.push(byte?);
@@ -226,7 +234,7 @@ impl<'r> Reader<'r> {
     pub(crate) fn read_i16_header<T: FieldHeaderEnum, F: HeaderField<T>>(
         &mut self,
         field: F,
-    ) -> Result<i16, std::io::Error> {
+    ) -> Result<i16, io::Error> {
         self.cursor
             .set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.cursor.read_i16::<BigEndian>()
@@ -234,7 +242,7 @@ impl<'r> Reader<'r> {
     pub(crate) fn read_u16_header<T: FieldHeaderEnum, F: HeaderField<T>>(
         &mut self,
         field: F,
-    ) -> Result<u16, std::io::Error> {
+    ) -> Result<u16, io::Error> {
         self.cursor
             .set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.cursor.read_u16::<BigEndian>()
@@ -242,7 +250,7 @@ impl<'r> Reader<'r> {
     pub(crate) fn read_u32_header<T: FieldHeaderEnum, F: HeaderField<T>>(
         &mut self,
         field: F,
-    ) -> Result<u32, std::io::Error> {
+    ) -> Result<u32, io::Error> {
         self.cursor
             .set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.cursor.read_u32::<BigEndian>()
