@@ -4,6 +4,20 @@ const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
 const EXTH_ON_FLAG: u32 = 0x40;
 const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
 
+#[derive(Debug, PartialEq)]
+pub enum TextEncoding {
+    CP1252,
+    UTF8,
+}
+impl fmt::Display for TextEncoding {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            TextEncoding::CP1252 => write!(f, "CP1252 (WINLATIN)"),
+            TextEncoding::UTF8 => write!(f, "UTF-8"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds Mobi header information
 pub struct MobiHeader {
@@ -142,7 +156,7 @@ Flis record:            {}",
             self.identifier,
             self.header_length,
             self.mobi_type().unwrap_or_default(),
-            self.text_encoding().unwrap_or_default(),
+            self.text_encoding(),
             self.id,
             self.gen_version,
             self.first_non_book_index,
@@ -259,11 +273,13 @@ impl MobiHeader {
             _ => None,
         }
     }
-    pub(crate) fn text_encoding(&self) -> Option<String> {
+    // Mobi format only specifies this two encodings so
+    // this should never panic
+    pub(crate) fn text_encoding(&self) -> TextEncoding {
         match self.text_encoding {
-            1252 => Some(String::from("CP1252 (WinLatin1)")),
-            65001 => Some(String::from("UTF-8")),
-            _ => None,
+            1252 => TextEncoding::CP1252,
+            65001 => TextEncoding::UTF8,
+            n => panic!("Unknown encoding {}", n),
         }
     }
     fn lang_code(code: u32) -> u16 {
@@ -417,13 +433,13 @@ mod tests {
         fn utf_8() {
             let mut m = MobiHeader::default();
             m.text_encoding = 65001;
-            assert_eq!(m.text_encoding(), Some(String::from("UTF-8")))
+            assert_eq!(m.text_encoding(), TextEncoding::UTF8)
         }
         #[test]
         fn win_latin1() {
             let mut m = MobiHeader::default();
             m.text_encoding = 1252;
-            assert_eq!(m.text_encoding(), Some(String::from("CP1252 (WinLatin1)")))
+            assert_eq!(m.text_encoding(), TextEncoding::CP1252)
         }
     }
     mod mobi_type {

@@ -19,7 +19,7 @@ use chrono::prelude::*;
 use exth::BookInfo;
 pub use exth::ExtHeader;
 pub use header::Header;
-pub use mobih::MobiHeader;
+pub use mobih::{MobiHeader, TextEncoding};
 use palmdoch::Compression;
 pub use palmdoch::PalmDocHeader;
 pub use record::Record;
@@ -58,6 +58,7 @@ impl Mobi {
             header.num_of_records,
             mobi.extra_bytes,
             palmdoc.compression_en(),
+            mobi.text_encoding(),
         )?;
         Ok(Mobi {
             contents,
@@ -89,6 +90,7 @@ impl Mobi {
             header.num_of_records,
             mobi.extra_bytes,
             palmdoc.compression_en(),
+            mobi.text_encoding(),
         )?;
         Ok(Mobi {
             contents,
@@ -128,7 +130,7 @@ impl Mobi {
         self.exth.get_book_info(BookInfo::Title)
     }
     /// Returns text encoding used in ebook
-    pub fn text_encoding(&self) -> Option<String> {
+    pub fn text_encoding(&self) -> TextEncoding {
         self.mobi.text_encoding()
     }
     /// Returns type of this ebook

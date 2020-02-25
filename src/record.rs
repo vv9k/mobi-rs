@@ -1,4 +1,6 @@
 use super::*;
+use encoding::all::WINDOWS_1252;
+use encoding::{DecoderTrap, Encoding};
 use std::io::{Error, ErrorKind};
 
 const RECORDS_START_INDEX: u64 = 78;
@@ -33,14 +35,23 @@ impl Record {
         extra_bytes: u32,
         compression_type: &Compression,
         content: &[u8],
+        encoding: &TextEncoding,
     ) -> Result<String, std::io::Error> {
         // #TODO: reconsider using string here due to possible different encodings?
         match compression_type {
-            Compression::No => Ok(String::from_utf8_lossy(
-                &content[record_data_offset as usize..next_record_data_offset as usize],
-            )
-            .to_owned()
-            .to_string()),
+            Compression::No => match encoding {
+                TextEncoding::UTF8 => Ok(String::from_utf8_lossy(
+                    &content[record_data_offset as usize..next_record_data_offset as usize],
+                )
+                .to_owned()
+                .to_string()),
+                TextEncoding::CP1252 => Ok(WINDOWS_1252
+                    .decode(
+                        &content[record_data_offset as usize..next_record_data_offset as usize],
+                        DecoderTrap::Ignore,
+                    )
+                    .unwrap()), // unwraping is ok here because of less strict DecoderTrap which ignores errors
+            },
             Compression::PalmDoc => {
                 if record_data_offset < content.len() as u32
                     && record_data_offset < next_record_data_offset - extra_bytes
@@ -48,6 +59,7 @@ impl Record {
                     lz77::decompress_lz77(
                         &content[record_data_offset as usize
                             ..(next_record_data_offset - extra_bytes) as usize],
+                        &encoding,
                     )
                 } else {
                     Err(Error::new(
@@ -74,6 +86,7 @@ impl Record {
         num_of_records: u16,
         _extra_bytes: u32,
         compression_type: Compression,
+        encoding: TextEncoding,
     ) -> Result<Vec<Record>, std::io::Error> {
         let mut records_content = vec![];
         let mut reader = Cursor::new(content);
@@ -92,6 +105,7 @@ impl Record {
                         _extra_bytes,
                         &compression_type,
                         content,
+                        &encoding,
                     ) {
                         Ok(record) => record,
                         Err(e) => {

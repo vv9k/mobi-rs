@@ -1,10 +1,13 @@
+use super::*;
 use byteorder::{BigEndian, ReadBytesExt};
+use encoding::all::WINDOWS_1252;
+use encoding::{DecoderTrap, Encoding};
 use std::io::Cursor;
-pub fn decompress_lz77(data: &[u8]) -> Result<String, std::io::Error> {
+pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> Result<String, std::io::Error> {
     let length = data.len();
     let mut reader = Cursor::new(data);
     let mut offset: usize = 0;
-    let mut text: Vec<char> = vec![];
+    let mut text: Vec<u8> = vec![];
     while offset < length {
         let byte = data[offset];
         offset += 1;
@@ -12,15 +15,15 @@ pub fn decompress_lz77(data: &[u8]) -> Result<String, std::io::Error> {
             // The first character is a null which are literal
             // Chars from range 0x09..=0x7f are also literal
             0x0 | 0x09..=0x7f => {
-                text.push(byte as char);
+                text.push(byte);
             }
             // next $byte bytes are also literal
             0x1..=0x8 => {
                 if offset + byte as usize <= length {
                     &data[offset..(offset + byte as usize)]
-                        .iter()
+                        .into_iter()
                         .for_each(|ch| {
-                            text.push(*ch as char);
+                            text.push(*ch);
                         });
                     offset += byte as usize;
                 }
@@ -29,7 +32,14 @@ pub fn decompress_lz77(data: &[u8]) -> Result<String, std::io::Error> {
             0x80..=0xbf => {
                 offset += 1;
                 if offset > length {
-                    return Ok(text.iter().collect::<String>());
+                    match encoding {
+                        TextEncoding::UTF8 => {
+                            return Ok(String::from_utf8_lossy(&text).to_owned().to_string())
+                        }
+                        TextEncoding::CP1252 => {
+                            return Ok(WINDOWS_1252.decode(&text, DecoderTrap::Ignore).unwrap());
+                        }
+                    }
                 }
                 reader.set_position((offset - 2) as u64);
                 let mut lz77 = reader.read_u16::<BigEndian>().unwrap();
@@ -40,7 +50,14 @@ pub fn decompress_lz77(data: &[u8]) -> Result<String, std::io::Error> {
 
                 if lz77offset < 1 {
                     // Decompression offset is invalid?
-                    return Ok(text.iter().collect::<String>());
+                    match encoding {
+                        TextEncoding::UTF8 => {
+                            return Ok(String::from_utf8_lossy(&text).to_owned().to_string())
+                        }
+                        TextEncoding::CP1252 => {
+                            return Ok(WINDOWS_1252.decode(&text, DecoderTrap::Ignore).unwrap());
+                        }
+                    }
                 }
 
                 for _lz77pos in 0..lz77length {
@@ -58,10 +75,13 @@ pub fn decompress_lz77(data: &[u8]) -> Result<String, std::io::Error> {
             }
             // 0xc0..= 0xff are single charaters XOR 0x80 preceded by a space
             _ => {
-                text.push(' ');
-                text.push((byte ^ 0x80) as char);
+                text.push(' ' as u8);
+                text.push(byte ^ 0x80);
             }
         }
     }
-    Ok(text.iter().collect::<String>())
+    match encoding {
+        TextEncoding::UTF8 => Ok(String::from_utf8_lossy(&text).to_owned().to_string()),
+        TextEncoding::CP1252 => Ok(WINDOWS_1252.decode(&text, DecoderTrap::Ignore).unwrap()),
+    }
 }
