@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/mobi)](https://crates.io/crates/mobi)
 [![crates.io](https://img.shields.io/crates/l/mobi)](https://github.com/wojciechkepka/mobi-rs/blob/master/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-master-brightgreen)](https://docs.rs/mobi)  
-A library written in rust to extract data from `.mobi` format ebooks.
+A crate to work with `.mobi` format ebooks.
 ## Usage
 - add to `Cargo.toml`
 ```toml
