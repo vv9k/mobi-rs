@@ -20,9 +20,9 @@ fn main() -> Result<(), std::io::Error> {
     let cursor = std::io::Cursor::new(&book);
     // You can either create a Mobi struct from a slice
     let m = Mobi::new(&book)?;
-    // Or from a reader
-    let m = Mobi::from_reader(&cursor)?;
-    // Or from a file
+    // Or from an instance of io::Read
+    let m = Mobi::from_read(&cursor)?;
+    // Or from filesystem
     let m = Mobi::from_path("/some/path/to/book.mobi")?;
 
     // Access metadata
