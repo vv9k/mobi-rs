@@ -1,14 +1,14 @@
 # mobi-rs
-[![GitHub Actions](https://github.com/wojciechkepka/mobi-rs/workflows/Mobi/badge.svg)](https://github.com/wojciechkepka/mobi-rs/actions)
+[![Build Status](https://travis-ci.com/wojciechkepka/mobi-rs.svg?branch=master)](https://travis-ci.com/wojciechkepka/mobi-rs)
 [![crates.io](https://img.shields.io/crates/v/mobi)](https://crates.io/crates/mobi)
-[![crates.io](https://img.shields.io/crates/l/mobi)](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
+[![crates.io](https://img.shields.io/crates/l/mobi)](https://github.com/wojciechkepka/mobi-rs/blob/master/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-master-brightgreen)](https://docs.rs/mobi)  
 A library written in rust to extract data from `.mobi` format ebooks.
 ## Usage
 - add to `Cargo.toml`
 ```toml
 [dependencies]
-mobi = "0.3.2"
+mobi = "0.3"
 ```
 ## Examples
 ### Print the whole book into stdout
@@ -152,6 +152,6 @@ Records:                {
 ## TODO:
 - [ ] Comments!
 ## License
-[**The MIT License (MIT)**](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
+[**The MIT License (MIT)**](https://github.com/wojciechkepka/mobi-rs/blob/master/LICENSE)
 ## Thanks to
 [kroo](https://github.com/kroo/mobi-python) for inspiration and idea.
