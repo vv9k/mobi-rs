@@ -23,13 +23,14 @@ pub use mobih::{MobiHeader, TextEncoding};
 use palmdoch::Compression;
 pub use palmdoch::PalmDocHeader;
 pub use record::Record;
-use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::fmt;
-use std::fs;
-use std::io;
-use std::io::{Cursor, Read};
-use std::path::Path;
+use std::{
+    collections::HashMap,
+    convert::TryFrom,
+    fmt, fs, io,
+    io::{Cursor, Read},
+    path::Path,
+};
+
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
 pub struct Mobi {

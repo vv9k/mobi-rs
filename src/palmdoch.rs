@@ -1,4 +1,5 @@
-use super::*;
+use super::{FieldHeaderEnum, HeaderField, Reader};
+
 pub(crate) enum Compression {
     No,
     PalmDoc,
@@ -94,8 +95,7 @@ impl PalmDocHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use book::BOOK;
-    use header::HeaderData;
+    use crate::{book::BOOK, header::HeaderData, Reader};
     #[test]
     fn parse() {
         let pdheader = PalmDocHeader {

@@ -1,7 +1,10 @@
-use super::*;
-use encoding::all::WINDOWS_1252;
-use encoding::{DecoderTrap, Encoding};
-use std::io::{Error, ErrorKind};
+use super::{lz77, Compression, TextEncoding};
+use byteorder::{BigEndian, ReadBytesExt};
+use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
+use std::{
+    fmt,
+    io::{Cursor, Error, ErrorKind},
+};
 
 const RECORDS_START_INDEX: u64 = 78;
 

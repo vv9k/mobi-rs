@@ -1,4 +1,5 @@
-use super::*;
+use super::{FieldHeaderEnum, HeaderField, Reader};
+
 /// Parameters of Header
 pub(crate) enum HeaderData {
     Name,
@@ -162,9 +163,8 @@ impl Header {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use book::BOOK;
-    use header::Header;
+    use super::Header;
+    use crate::book::BOOK;
     #[test]
     fn parse() {
         let header = Header {
