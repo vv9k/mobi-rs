@@ -29,43 +29,34 @@ impl<'r> Reader<'r> {
         self.cursor.set_position(n);
     }
     #[inline]
-    pub(crate) fn read_u32_be(&mut self) -> Result<u32, io::Error> {
+    pub(crate) fn read_u32_be(&mut self) -> io::Result<u32> {
         self.cursor.read_u32::<BigEndian>()
     }
     #[inline]
-    pub(crate) fn read_u16_be(&mut self) -> Result<u16, io::Error> {
+    pub(crate) fn read_u16_be(&mut self) -> io::Result<u16> {
         self.cursor.read_u16::<BigEndian>()
     }
     #[inline]
-    pub(crate) fn read_i16_be(&mut self) -> Result<i16, io::Error> {
+    pub(crate) fn read_i16_be(&mut self) -> io::Result<i16> {
         self.cursor.read_i16::<BigEndian>()
     }
     #[inline]
-    pub(crate) fn read_u8(&mut self) -> Result<u8, io::Error> {
+    pub(crate) fn read_u8(&mut self) -> io::Result<u8> {
         self.cursor.read_u8()
     }
 
     #[inline]
-    pub(crate) fn read_i16_header<T: FieldHeaderEnum, F: HeaderField<T>>(
-        &mut self,
-        field: F,
-    ) -> Result<i16, io::Error> {
+    pub(crate) fn read_i16_header<T: FieldHeaderEnum, F: HeaderField<T>>(&mut self, field: F) -> io::Result<i16> {
         self.set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.read_i16_be()
     }
     #[inline]
-    pub(crate) fn read_u16_header<T: FieldHeaderEnum, F: HeaderField<T>>(
-        &mut self,
-        field: F,
-    ) -> Result<u16, io::Error> {
+    pub(crate) fn read_u16_header<T: FieldHeaderEnum, F: HeaderField<T>>(&mut self, field: F) -> io::Result<u16> {
         self.set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.read_u16_be()
     }
     #[inline]
-    pub(crate) fn read_u32_header<T: FieldHeaderEnum, F: HeaderField<T>>(
-        &mut self,
-        field: F,
-    ) -> Result<u32, io::Error> {
+    pub(crate) fn read_u32_header<T: FieldHeaderEnum, F: HeaderField<T>>(&mut self, field: F) -> io::Result<u32> {
         self.set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.read_u32_be()
     }

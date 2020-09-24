@@ -1,9 +1,9 @@
 use super::TextEncoding;
 use byteorder::{BigEndian, ReadBytesExt};
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
-use std::io::Cursor;
+use std::io::{self, Cursor};
 
-pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> Result<String, std::io::Error> {
+pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> io::Result<String> {
     let length = data.len();
     let mut reader = Cursor::new(data);
     let mut offset: usize = 0;

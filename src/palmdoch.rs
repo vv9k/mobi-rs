@@ -1,4 +1,5 @@
 use super::{FieldHeaderEnum, HeaderField, Reader};
+use std::io;
 
 pub(crate) enum Compression {
     No,
@@ -38,7 +39,7 @@ pub struct PalmDocHeader {
 impl PalmDocHeader {
     /// Parse a PalmDOC header from a reader. Reader must have num_of_records set
     /// to value from header.num_of_records
-    pub(crate) fn parse(reader: &mut Reader) -> Result<PalmDocHeader, std::io::Error> {
+    pub(crate) fn parse(reader: &mut Reader) -> io::Result<PalmDocHeader> {
         use PalmDocHeaderData::*;
         Ok(PalmDocHeader {
             compression: reader.read_u16_header(Compression)?,

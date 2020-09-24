@@ -1,4 +1,5 @@
 use super::{FieldHeaderEnum, HeaderField, Reader};
+use std::io;
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
 const EXTH_ON_FLAG: u32 = 0x40;
@@ -111,7 +112,7 @@ impl HeaderField<MobiHeaderData> for MobiHeaderData {
 }
 impl MobiHeader {
     /// Parse a Mobi header from the content
-    pub(crate) fn parse(mut reader: &mut Reader) -> Result<MobiHeader, std::io::Error> {
+    pub(crate) fn parse(mut reader: &mut Reader) -> io::Result<MobiHeader> {
         use MobiHeaderData::*;
         Ok(MobiHeader {
             identifier: reader.read_u32_header(Identifier)?,
@@ -147,7 +148,7 @@ impl MobiHeader {
         })
     }
     /// Returns the book name
-    pub(crate) fn name(reader: &mut Reader) -> Result<String, std::io::Error> {
+    pub(crate) fn name(reader: &mut Reader) -> io::Result<String> {
         let name_offset = reader.read_u32_header(MobiHeaderData::NameOffset)?;
         let name_length = reader.read_u32_header(MobiHeaderData::NameLength)?;
         // TODO: figure out why is this exactly `+ 80` and it works?
@@ -167,7 +168,7 @@ impl MobiHeader {
         drm_offset != DRM_ON_FLAG
     }
     /// Returns extra bytes for reading records
-    fn extra_bytes(reader: &mut Reader) -> Result<u32, std::io::Error> {
+    fn extra_bytes(reader: &mut Reader) -> io::Result<u32> {
         let ex_bytes = reader.read_u16_header(MobiHeaderData::ExtraBytes)?;
         Ok(2 * (ex_bytes & EXTRA_BYTES_FLAG).count_ones())
     }

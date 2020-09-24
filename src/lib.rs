@@ -40,15 +40,15 @@ pub struct Mobi {
 }
 impl Mobi {
     /// Construct a Mobi object from a slice
-    pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> Result<Mobi, io::Error> {
+    pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<Mobi> {
         Mobi::from_reader(Reader::new(bytes.as_ref()))
     }
     /// Construct a Mobi object from passed file path
-    pub fn from_path<P: AsRef<Path>>(file_path: P) -> Result<Mobi, io::Error> {
+    pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<Mobi> {
         Mobi::new(&fs::read(file_path)?)
     }
     /// Construct a Mobi object from an object that implements a Read trait
-    pub fn from_read<R: Read>(reader: R) -> Result<Mobi, io::Error> {
+    pub fn from_read<R: Read>(reader: R) -> io::Result<Mobi> {
         // Temporary solution
         let mut content = Vec::new();
         for byte in reader.bytes() {
@@ -57,7 +57,7 @@ impl Mobi {
         Mobi::from_reader(Reader::new(&content))
     }
 
-    fn from_reader(mut reader: Reader) -> Result<Mobi, io::Error> {
+    fn from_reader(mut reader: Reader) -> io::Result<Mobi> {
         let header = Header::parse(&mut reader)?;
         reader.set_num_of_records(header.num_of_records);
 
