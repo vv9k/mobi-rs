@@ -17,29 +17,30 @@ mobi = "0.3"
 use mobi::Mobi;
 fn main() -> Result<(), std::io::Error> {
     let book = vec![0, 0, 0];
-    let cursor = std::io::Cursor::new(&book);
     // You can either create a Mobi struct from a slice
     let m = Mobi::new(&book)?;
     // Or from an instance of io::Read
-    let m = Mobi::from_read(&cursor)?;
+    let stdin = std::io::stdin();
+    let mut handle = stdin.lock();
+    let m = Mobi::from_read(&mut handle)?;
     // Or from filesystem
     let m = Mobi::from_path("/some/path/to/book.mobi")?;
 
+    let empty = "".to_string();
     // Access metadata
-    let title = m.title().unwrap_or_default();
-    let author = m.author().unwrap_or_default();
-    let publisher = m.publisher().unwrap_or_default();
-    let desc = m.description().unwrap_or_default();
-    let isbn = m.isbn().unwrap_or_default();
-    let pub_date = m.publish_date().unwrap_or_default();
-    let contributor = m.contributor().unwrap_or_default();
-    println!("{}\n{}\n{}\n{}\n{}\n{}\n{}\n", title, author, publisher, isbn, pub_date, desc, contributor);
+    let title = m.title().unwrap_or(&empty);
+    let author = m.author().unwrap_or(&empty);
+    let publisher = m.publisher().unwrap_or(&empty);
+    let desc = m.description().unwrap_or(&empty);
+    let isbn = m.isbn().unwrap_or(&empty);
+    let pub_date = m.publish_date().unwrap_or(&empty);
+    let contributor = m.contributor().unwrap_or(&empty);
 
     // Access Headers
-    let header = m.header; // Normal Header
-    let pdheader = m.palmdoc; // PalmDOC Header
-    let mheader = m.mobi; // MOBI Header
-    let exth = m.exth // Extra Header
+    let header = &m.header; // Normal Header
+    let pdheader = &m.palmdoc; // PalmDOC Header
+    let mheader = &m.mobi; // MOBI Header
+    let exth = &m.exth; // Extra Header
 
     // Access content
     let content = m.content_as_string();
