@@ -1,4 +1,4 @@
-use super::{FieldHeaderEnum, HeaderField, Reader};
+use crate::{FieldHeaderEnum, HeaderField, Reader};
 use std::io;
 
 pub(crate) enum Compression {
