@@ -185,58 +185,21 @@ impl Mobi {
         1..self.last_index()
     }
 
-    /// Returns the whole content as String
-    /// There are only two supported encodings in mobi format and both are
-    /// losely converted by this function
+    /// Returns all readable records content decompressed as a String.
+    /// There are only two supported encodings in mobi format (UTF8, WIN1252)
+    /// and both are losely converted by this function
     pub fn content_as_string(&self) -> String {
         self.readable_records_range()
             .map(|i| self.records[i as usize].to_string(self.text_encoding()))
             .collect()
     }
 
+    /// Returns all readable records content decompressed as a Vec
     pub fn content(&self) -> Vec<u8> {
         self.readable_records_range()
             .map(|i| self.records[i as usize].record_data.clone())
             .flatten()
             .collect()
-    }
-}
-#[cfg(feature = "fmt")]
-impl fmt::Display for Mobi {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let empty_str = String::from("");
-        write!(
-            f,
-            "
-------------------------------------------------------------------------------------
-Title:                  {}
-Author:                 {}
-Publisher:              {}
-Description:            {}
-ISBN:                   {}
-Publish Date:           {}
-Contributor:            {}
-------------------------------------------------------------------------------------
-{}
-------------------------------------------------------------------------------------
-{}
-------------------------------------------------------------------------------------
-{}
-------------------------------------------------------------------------------------
-{}
-------------------------------------------------------------------------------------",
-            self.title().unwrap_or(&empty_str),
-            self.author().unwrap_or(&empty_str),
-            self.publisher().unwrap_or(&empty_str),
-            self.description().unwrap_or(&empty_str),
-            self.isbn().unwrap_or(&empty_str),
-            self.publish_date().unwrap_or(&empty_str),
-            self.contributor().unwrap_or(&empty_str),
-            self.header,
-            self.palmdoc,
-            self.mobi,
-            self.exth,
-        )
     }
 }
 

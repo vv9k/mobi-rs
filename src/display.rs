@@ -181,3 +181,41 @@ Flis record:            {}",
         )
     }
 }
+
+impl fmt::Display for Mobi {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let empty_str = String::from("");
+        write!(
+            f,
+            "
+------------------------------------------------------------------------------------
+Title:                  {}
+Author:                 {}
+Publisher:              {}
+Description:            {}
+ISBN:                   {}
+Publish Date:           {}
+Contributor:            {}
+------------------------------------------------------------------------------------
+{}
+------------------------------------------------------------------------------------
+{}
+------------------------------------------------------------------------------------
+{}
+------------------------------------------------------------------------------------
+{}
+------------------------------------------------------------------------------------",
+            self.title().unwrap_or(&empty_str),
+            self.author().unwrap_or(&empty_str),
+            self.publisher().unwrap_or(&empty_str),
+            self.description().unwrap_or(&empty_str),
+            self.isbn().unwrap_or(&empty_str),
+            self.publish_date().unwrap_or(&empty_str),
+            self.contributor().unwrap_or(&empty_str),
+            self.header,
+            self.palmdoc,
+            self.mobi,
+            self.exth,
+        )
+    }
+}
