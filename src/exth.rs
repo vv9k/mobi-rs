@@ -78,9 +78,7 @@ impl ExtHeader {
             }
             records.insert(
                 record_type,
-                String::from_utf8_lossy(&record_data[..])
-                    .to_owned()
-                    .to_string(),
+                String::from_utf8_lossy(&record_data[..]).to_owned().to_string(),
             );
         }
         self.records = records;
@@ -129,11 +127,7 @@ mod tests {
             records,
         };
         let mut reader = Reader::new(&BOOK, 0);
-        let parsed_header = ExtHeader::parse(
-            BOOK,
-            reader.read_u16_header(HeaderData::NumOfRecords).unwrap(),
-        )
-        .unwrap();
+        let parsed_header = ExtHeader::parse(BOOK, reader.read_u16_header(HeaderData::NumOfRecords).unwrap()).unwrap();
         assert_eq!(extheader, parsed_header);
     }
     mod records {
