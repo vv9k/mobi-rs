@@ -12,8 +12,8 @@ pub(crate) mod header;
 pub(crate) mod lz77;
 pub(crate) mod mobih;
 pub(crate) mod palmdoch;
+pub(crate) mod reader;
 pub(crate) mod record;
-use byteorder::{BigEndian, ReadBytesExt};
 #[cfg(feature = "time")]
 use chrono::prelude::*;
 use exth::BookInfo;
@@ -22,14 +22,9 @@ pub use header::Header;
 pub use mobih::{MobiHeader, TextEncoding};
 use palmdoch::Compression;
 pub use palmdoch::PalmDocHeader;
+pub(crate) use reader::Reader;
 pub use record::Record;
-use std::{
-    collections::HashMap,
-    convert::TryFrom,
-    fmt, fs, io,
-    io::{Cursor, Read},
-    path::Path,
-};
+use std::{convert::TryFrom, fs, io, io::Read, path::Path};
 
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
@@ -214,48 +209,4 @@ pub(crate) trait FieldHeaderEnum {}
 pub(crate) trait HeaderField<T: FieldHeaderEnum> {
     /// Returns a position in the text where this field can be read
     fn position(self) -> u16;
-}
-
-/// Helper struct for reading header values from content
-pub(crate) struct Reader<'r> {
-    cursor: Cursor<&'r [u8]>,
-    num_of_records: u16,
-}
-impl<'r> Reader<'r> {
-    pub(crate) fn new(content: &[u8], num_of_records: u16) -> Reader {
-        Reader {
-            cursor: Cursor::new(content),
-            num_of_records,
-        }
-    }
-    pub(crate) fn read_i16_header<T: FieldHeaderEnum, F: HeaderField<T>>(
-        &mut self,
-        field: F,
-    ) -> Result<i16, io::Error> {
-        self.cursor
-            .set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
-        self.cursor.read_i16::<BigEndian>()
-    }
-    pub(crate) fn read_u16_header<T: FieldHeaderEnum, F: HeaderField<T>>(
-        &mut self,
-        field: F,
-    ) -> Result<u16, io::Error> {
-        self.cursor
-            .set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
-        self.cursor.read_u16::<BigEndian>()
-    }
-    pub(crate) fn read_u32_header<T: FieldHeaderEnum, F: HeaderField<T>>(
-        &mut self,
-        field: F,
-    ) -> Result<u32, io::Error> {
-        self.cursor
-            .set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
-        self.cursor.read_u32::<BigEndian>()
-    }
-    pub(crate) fn read_string_header<T: FieldHeaderEnum, F: HeaderField<T>>(&mut self, field: F, len: u64) -> String {
-        let position = field.position();
-        String::from_utf8_lossy(&self.cursor.get_ref()[position as usize..(position as u64 + len) as usize])
-            .to_owned()
-            .to_string()
-    }
 }
