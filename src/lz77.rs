@@ -20,7 +20,7 @@ pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> Result<String, s
             // next $byte bytes are also literal
             0x1..=0x8 => {
                 if offset + byte as usize <= length {
-                    &data[offset..(offset + byte as usize)].into_iter().for_each(|ch| {
+                    data[offset..(offset + byte as usize)].iter().for_each(|ch| {
                         text.push(*ch);
                     });
                     offset += byte as usize;
@@ -69,7 +69,7 @@ pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> Result<String, s
             }
             // 0xc0..= 0xff are single charaters XOR 0x80 preceded by a space
             _ => {
-                text.push(' ' as u8);
+                text.push(b' ');
                 text.push(byte ^ 0x80);
             }
         }
