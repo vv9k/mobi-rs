@@ -2,10 +2,7 @@ use super::{lz77, TextEncoding};
 use crate::headers::palmdoch::Compression;
 use byteorder::{BigEndian, ReadBytesExt};
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
-use std::{
-    fmt,
-    io::{self, Cursor, ErrorKind},
-};
+use std::io::{self, Cursor, ErrorKind};
 
 const RECORDS_START_INDEX: u64 = 78;
 
@@ -14,13 +11,8 @@ const RECORDS_START_INDEX: u64 = 78;
 pub struct Record {
     record_data_offset: u32,
     id: u32,
-    pub record_data: String,
+    pub record_data: Vec<u8>,
     pub length: usize,
-}
-impl fmt::Display for Record {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.record_data)
-    }
 }
 impl Record {
     #[allow(dead_code)]
@@ -28,7 +20,7 @@ impl Record {
         Record {
             record_data_offset: 0,
             id: 0,
-            record_data: String::new(),
+            record_data: Vec::new(),
             length: 0,
         }
     }
@@ -39,30 +31,16 @@ impl Record {
         extra_bytes: u32,
         compression_type: &Compression,
         content: &[u8],
-        encoding: &TextEncoding,
-    ) -> io::Result<String> {
+    ) -> io::Result<Vec<u8>> {
         // #TODO: reconsider using string here due to possible different encodings?
         match compression_type {
-            Compression::No => match encoding {
-                TextEncoding::UTF8 => Ok(String::from_utf8_lossy(
-                    &content[record_data_offset as usize..next_record_data_offset as usize],
-                )
-                .to_owned()
-                .to_string()),
-                TextEncoding::CP1252 => Ok(WINDOWS_1252
-                    .decode(
-                        &content[record_data_offset as usize..next_record_data_offset as usize],
-                        DecoderTrap::Ignore,
-                    )
-                    .unwrap()), // unwraping is ok here because of less strict DecoderTrap which ignores errors
-            },
+            Compression::No => Ok(content[record_data_offset as usize..next_record_data_offset as usize].to_vec()),
             Compression::PalmDoc => {
                 if record_data_offset < content.len() as u32
                     && record_data_offset < next_record_data_offset - extra_bytes
                 {
                     lz77::decompress_lz77(
                         &content[record_data_offset as usize..(next_record_data_offset - extra_bytes) as usize],
-                        &encoding,
                     )
                 } else {
                     Err(io::Error::new(
@@ -79,7 +57,7 @@ impl Record {
         Ok(Record {
             record_data_offset: reader.read_u32::<BigEndian>()?,
             id: reader.read_u32::<BigEndian>()?,
-            record_data: String::new(),
+            record_data: Vec::new(),
             length: 0,
         })
     }
@@ -89,7 +67,6 @@ impl Record {
         num_of_records: u16,
         _extra_bytes: u32,
         compression_type: Compression,
-        encoding: TextEncoding,
     ) -> io::Result<Vec<Record>> {
         let mut records_content = vec![];
         let mut reader = Cursor::new(content);
@@ -108,16 +85,9 @@ impl Record {
                         _extra_bytes,
                         &compression_type,
                         content,
-                        &encoding,
                     ) {
                         Ok(record) => record,
-                        Err(e) => {
-                            eprintln!(
-                                "failed parsing record at offset {} - {}",
-                                current_rec.record_data_offset, e
-                            );
-                            String::new()
-                        }
+                        Err(_) => Vec::new(),
                     };
 
                     current_rec.length = current_rec.record_data.len();
@@ -127,5 +97,12 @@ impl Record {
             }
         }
         Ok(records_content)
+    }
+
+    pub(crate) fn to_string(&self, encoding: TextEncoding) -> String {
+        match encoding {
+            TextEncoding::UTF8 => String::from_utf8_lossy(&self.record_data).to_owned().to_string(),
+            TextEncoding::CP1252 => WINDOWS_1252.decode(&self.record_data, DecoderTrap::Ignore).unwrap(),
+        }
     }
 }

@@ -1,9 +1,7 @@
-use super::TextEncoding;
 use byteorder::{BigEndian, ReadBytesExt};
-use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
 use std::io::{self, Cursor};
 
-pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> io::Result<String> {
+pub fn decompress_lz77(data: &[u8]) -> io::Result<Vec<u8>> {
     let length = data.len();
     let mut reader = Cursor::new(data);
     let mut offset: usize = 0;
@@ -30,12 +28,7 @@ pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> io::Result<Strin
             0x80..=0xbf => {
                 offset += 1;
                 if offset > length {
-                    match encoding {
-                        TextEncoding::UTF8 => return Ok(String::from_utf8_lossy(&text).to_owned().to_string()),
-                        TextEncoding::CP1252 => {
-                            return Ok(WINDOWS_1252.decode(&text, DecoderTrap::Ignore).unwrap());
-                        }
-                    }
+                    return Ok(text);
                 }
                 reader.set_position((offset - 2) as u64);
                 let mut lz77 = reader.read_u16::<BigEndian>().unwrap();
@@ -46,12 +39,7 @@ pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> io::Result<Strin
 
                 if lz77offset < 1 {
                     // Decompression offset is invalid?
-                    match encoding {
-                        TextEncoding::UTF8 => return Ok(String::from_utf8_lossy(&text).to_owned().to_string()),
-                        TextEncoding::CP1252 => {
-                            return Ok(WINDOWS_1252.decode(&text, DecoderTrap::Ignore).unwrap());
-                        }
-                    }
+                    return Ok(text);
                 }
 
                 for _lz77pos in 0..lz77length {
@@ -74,8 +62,6 @@ pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> io::Result<Strin
             }
         }
     }
-    match encoding {
-        TextEncoding::UTF8 => Ok(String::from_utf8_lossy(&text).to_owned().to_string()),
-        TextEncoding::CP1252 => Ok(WINDOWS_1252.decode(&text, DecoderTrap::Ignore).unwrap()),
-    }
+
+    Ok(text)
 }
