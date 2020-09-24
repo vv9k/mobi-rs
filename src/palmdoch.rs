@@ -55,9 +55,9 @@ Encryption type:        {}",
     }
 }
 impl PalmDocHeader {
-    /// Parse a PalmDOC header from the content
-    pub(crate) fn parse(content: &[u8], num_of_records: u16) -> Result<PalmDocHeader, std::io::Error> {
-        let mut reader = Reader::new(&content, num_of_records);
+    /// Parse a PalmDOC header from a reader. Reader must have num_of_records set
+    /// to value from header.num_of_records
+    pub(crate) fn parse(reader: &mut Reader) -> Result<PalmDocHeader, std::io::Error> {
         use PalmDocHeaderData::*;
         Ok(PalmDocHeader {
             compression: reader.read_u16_header(Compression)?,
@@ -95,7 +95,7 @@ impl PalmDocHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{book::BOOK, header::HeaderData, Reader};
+    use crate::book;
     #[test]
     fn parse() {
         let pdheader = PalmDocHeader {
@@ -105,10 +105,10 @@ mod tests {
             record_size: 4096,
             encryption_type: 0,
         };
-        let mut reader = Reader::new(&BOOK, 0);
-        let parsed_header =
-            PalmDocHeader::parse(BOOK, reader.read_u16_header(HeaderData::NumOfRecords).unwrap()).unwrap();
-        assert_eq!(pdheader, parsed_header);
+
+        let mut reader = book::test_reader_after_header();
+
+        assert_eq!(pdheader, PalmDocHeader::parse(&mut reader).unwrap());
     }
     mod compression_type {
         use super::*;
