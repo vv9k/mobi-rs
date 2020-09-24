@@ -127,9 +127,8 @@ Num_of_records:         {}",
 }
 impl Header {
     /// Parse a header from the content
-    pub(crate) fn parse(content: &[u8]) -> Result<Header, std::io::Error> {
+    pub(crate) fn parse(reader: &mut Reader) -> Result<Header, std::io::Error> {
         use HeaderData::*;
-        let mut reader = Reader::new(&content, 0);
         Ok(Header {
             name: reader.read_string_header(Name, 32),
             attributes: reader.read_i16_header(Attributes)?,
@@ -164,7 +163,7 @@ impl Header {
 #[cfg(test)]
 mod tests {
     use super::Header;
-    use crate::book::BOOK;
+    use crate::book;
     #[test]
     fn parse() {
         let header = Header {
@@ -183,7 +182,8 @@ mod tests {
             next_record_list_id: 0,
             num_of_records: 292,
         };
-        let parsed_header = Header::parse(BOOK);
+        let mut reader = book::test_reader();
+        let parsed_header = Header::parse(&mut reader);
         assert_eq!(header, parsed_header.unwrap())
     }
 }

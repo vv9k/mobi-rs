@@ -45,12 +45,16 @@ impl TryFrom<&[u8]> for Mobi {
 }
 impl Mobi {
     pub fn new(bytes: &[u8]) -> Result<Mobi, io::Error> {
-        let header = Header::parse(&bytes)?;
-        let palmdoc = PalmDocHeader::parse(&bytes, header.num_of_records)?;
-        let mobi = MobiHeader::parse(&bytes, header.num_of_records)?;
+        let mut reader = Reader::new(&bytes, 0);
+
+        let header = Header::parse(&mut reader)?;
+        reader.set_num_of_records(header.num_of_records);
+
+        let palmdoc = PalmDocHeader::parse(&mut reader)?;
+        let mobi = MobiHeader::parse(&mut reader)?;
         let exth = {
             if mobi.has_exth_header {
-                ExtHeader::parse(&bytes, header.num_of_records)?
+                ExtHeader::parse(&mut reader)?
             } else {
                 ExtHeader::default()
             }

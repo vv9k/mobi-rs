@@ -1,6 +1,5 @@
 use super::{FieldHeaderEnum, HeaderField, Reader};
-use byteorder::{BigEndian, ReadBytesExt};
-use std::{collections::HashMap, io::Cursor};
+use std::collections::HashMap;
 
 const RECORDS_OFFSET: u16 = 340;
 
@@ -53,9 +52,8 @@ Records:                {:#?}",
 }
 impl ExtHeader {
     /// Parse a Exth header from the content
-    pub(crate) fn parse(content: &[u8], num_of_records: u16) -> Result<ExtHeader, std::io::Error> {
+    pub(crate) fn parse(mut reader: &mut Reader) -> Result<ExtHeader, std::io::Error> {
         use ExtHeaderData::*;
-        let mut reader = Reader::new(&content, num_of_records);
 
         let mut extheader = ExtHeader {
             identifier: reader.read_u32_header(Identifier)?,
@@ -63,18 +61,18 @@ impl ExtHeader {
             record_count: reader.read_u32_header(RecordCount)?,
             records: HashMap::new(),
         };
-        extheader.get_records(&mut reader.cursor, num_of_records);
+        extheader.get_records(&mut reader);
         Ok(extheader)
     }
     /// Gets header records
-    fn get_records(&mut self, reader: &mut Cursor<&[u8]>, num_of_records: u16) {
+    fn get_records(&mut self, reader: &mut Reader) {
         let mut records = HashMap::new();
-        let position: u64 = RECORDS_OFFSET as u64 + u64::from(num_of_records * 8);
+        let position: u64 = RECORDS_OFFSET as u64 + u64::from(reader.num_of_records * 8);
         reader.set_position(position);
         for _i in 0..self.record_count {
             let mut record_data = vec![];
-            let record_type = reader.read_u32::<BigEndian>().unwrap_or(0);
-            let record_len = reader.read_u32::<BigEndian>().unwrap_or(0);
+            let record_type = reader.read_u32_be().unwrap_or(0);
+            let record_len = reader.read_u32_be().unwrap_or(0);
             for _j in 0..record_len - 8 {
                 record_data.push(reader.read_u8().unwrap_or(0));
             }
@@ -102,7 +100,7 @@ impl ExtHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{book::BOOK, header::HeaderData};
+    use crate::book;
     #[test]
     fn parse() {
         let records: HashMap<u32, String> = [
@@ -125,15 +123,18 @@ mod tests {
             record_count: 11,
             records,
         };
-        let mut reader = Reader::new(&BOOK, 0);
-        let parsed_header = ExtHeader::parse(BOOK, reader.read_u16_header(HeaderData::NumOfRecords).unwrap()).unwrap();
+        let mut reader = book::test_reader_after_header();
+        let parsed_header = ExtHeader::parse(&mut reader).unwrap();
         assert_eq!(extheader, parsed_header);
     }
     mod records {
         use super::*;
+        use crate::book;
         macro_rules! info {
             ($t: ident, $s: expr) => {
-                let exth = ExtHeader::parse(BOOK, 292).unwrap();
+                let mut reader = book::test_reader();
+                reader.set_num_of_records(292);
+                let exth = ExtHeader::parse(&mut reader).unwrap();
                 let data = exth.get_book_info(BookInfo::$t);
                 assert_eq!(data, Some(&String::from($s)));
             };

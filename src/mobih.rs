@@ -188,9 +188,8 @@ Flis record:            {}",
 }
 impl MobiHeader {
     /// Parse a Mobi header from the content
-    pub(crate) fn parse(content: &[u8], num_of_records: u16) -> Result<MobiHeader, std::io::Error> {
+    pub(crate) fn parse(mut reader: &mut Reader) -> Result<MobiHeader, std::io::Error> {
         use MobiHeaderData::*;
-        let mut reader = Reader::new(&content, num_of_records);
         Ok(MobiHeader {
             identifier: reader.read_u32_header(Identifier)?,
             header_length: reader.read_u32_header(HeaderLength)?,
@@ -373,7 +372,7 @@ impl MobiHeader {
 }
 #[cfg(test)]
 mod tests {
-    use crate::{book::BOOK, header::HeaderData, mobih::MobiHeader, Reader, TextEncoding};
+    use crate::{book, mobih::MobiHeader, TextEncoding};
 
     #[test]
     fn has_exth_header() {
@@ -413,15 +412,10 @@ mod tests {
             flis_record: 289,
             extra_bytes: 22,
         };
-        let mut reader = Reader::new(&BOOK, 0);
-        let parsed_header = MobiHeader::parse(
-            BOOK,
-            reader
-                .read_u16_header(HeaderData::NumOfRecords)
-                .expect("failed to read number of records"),
-        )
-        .unwrap();
-        assert_eq!(mobiheader, parsed_header);
+
+        let mut reader = book::test_reader_after_header();
+
+        assert_eq!(mobiheader, MobiHeader::parse(&mut reader).unwrap());
     }
     mod text_encoding {
         use super::*;
