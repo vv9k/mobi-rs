@@ -11,21 +11,18 @@ A library written in rust to extract data from `.mobi` format ebooks.
 mobi = "0.3"
 ```
 ## Examples
-### Print the whole book into stdout
-```rust
-use mobi::Mobi;
-fn main() -> Result<(), std::io::Error> {
-    let m = Mobi::new("/home/wojtek/Downloads/lotr.mobi")?;
-    println!("{}", m.content_as_string());
-    Ok(())
-}
-```
 ### Access basic info
 - `src/main.rs`
 ```rust
 use mobi::Mobi;
 fn main() -> Result<(), std::io::Error> {
-    let m = Mobi::new(Path::new("/home/wojtek/Downloads/lotr.mobi"))?;
+    let book = vec![0, 0, 0];
+    // You can either create a Mobi struct from a reader
+    let m = Mobi::new(&book)?;
+    // Or from a file
+    let m = Mobi::from_path("/some/path/to/book.mobi")?;
+
+    // Access metadata
     let title = m.title().unwrap_or_default();
     let author = m.author().unwrap_or_default();
     let publisher = m.publisher().unwrap_or_default();
@@ -34,16 +31,20 @@ fn main() -> Result<(), std::io::Error> {
     let pub_date = m.publish_date().unwrap_or_default();
     let contributor = m.contributor().unwrap_or_default();
     println!("{}\n{}\n{}\n{}\n{}\n{}\n{}\n", title, author, publisher, isbn, pub_date, desc, contributor);
+
     // Access Headers
     let header = m.header; // Normal Header
     let pdheader = m.palmdoc; // PalmDOC Header
     let mheader = m.mobi; // MOBI Header
     let exth = m.exth // Extra Header
 
+    // Access content
+    let content = m.content_as_string();
+
     Ok(())
 }
 ```
-Output:
+Example Output:
 ```
 The Fellowship of the Ring
 J. R. R. Tolkien
@@ -60,12 +61,12 @@ calibre (0.7.23) [http://calibre-ebook.com]
 use mobi::Mobi;
 
 fn main() -> Result<(), std::io::Error> {
-    let m = Mobi::new(Path::new("/home/wojtek/Downloads/lotr.mobi"))?;
+    let m = Mobi::from_path("/some/path/to/book.mobi")?;
     println!("{}", m)
     Ok(())
 }
 ```
-Running `cargo run` would yield (different data based on the file ofcourse):
+Example Output:
 ```
 ------------------------------------------------------------------------------------
 Title:                  Lord of the Rings - Fellowship of the Ring
