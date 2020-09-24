@@ -9,21 +9,15 @@
 pub(crate) mod book;
 #[cfg(feature = "fmt")]
 mod display;
-pub(crate) mod exth;
-pub(crate) mod header;
+/// Module with headers from book containg more extracted data not
+/// available through public API.
+pub mod headers;
 pub(crate) mod lz77;
-pub(crate) mod mobih;
-pub(crate) mod palmdoch;
 pub(crate) mod reader;
 pub(crate) mod record;
 #[cfg(feature = "time")]
 use chrono::prelude::*;
-use exth::BookInfo;
-pub use exth::ExtHeader;
-pub use header::Header;
-pub use mobih::{MobiHeader, TextEncoding};
-use palmdoch::Compression;
-pub use palmdoch::PalmDocHeader;
+use headers::{exth, ExtHeader, Header, MobiHeader, PalmDocHeader, TextEncoding};
 pub(crate) use reader::Reader;
 pub use record::Record;
 use std::{fs, io, io::Read, path::Path};
@@ -89,31 +83,31 @@ impl Mobi {
 
     /// Returns author record if such exists
     pub fn author(&self) -> Option<&String> {
-        self.exth.get_book_info(BookInfo::Author)
+        self.exth.get_book_info(exth::BookInfo::Author)
     }
     /// Returns publisher record if such exists
     pub fn publisher(&self) -> Option<&String> {
-        self.exth.get_book_info(BookInfo::Publisher)
+        self.exth.get_book_info(exth::BookInfo::Publisher)
     }
     /// Returns description record if such exists
     pub fn description(&self) -> Option<&String> {
-        self.exth.get_book_info(BookInfo::Description)
+        self.exth.get_book_info(exth::BookInfo::Description)
     }
     /// Returns isbn record if such exists
     pub fn isbn(&self) -> Option<&String> {
-        self.exth.get_book_info(BookInfo::Isbn)
+        self.exth.get_book_info(exth::BookInfo::Isbn)
     }
     /// Returns publish_date record if such exists
     pub fn publish_date(&self) -> Option<&String> {
-        self.exth.get_book_info(BookInfo::PublishDate)
+        self.exth.get_book_info(exth::BookInfo::PublishDate)
     }
     /// Returns contributor record if such exists
     pub fn contributor(&self) -> Option<&String> {
-        self.exth.get_book_info(BookInfo::Contributor)
+        self.exth.get_book_info(exth::BookInfo::Contributor)
     }
     /// Returns title record if such exists
     pub fn title(&self) -> Option<&String> {
-        self.exth.get_book_info(BookInfo::Title)
+        self.exth.get_book_info(exth::BookInfo::Title)
     }
     /// Returns text encoding used in ebook
     pub fn text_encoding(&self) -> TextEncoding {

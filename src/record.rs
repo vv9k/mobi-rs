@@ -1,4 +1,5 @@
-use super::{lz77, Compression, TextEncoding};
+use super::{lz77, TextEncoding};
+use crate::headers::palmdoch::Compression;
 use byteorder::{BigEndian, ReadBytesExt};
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
 use std::{

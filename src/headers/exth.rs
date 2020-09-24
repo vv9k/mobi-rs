@@ -1,4 +1,4 @@
-use super::{FieldHeaderEnum, HeaderField, Reader};
+use crate::{FieldHeaderEnum, HeaderField, Reader};
 use std::{collections::HashMap, io};
 
 const RECORDS_OFFSET: u16 = 340;
