@@ -17,8 +17,11 @@ mobi = "0.3"
 use mobi::Mobi;
 fn main() -> Result<(), std::io::Error> {
     let book = vec![0, 0, 0];
-    // You can either create a Mobi struct from a reader
+    let cursor = std::io::Cursor::new(&book);
+    // You can either create a Mobi struct from a slice
     let m = Mobi::new(&book)?;
+    // Or from a reader
+    let m = Mobi::from_reader(&cursor)?;
     // Or from a file
     let m = Mobi::from_path("/some/path/to/book.mobi")?;
 
