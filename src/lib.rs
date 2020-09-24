@@ -24,7 +24,7 @@ use palmdoch::Compression;
 pub use palmdoch::PalmDocHeader;
 pub(crate) use reader::Reader;
 pub use record::Record;
-use std::{convert::TryFrom, fs, io, io::Read, path::Path};
+use std::{fs, io, io::Read, path::Path};
 
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
@@ -36,17 +36,26 @@ pub struct Mobi {
     pub exth: ExtHeader,
     pub records: Vec<Record>,
 }
-impl TryFrom<&[u8]> for Mobi {
-    type Error = io::Error;
-
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        Self::new(&bytes)
-    }
-}
 impl Mobi {
-    pub fn new(bytes: &[u8]) -> Result<Mobi, io::Error> {
-        let mut reader = Reader::new(&bytes, 0);
+    /// Construct a Mobi object from a slice
+    pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> Result<Mobi, io::Error> {
+        Mobi::from_reader(Reader::new(bytes.as_ref()))
+    }
+    /// Construct a Mobi object from passed file path
+    pub fn from_path<P: AsRef<Path>>(file_path: P) -> Result<Mobi, io::Error> {
+        Mobi::new(&fs::read(file_path)?)
+    }
+    /// Construct a Mobi object from an object that implements a Read trait
+    pub fn from_read<R: Read>(reader: R) -> Result<Mobi, io::Error> {
+        // Temporary solution
+        let mut content = Vec::new();
+        for byte in reader.bytes() {
+            content.push(byte?);
+        }
+        Mobi::from_reader(Reader::new(&content))
+    }
 
+    fn from_reader(mut reader: Reader) -> Result<Mobi, io::Error> {
         let header = Header::parse(&mut reader)?;
         reader.set_num_of_records(header.num_of_records);
 
@@ -60,14 +69,14 @@ impl Mobi {
             }
         };
         let records = Record::parse_records(
-            &bytes,
+            reader.content_ref(),
             header.num_of_records,
             mobi.extra_bytes,
             palmdoc.compression_en(),
             mobi.text_encoding(),
         )?;
         Ok(Mobi {
-            content: bytes.to_vec(),
+            content: reader.content(),
             header,
             palmdoc,
             mobi,
@@ -75,18 +84,7 @@ impl Mobi {
             records,
         })
     }
-    /// Construct a Mobi object from passed file path
-    pub fn from_path<P: AsRef<Path>>(file_path: P) -> Result<Mobi, io::Error> {
-        Self::new(&fs::read(file_path)?)
-    }
-    /// Construct a Mobi object from an object that implements a Read trait
-    pub fn from_reader<R: Read>(reader: R) -> Result<Mobi, io::Error> {
-        let mut content = Vec::new();
-        for byte in reader.bytes() {
-            content.push(byte?);
-        }
-        Self::new(&content)
-    }
+
     /// Returns author record if such exists
     pub fn author(&self) -> Option<&String> {
         self.exth.get_book_info(BookInfo::Author)
