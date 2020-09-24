@@ -1,5 +1,5 @@
 use super::{FieldHeaderEnum, HeaderField, Reader};
-use std::collections::HashMap;
+use std::{collections::HashMap, io};
 
 const RECORDS_OFFSET: u16 = 340;
 
@@ -38,7 +38,7 @@ pub struct ExtHeader {
 }
 impl ExtHeader {
     /// Parse a Exth header from the content
-    pub(crate) fn parse(mut reader: &mut Reader) -> Result<ExtHeader, std::io::Error> {
+    pub(crate) fn parse(mut reader: &mut Reader) -> io::Result<ExtHeader> {
         use ExtHeaderData::*;
 
         let mut extheader = ExtHeader {

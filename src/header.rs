@@ -1,4 +1,5 @@
 use super::{FieldHeaderEnum, HeaderField, Reader};
+use std::io;
 
 /// Parameters of Header
 pub(crate) enum HeaderData {
@@ -58,7 +59,7 @@ pub struct Header {
 }
 impl Header {
     /// Parse a header from the content
-    pub(crate) fn parse(reader: &mut Reader) -> Result<Header, std::io::Error> {
+    pub(crate) fn parse(reader: &mut Reader) -> io::Result<Header> {
         use HeaderData::*;
         Ok(Header {
             name: reader.read_string_header(Name, 32),

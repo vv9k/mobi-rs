@@ -3,7 +3,7 @@ use byteorder::{BigEndian, ReadBytesExt};
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
 use std::{
     fmt,
-    io::{Cursor, Error, ErrorKind},
+    io::{self, Cursor, ErrorKind},
 };
 
 const RECORDS_START_INDEX: u64 = 78;
@@ -39,7 +39,7 @@ impl Record {
         compression_type: &Compression,
         content: &[u8],
         encoding: &TextEncoding,
-    ) -> Result<String, std::io::Error> {
+    ) -> io::Result<String> {
         // #TODO: reconsider using string here due to possible different encodings?
         match compression_type {
             Compression::No => match encoding {
@@ -64,7 +64,7 @@ impl Record {
                         &encoding,
                     )
                 } else {
-                    Err(Error::new(
+                    Err(io::Error::new(
                         ErrorKind::NotFound,
                         "record points to location out of bounds",
                     ))
@@ -74,7 +74,7 @@ impl Record {
         }
     }
     /// Parses a record from the reader at current position
-    fn parse_record(reader: &mut Cursor<&[u8]>) -> Result<Record, std::io::Error> {
+    fn parse_record(reader: &mut Cursor<&[u8]>) -> io::Result<Record> {
         Ok(Record {
             record_data_offset: reader.read_u32::<BigEndian>()?,
             id: reader.read_u32::<BigEndian>()?,
@@ -89,7 +89,7 @@ impl Record {
         _extra_bytes: u32,
         compression_type: Compression,
         encoding: TextEncoding,
-    ) -> Result<Vec<Record>, std::io::Error> {
+    ) -> io::Result<Vec<Record>> {
         let mut records_content = vec![];
         let mut reader = Cursor::new(content);
         reader.set_position(RECORDS_START_INDEX);
