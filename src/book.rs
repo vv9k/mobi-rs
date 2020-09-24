@@ -1,4 +1,6 @@
 #![cfg(test)]
+use super::{header::HeaderData, Reader};
+
 pub const BOOK: &[u8] = &[
     76, 111, 114, 100, 95, 111, 102, 95, 116, 104, 101, 95, 82, 105, 110, 103, 115, 95, 45, 95, 70, 101, 108, 108, 111,
     119, 115, 104, 105, 112, 95, 0, 0, 0, 0, 0, 77, 120, 0, 27, 77, 120, 0, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -130,3 +132,14 @@ pub const BOOK: &[u8] = &[
     32, 82, 105, 110, 103, 115, 32, 45, 32, 70, 101, 108, 108, 111, 119, 115, 104, 105, 112, 32, 111, 102, 32, 116,
     104, 101, 32, 82, 105, 110, 103,
 ];
+
+pub(crate) fn test_reader() -> Reader<'static> {
+    Reader::new(&BOOK, 0)
+}
+
+pub(crate) fn test_reader_after_header() -> Reader<'static> {
+    let mut reader = test_reader();
+    let num_of_records = reader.read_u16_header(HeaderData::NumOfRecords).unwrap();
+    reader.set_num_of_records(num_of_records);
+    reader
+}
