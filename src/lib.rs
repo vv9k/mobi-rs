@@ -55,12 +55,12 @@ use chrono::prelude::*;
 use headers::{exth, ExtHeader, Header, MobiHeader, PalmDocHeader, TextEncoding};
 pub(crate) use reader::Reader;
 pub use record::Record;
-use std::{fs, io, io::Read, path::Path};
+use std::{fs, io, io::Read, ops::Range, path::Path};
 
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
 pub struct Mobi {
-    pub content: Vec<u8>,
+    pub raw_content: Vec<u8>,
     pub header: Header,
     pub palmdoc: PalmDocHeader,
     pub mobi: MobiHeader,
@@ -104,10 +104,9 @@ impl Mobi {
             header.num_of_records,
             mobi.extra_bytes,
             palmdoc.compression_en(),
-            mobi.text_encoding(),
         )?;
         Ok(Mobi {
-            content: reader.content(),
+            raw_content: reader.content(),
             header,
             palmdoc,
             mobi,
@@ -176,24 +175,30 @@ impl Mobi {
     pub fn encryption(&self) -> Option<String> {
         self.palmdoc.encryption()
     }
-    /// Returns the whole content as String
-    pub fn content_as_string(&self) -> String {
-        (1..self.palmdoc.record_count - 1)
-            .map(|i| self.records[i as usize].to_string())
-            .collect()
-    }
+
     /// Returns last readable index of the book
-    pub fn last_index(&self) -> usize {
+    fn last_index(&self) -> usize {
         (self.palmdoc.record_count - 1) as usize
     }
-    /// Returns a slice of the content where b is beginning index and e is ending index.
-    /// Use `last_index` function to find out the last readable index
-    pub fn content_slice(&self, b: usize, e: usize) -> Option<String> {
-        if (b >= 1) && (b <= e) && (e < self.last_index()) {
-            Some((b..e).map(|i| self.records[i as usize].to_string()).collect())
-        } else {
-            None
-        }
+
+    fn readable_records_range(&self) -> Range<usize> {
+        1..self.last_index()
+    }
+
+    /// Returns the whole content as String
+    /// There are only two supported encodings in mobi format and both are
+    /// losely converted by this function
+    pub fn content_as_string(&self) -> String {
+        self.readable_records_range()
+            .map(|i| self.records[i as usize].to_string(self.text_encoding()))
+            .collect()
+    }
+
+    pub fn content(&self) -> Vec<u8> {
+        self.readable_records_range()
+            .map(|i| self.records[i as usize].record_data.clone())
+            .flatten()
+            .collect()
     }
 }
 #[cfg(feature = "fmt")]
