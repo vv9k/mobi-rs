@@ -14,6 +14,12 @@ impl<'r> Reader<'r> {
             num_of_records: 0,
         }
     }
+    pub(crate) fn content(&self) -> Vec<u8> {
+        self.cursor.clone().into_inner().to_vec()
+    }
+    pub(crate) fn content_ref(&self) -> &[u8] {
+        self.cursor.clone().into_inner()
+    }
     #[inline]
     pub(crate) fn set_num_of_records(&mut self, n: u16) {
         self.num_of_records = n;
