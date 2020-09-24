@@ -20,11 +20,9 @@ pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> Result<String, s
             // next $byte bytes are also literal
             0x1..=0x8 => {
                 if offset + byte as usize <= length {
-                    &data[offset..(offset + byte as usize)]
-                        .into_iter()
-                        .for_each(|ch| {
-                            text.push(*ch);
-                        });
+                    &data[offset..(offset + byte as usize)].into_iter().for_each(|ch| {
+                        text.push(*ch);
+                    });
                     offset += byte as usize;
                 }
             }
@@ -33,9 +31,7 @@ pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> Result<String, s
                 offset += 1;
                 if offset > length {
                     match encoding {
-                        TextEncoding::UTF8 => {
-                            return Ok(String::from_utf8_lossy(&text).to_owned().to_string())
-                        }
+                        TextEncoding::UTF8 => return Ok(String::from_utf8_lossy(&text).to_owned().to_string()),
                         TextEncoding::CP1252 => {
                             return Ok(WINDOWS_1252.decode(&text, DecoderTrap::Ignore).unwrap());
                         }
@@ -51,9 +47,7 @@ pub fn decompress_lz77(data: &[u8], encoding: &TextEncoding) -> Result<String, s
                 if lz77offset < 1 {
                     // Decompression offset is invalid?
                     match encoding {
-                        TextEncoding::UTF8 => {
-                            return Ok(String::from_utf8_lossy(&text).to_owned().to_string())
-                        }
+                        TextEncoding::UTF8 => return Ok(String::from_utf8_lossy(&text).to_owned().to_string()),
                         TextEncoding::CP1252 => {
                             return Ok(WINDOWS_1252.decode(&text, DecoderTrap::Ignore).unwrap());
                         }

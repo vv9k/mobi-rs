@@ -230,11 +230,9 @@ impl MobiHeader {
         // TODO: figure out why is this exactly `+ 80` and it works?
         let offset = name_offset as usize + (reader.num_of_records * 8) as usize + 80;
         Ok(
-            String::from_utf8_lossy(
-                &reader.cursor.get_mut()[offset..offset + name_length as usize],
-            )
-            .to_owned()
-            .to_string(),
+            String::from_utf8_lossy(&reader.cursor.get_mut()[offset..offset + name_length as usize])
+                .to_owned()
+                .to_string(),
         )
     }
     /// Checks if there is a Exth Header and changes the parameter

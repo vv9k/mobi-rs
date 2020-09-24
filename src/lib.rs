@@ -161,11 +161,7 @@ impl Mobi {
     /// Use `last_index` function to find out the last readable index
     pub fn content_slice(&self, b: usize, e: usize) -> Option<String> {
         if (b >= 1) && (b <= e) && (e < self.last_index()) {
-            Some(
-                (b..e)
-                    .map(|i| self.records[i as usize].to_string())
-                    .collect(),
-            )
+            Some((b..e).map(|i| self.records[i as usize].to_string()).collect())
         } else {
             None
         }
@@ -255,16 +251,10 @@ impl<'r> Reader<'r> {
             .set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.cursor.read_u32::<BigEndian>()
     }
-    pub(crate) fn read_string_header<T: FieldHeaderEnum, F: HeaderField<T>>(
-        &mut self,
-        field: F,
-        len: u64,
-    ) -> String {
+    pub(crate) fn read_string_header<T: FieldHeaderEnum, F: HeaderField<T>>(&mut self, field: F, len: u64) -> String {
         let position = field.position();
-        String::from_utf8_lossy(
-            &self.cursor.get_ref()[position as usize..(position as u64 + len) as usize],
-        )
-        .to_owned()
-        .to_string()
+        String::from_utf8_lossy(&self.cursor.get_ref()[position as usize..(position as u64 + len) as usize])
+            .to_owned()
+            .to_string()
     }
 }

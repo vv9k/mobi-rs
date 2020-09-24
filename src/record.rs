@@ -57,8 +57,7 @@ impl Record {
                     && record_data_offset < next_record_data_offset - extra_bytes
                 {
                     lz77::decompress_lz77(
-                        &content[record_data_offset as usize
-                            ..(next_record_data_offset - extra_bytes) as usize],
+                        &content[record_data_offset as usize..(next_record_data_offset - extra_bytes) as usize],
                         &encoding,
                     )
                 } else {
