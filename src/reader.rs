@@ -8,10 +8,10 @@ pub(crate) struct Reader<'r> {
     pub num_of_records: u16,
 }
 impl<'r> Reader<'r> {
-    pub(crate) fn new(content: &[u8], num_of_records: u16) -> Reader {
+    pub(crate) fn new(content: &'r [u8]) -> Reader<'r> {
         Reader {
             cursor: Cursor::new(content),
-            num_of_records,
+            num_of_records: 0,
         }
     }
     #[inline]

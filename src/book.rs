@@ -134,7 +134,7 @@ pub const BOOK: &[u8] = &[
 ];
 
 pub(crate) fn test_reader() -> Reader<'static> {
-    Reader::new(&BOOK, 0)
+    Reader::new(&BOOK)
 }
 
 pub(crate) fn test_reader_after_header() -> Reader<'static> {
