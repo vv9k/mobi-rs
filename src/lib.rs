@@ -8,6 +8,8 @@
 //! Examples are available on the GitHub repository
 pub(crate) mod book;
 pub(crate) mod exth;
+#[cfg(feature = "fmt")]
+mod fmt;
 pub(crate) mod header;
 pub(crate) mod lz77;
 pub(crate) mod mobih;

@@ -35,25 +35,6 @@ pub struct PalmDocHeader {
     pub record_size: u16,
     pub encryption_type: u16,
 }
-#[cfg(feature = "fmt")]
-impl fmt::Display for PalmDocHeader {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "PALMDOC HEADER
-Compression:            {}
-Text length:            {}
-Record count:           {}
-Record size:            {}
-Encryption type:        {}",
-            self.compression().unwrap_or_default(),
-            self.text_length,
-            self.record_count,
-            self.record_size,
-            self.encryption().unwrap_or_default(),
-        )
-    }
-}
 impl PalmDocHeader {
     /// Parse a PalmDOC header from a reader. Reader must have num_of_records set
     /// to value from header.num_of_records

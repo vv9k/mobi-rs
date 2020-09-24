@@ -36,20 +36,6 @@ pub struct ExtHeader {
     pub record_count: u32,
     pub records: HashMap<u32, String>,
 }
-#[cfg(feature = "fmt")]
-impl fmt::Display for ExtHeader {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "EXTHEADER
-Identifier:             {}
-Header_length:          {}
-Record_count:           {}
-Records:                {:#?}",
-            self.identifier, self.header_length, self.record_count, self.records,
-        )
-    }
-}
 impl ExtHeader {
     /// Parse a Exth header from the content
     pub(crate) fn parse(mut reader: &mut Reader) -> Result<ExtHeader, std::io::Error> {
