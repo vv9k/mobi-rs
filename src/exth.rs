@@ -1,4 +1,6 @@
-use super::*;
+use super::{FieldHeaderEnum, HeaderField, Reader};
+use byteorder::{BigEndian, ReadBytesExt};
+use std::{collections::HashMap, io::Cursor};
 
 const RECORDS_OFFSET: u16 = 340;
 
@@ -100,10 +102,7 @@ impl ExtHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use book::BOOK;
-    use exth::{BookInfo, ExtHeader};
-    use header::HeaderData;
-    use std::collections::HashMap;
+    use crate::{book::BOOK, header::HeaderData};
     #[test]
     fn parse() {
         let records: HashMap<u32, String> = [

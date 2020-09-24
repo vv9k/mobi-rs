@@ -1,4 +1,5 @@
-use super::*;
+use super::{FieldHeaderEnum, HeaderField, Reader};
+use std::fmt;
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
 const EXTH_ON_FLAG: u32 = 0x40;
@@ -372,10 +373,7 @@ impl MobiHeader {
 }
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use book::BOOK;
-    use header::HeaderData;
-    use mobih::MobiHeader;
+    use crate::{book::BOOK, header::HeaderData, mobih::MobiHeader, Reader, TextEncoding};
 
     #[test]
     fn has_exth_header() {
