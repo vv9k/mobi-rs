@@ -1,4 +1,4 @@
-use crate::{FieldHeaderEnum, HeaderField, Reader};
+use crate::{HeaderField, Reader};
 use std::io;
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
@@ -75,8 +75,7 @@ pub(crate) enum MobiHeaderData {
     FlisRecord,
     ExtraBytes,
 }
-impl FieldHeaderEnum for MobiHeaderData {}
-impl HeaderField<MobiHeaderData> for MobiHeaderData {
+impl HeaderField for MobiHeaderData {
     fn position(self) -> u16 {
         match self {
             // TODO: Check if this field is actually on position 0

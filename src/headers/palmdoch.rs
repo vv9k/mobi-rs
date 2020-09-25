@@ -1,4 +1,4 @@
-use crate::{FieldHeaderEnum, HeaderField, Reader};
+use crate::{HeaderField, Reader};
 use std::io;
 
 pub(crate) enum Compression {
@@ -14,8 +14,7 @@ pub(crate) enum PalmDocHeaderData {
     RecordSize,
     EncryptionType,
 }
-impl FieldHeaderEnum for PalmDocHeaderData {}
-impl HeaderField<PalmDocHeaderData> for PalmDocHeaderData {
+impl HeaderField for PalmDocHeaderData {
     fn position(self) -> u16 {
         match self {
             PalmDocHeaderData::Compression => 80,

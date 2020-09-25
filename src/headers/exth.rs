@@ -1,4 +1,4 @@
-use crate::{FieldHeaderEnum, HeaderField, Reader};
+use crate::{HeaderField, Reader};
 use std::{collections::HashMap, io};
 
 const RECORDS_OFFSET: u16 = 340;
@@ -18,8 +18,7 @@ pub(crate) enum ExtHeaderData {
     HeaderLength,
     RecordCount,
 }
-impl FieldHeaderEnum for ExtHeaderData {}
-impl HeaderField<ExtHeaderData> for ExtHeaderData {
+impl HeaderField for ExtHeaderData {
     fn position(self) -> u16 {
         match self {
             ExtHeaderData::Identifier => 328,

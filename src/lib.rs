@@ -203,11 +203,8 @@ impl Mobi {
     }
 }
 
-/// Helper trait to group all enums containing header fields corresponding to each possible header
-/// (MobiHeaderData, ExtHeaderData, PalmDocHeaderData, HeaderData)
-pub(crate) trait FieldHeaderEnum {}
 /// Trait allowing generic reading of header fields
-pub(crate) trait HeaderField<T: FieldHeaderEnum> {
+pub(crate) trait HeaderField {
     /// Returns a position in the text where this field can be read
     fn position(self) -> u16;
 }
