@@ -1,4 +1,4 @@
-use crate::{FieldHeaderEnum, HeaderField, Reader};
+use crate::{HeaderField, Reader};
 use std::io;
 
 /// Parameters of Header
@@ -18,8 +18,7 @@ pub(crate) enum HeaderData {
     NextRecordListId,
     NumOfRecords,
 }
-impl FieldHeaderEnum for HeaderData {}
-impl HeaderField<HeaderData> for HeaderData {
+impl HeaderField for HeaderData {
     fn position(self) -> u16 {
         match self {
             HeaderData::Name => 0,

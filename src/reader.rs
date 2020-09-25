@@ -1,4 +1,4 @@
-use super::{FieldHeaderEnum, HeaderField};
+use super::HeaderField;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{self, Cursor};
 
@@ -46,21 +46,21 @@ impl<'r> Reader<'r> {
     }
 
     #[inline]
-    pub(crate) fn read_i16_header<T: FieldHeaderEnum, F: HeaderField<T>>(&mut self, field: F) -> io::Result<i16> {
+    pub(crate) fn read_i16_header<F: HeaderField>(&mut self, field: F) -> io::Result<i16> {
         self.set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.read_i16_be()
     }
     #[inline]
-    pub(crate) fn read_u16_header<T: FieldHeaderEnum, F: HeaderField<T>>(&mut self, field: F) -> io::Result<u16> {
+    pub(crate) fn read_u16_header<F: HeaderField>(&mut self, field: F) -> io::Result<u16> {
         self.set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.read_u16_be()
     }
     #[inline]
-    pub(crate) fn read_u32_header<T: FieldHeaderEnum, F: HeaderField<T>>(&mut self, field: F) -> io::Result<u32> {
+    pub(crate) fn read_u32_header<F: HeaderField>(&mut self, field: F) -> io::Result<u32> {
         self.set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
         self.read_u32_be()
     }
-    pub(crate) fn read_string_header<T: FieldHeaderEnum, F: HeaderField<T>>(&mut self, field: F, len: u64) -> String {
+    pub(crate) fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> String {
         let position = field.position();
         String::from_utf8_lossy(&self.cursor.get_ref()[position as usize..(position as u64 + len) as usize])
             .to_owned()
