@@ -19,7 +19,7 @@ pub(crate) enum HeaderData {
     NumOfRecords,
 }
 impl HeaderField for HeaderData {
-    fn position(self) -> u16 {
+    fn position(self) -> u64 {
         match self {
             HeaderData::Name => 0,
             HeaderData::Attributes => 32,

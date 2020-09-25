@@ -45,24 +45,29 @@ impl<'r> Reader<'r> {
         self.cursor.read_u8()
     }
 
+    fn position_after_records(&self) -> u64 {
+        self.num_of_records as u64 * 8
+    }
+
     #[inline]
     pub(crate) fn read_i16_header<F: HeaderField>(&mut self, field: F) -> io::Result<i16> {
-        self.set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
+        self.set_position(self.position_after_records() + field.position());
         self.read_i16_be()
     }
     #[inline]
     pub(crate) fn read_u16_header<F: HeaderField>(&mut self, field: F) -> io::Result<u16> {
-        self.set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
+        self.set_position(self.position_after_records() + field.position());
         self.read_u16_be()
     }
     #[inline]
     pub(crate) fn read_u32_header<F: HeaderField>(&mut self, field: F) -> io::Result<u32> {
-        self.set_position(field.position() as u64 + u64::from(self.num_of_records * 8));
+        self.set_position(self.position_after_records() + field.position());
         self.read_u32_be()
     }
     pub(crate) fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> String {
-        let position = field.position();
-        String::from_utf8_lossy(&self.cursor.get_ref()[position as usize..(position as u64 + len) as usize])
+        let position = field.position() as usize;
+        let string_range = position..position + len as usize;
+        String::from_utf8_lossy(&self.cursor.get_ref()[string_range])
             .to_owned()
             .to_string()
     }
