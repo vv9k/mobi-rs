@@ -19,7 +19,7 @@ pub(crate) enum ExtHeaderData {
     RecordCount,
 }
 impl HeaderField for ExtHeaderData {
-    fn position(self) -> u16 {
+    fn position(self) -> u64 {
         match self {
             ExtHeaderData::Identifier => 328,
             ExtHeaderData::HeaderLength => 332,

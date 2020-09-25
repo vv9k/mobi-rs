@@ -76,7 +76,7 @@ pub(crate) enum MobiHeaderData {
     ExtraBytes,
 }
 impl HeaderField for MobiHeaderData {
-    fn position(self) -> u16 {
+    fn position(self) -> u64 {
         match self {
             // TODO: Check if this field is actually on position 0
             MobiHeaderData::ExtraBytes => 0,

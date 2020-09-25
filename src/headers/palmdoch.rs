@@ -15,7 +15,7 @@ pub(crate) enum PalmDocHeaderData {
     EncryptionType,
 }
 impl HeaderField for PalmDocHeaderData {
-    fn position(self) -> u16 {
+    fn position(self) -> u64 {
         match self {
             PalmDocHeaderData::Compression => 80,
             PalmDocHeaderData::RecordCount => 88,
