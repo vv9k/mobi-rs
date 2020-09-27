@@ -10,3 +10,4 @@ install:
   - cargo clippy -- -Wclippy::all
   - cargo fmt -- --check
   - cargo test
+  - cargo doc --all-features
