@@ -167,14 +167,12 @@ impl Mobi {
     pub fn mod_datetime(&self) -> NaiveDateTime {
         self.header.mod_datetime()
     }
-    #[cfg(not(feature = "time"))]
     /// Returns creation time as u32 timestamp
-    pub fn created_datetime(&self) -> u32 {
+    pub fn created_time(&self) -> u32 {
         self.header.created_datetime()
     }
-    #[cfg(not(feature = "time"))]
     /// Returns last modification time as u32 timestamp
-    pub fn mod_datetime(&self) -> u32 {
+    pub fn mod_time(&self) -> u32 {
         self.header.mod_datetime()
     }
 
