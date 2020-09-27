@@ -1,5 +1,5 @@
 #![cfg(feature = "fmt")]
-use super::{MobiHeader, PalmDocHeader};
+use super::{ExtHeader, Header, Mobi, MobiHeader, PalmDocHeader, TextEncoding};
 use std::fmt;
 
 impl fmt::Display for ExtHeader {

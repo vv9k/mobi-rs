@@ -1,4 +1,6 @@
 use crate::{HeaderField, Reader};
+#[cfg(feature = "time")]
+use chrono::NaiveDateTime;
 use std::io;
 
 /// Parameters of Header
