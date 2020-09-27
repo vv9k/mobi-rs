@@ -1,6 +1,6 @@
 [package]
 name = "mobi"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["wojciechkepka <wojciech@wkepka.dev>"]
 edition = "2018"
 license = "MIT"
@@ -25,5 +25,4 @@ encoding = "0.2.0"
 
 
 [package.metadata.docs.rs]
-features = ["time", "fmt"]
 all-features = true
