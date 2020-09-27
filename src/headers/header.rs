@@ -91,6 +91,18 @@ impl Header {
     pub(crate) fn mod_datetime(&self) -> NaiveDateTime {
         NaiveDateTime::from_timestamp(i64::from(self.modified), 0)
     }
+    #[cfg(not(feature = "time"))]
+    /// Returns a u32 timestamp of creation. This is a fallback
+    /// method when `time` feature is disabled.
+    pub(crate) fn created_datetime(&self) -> u32 {
+        self.created
+    }
+    #[cfg(not(feature = "time"))]
+    /// Returns a u32 timestamp of last modification. This is a fallback
+    /// method when `time` feature is disabled.
+    pub(crate) fn mod_datetime(&self) -> u32 {
+        self.modified
+    }
 }
 
 #[cfg(test)]
