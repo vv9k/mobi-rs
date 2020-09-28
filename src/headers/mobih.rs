@@ -1,4 +1,5 @@
-use crate::{HeaderField, Reader};
+use super::HeaderField;
+use crate::Reader;
 use std::io;
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;

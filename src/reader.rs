@@ -1,4 +1,4 @@
-use super::HeaderField;
+use crate::headers::HeaderField;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{self, Cursor};
 

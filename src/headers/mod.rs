@@ -9,3 +9,9 @@ pub use self::{
     mobih::{MobiHeader, TextEncoding},
     palmdoch::PalmDocHeader,
 };
+
+/// Trait allowing generic reading of header fields
+pub(crate) trait HeaderField {
+    /// Returns a position in the text where this field can be read
+    fn position(self) -> u64;
+}
