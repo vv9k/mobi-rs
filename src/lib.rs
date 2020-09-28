@@ -103,7 +103,7 @@ impl Mobi {
             reader.content_ref(),
             header.num_of_records,
             mobi.extra_bytes,
-            palmdoc.compression_en(),
+            palmdoc.compression_enum(),
         )?;
         Ok(Mobi {
             raw_content: reader.content(),
@@ -117,31 +117,31 @@ impl Mobi {
 
     /// Returns author record if such exists
     pub fn author(&self) -> Option<&String> {
-        self.exth.get_book_info(exth::BookInfo::Author)
+        self.exth.get_record(exth::ExthRecord::Author)
     }
     /// Returns publisher record if such exists
     pub fn publisher(&self) -> Option<&String> {
-        self.exth.get_book_info(exth::BookInfo::Publisher)
+        self.exth.get_record(exth::ExthRecord::Publisher)
     }
     /// Returns description record if such exists
     pub fn description(&self) -> Option<&String> {
-        self.exth.get_book_info(exth::BookInfo::Description)
+        self.exth.get_record(exth::ExthRecord::Description)
     }
     /// Returns isbn record if such exists
     pub fn isbn(&self) -> Option<&String> {
-        self.exth.get_book_info(exth::BookInfo::Isbn)
+        self.exth.get_record(exth::ExthRecord::Isbn)
     }
     /// Returns publish_date record if such exists
     pub fn publish_date(&self) -> Option<&String> {
-        self.exth.get_book_info(exth::BookInfo::PublishDate)
+        self.exth.get_record(exth::ExthRecord::PublishDate)
     }
     /// Returns contributor record if such exists
     pub fn contributor(&self) -> Option<&String> {
-        self.exth.get_book_info(exth::BookInfo::Contributor)
+        self.exth.get_record(exth::ExthRecord::Contributor)
     }
     /// Returns title record if such exists
     pub fn title(&self) -> Option<&String> {
-        self.exth.get_book_info(exth::BookInfo::Title)
+        self.exth.get_record(exth::ExthRecord::Title)
     }
     /// Returns text encoding used in ebook
     pub fn text_encoding(&self) -> TextEncoding {
@@ -177,11 +177,11 @@ impl Mobi {
     }
 
     /// Returns compression method used on this file
-    pub fn compression(&self) -> Option<String> {
+    pub fn compression(&self) -> String {
         self.palmdoc.compression()
     }
     /// Returns encryption method used on this file
-    pub fn encryption(&self) -> Option<String> {
+    pub fn encryption(&self) -> String {
         self.palmdoc.encryption()
     }
 

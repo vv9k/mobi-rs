@@ -2,11 +2,56 @@ use super::HeaderField;
 use crate::Reader;
 use std::io;
 
+/// Compression types available in MOBI format.
 pub(crate) enum Compression {
     No,
     PalmDoc,
     Huff,
 }
+impl From<u16> for Compression {
+    fn from(n: u16) -> Compression {
+        match n {
+            2 => Compression::PalmDoc,
+            17480 => Compression::Huff,
+            _ => Compression::No,
+        }
+    }
+}
+impl ToString for Compression {
+    fn to_string(&self) -> String {
+        match self {
+            Compression::No => String::from("No Compression"),
+            Compression::PalmDoc => String::from("PalmDOC Compression"),
+            Compression::Huff => String::from("HUFF/CFIC Compression"),
+        }
+    }
+}
+
+/// Encryption types available in MOBI format.
+pub(crate) enum Encryption {
+    No,
+    OldMobipocket,
+    Mobipocket,
+}
+impl From<u16> for Encryption {
+    fn from(n: u16) -> Encryption {
+        match n {
+            2 => Encryption::Mobipocket,
+            1 => Encryption::OldMobipocket,
+            _ => Encryption::No,
+        }
+    }
+}
+impl ToString for Encryption {
+    fn to_string(&self) -> String {
+        match self {
+            Encryption::No => String::from("No Encryption"),
+            Encryption::OldMobipocket => String::from("Old Mobipocket Encryption"),
+            Encryption::Mobipocket => String::from("Mobipocket Encryption"),
+        }
+    }
+}
+
 /// Parameters of PalmDOC Header
 pub(crate) enum PalmDocHeaderData {
     Compression,
@@ -49,28 +94,15 @@ impl PalmDocHeader {
             encryption_type: reader.read_u16_header(EncryptionType)?,
         })
     }
-    pub(crate) fn compression(&self) -> Option<String> {
-        match self.compression {
-            1 => Some(String::from("No Compression")),
-            2 => Some(String::from("PalmDOC Compression")),
-            17480 => Some(String::from("HUFF/CFIC Compression")),
-            _ => None,
-        }
+
+    pub(crate) fn compression(&self) -> String {
+        Compression::from(self.compression).to_string()
     }
-    pub(crate) fn encryption(&self) -> Option<String> {
-        match self.encryption_type {
-            0 => Some(String::from("No Encryption")),
-            1 => Some(String::from("Old Mobipocket Encryption")),
-            2 => Some(String::from("Mobipocket Encryption")),
-            _ => None,
-        }
+    pub(crate) fn encryption(&self) -> String {
+        Encryption::from(self.encryption_type).to_string()
     }
-    pub(crate) fn compression_en(&self) -> Compression {
-        match self.compression {
-            2 => Compression::PalmDoc,
-            17480 => Compression::Huff,
-            _ => Compression::No,
-        }
+    pub(crate) fn compression_enum(&self) -> Compression {
+        Compression::from(self.compression)
     }
 }
 
@@ -98,7 +130,7 @@ mod tests {
             ($et: expr, $s: expr) => {
                 let mut pdheader = PalmDocHeader::default();
                 pdheader.compression = $et;
-                assert_eq!(pdheader.compression(), Some(String::from($s)))
+                assert_eq!(pdheader.compression(), String::from($s))
             };
         }
         #[test]
@@ -120,7 +152,7 @@ mod tests {
             ($et: expr, $s: expr) => {
                 let mut pdheader = PalmDocHeader::default();
                 pdheader.encryption_type = $et;
-                assert_eq!(pdheader.encryption(), Some(String::from($s)))
+                assert_eq!(pdheader.encryption(), String::from($s))
             };
         }
         #[test]

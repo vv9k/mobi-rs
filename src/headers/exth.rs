@@ -4,7 +4,8 @@ use std::{collections::HashMap, io};
 
 const RECORDS_OFFSET: u16 = 340;
 
-pub(crate) enum BookInfo {
+// Records available in EXTH header
+pub(crate) enum ExthRecord {
     Author,
     Publisher,
     Description,
@@ -29,7 +30,9 @@ impl HeaderField for ExtHeaderData {
     }
 }
 #[derive(Debug, Default, PartialEq)]
-/// Strcture that holds Exth header information
+/// Optional header containing extended information. If the MOBI header
+/// indicates that there's an EXTH header, it follows immediately after
+/// the MOBI header.
 pub struct ExtHeader {
     pub identifier: u32,
     pub header_length: u32,
@@ -37,7 +40,7 @@ pub struct ExtHeader {
     pub records: HashMap<u32, String>,
 }
 impl ExtHeader {
-    /// Parse a Exth header from the content
+    /// Parse a EXTH header from the content
     pub(crate) fn parse(mut reader: &mut Reader) -> io::Result<ExtHeader> {
         use ExtHeaderData::*;
 
@@ -69,15 +72,15 @@ impl ExtHeader {
         }
         self.records = records;
     }
-    pub(crate) fn get_book_info(&self, info: BookInfo) -> Option<&String> {
-        let record: u32 = match info {
-            BookInfo::Author => 100,
-            BookInfo::Publisher => 101,
-            BookInfo::Description => 103,
-            BookInfo::Isbn => 104,
-            BookInfo::PublishDate => 106,
-            BookInfo::Contributor => 108,
-            BookInfo::Title => 503,
+    pub(crate) fn get_record(&self, record: ExthRecord) -> Option<&String> {
+        let record: u32 = match record {
+            ExthRecord::Author => 100,
+            ExthRecord::Publisher => 101,
+            ExthRecord::Description => 103,
+            ExthRecord::Isbn => 104,
+            ExthRecord::PublishDate => 106,
+            ExthRecord::Contributor => 108,
+            ExthRecord::Title => 503,
         };
         self.records.get(&record)
     }
@@ -121,7 +124,7 @@ mod tests {
                 let mut reader = book::test_reader();
                 reader.set_num_of_records(292);
                 let exth = ExtHeader::parse(&mut reader).unwrap();
-                let data = exth.get_book_info(BookInfo::$t);
+                let data = exth.get_record(ExthRecord::$t);
                 assert_eq!(data, Some(&String::from($s)));
             };
         }
