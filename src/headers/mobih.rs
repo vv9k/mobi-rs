@@ -48,66 +48,37 @@ pub struct MobiHeader {
 }
 /// Parameters of Mobi Header
 pub(crate) enum MobiHeaderData {
-    Identifier,
-    HeaderLength,
-    MobiType,
-    TextEncoding,
-    Id,
-    GenVersion,
-    FirstNonBookIndex,
-    NameOffset,
-    NameLength,
-    LanguageCode,
-    InputLanguage,
-    OutputLanguage,
-    FormatVersion,
-    FirstImageIndex,
-    FirstHuffRecord,
-    HuffRecordCount,
-    FirstDataRecord,
-    DataRecordCount,
-    ExthFlags,
-    DrmOffset,
-    DrmCount,
-    DrmSize,
-    DrmFlags,
-    LastImageRecord,
-    FcisRecord,
-    FlisRecord,
-    ExtraBytes,
+    ExtraBytes = 0,
+    Identifier = 96,
+    HeaderLength = 100,
+    MobiType = 104,
+    TextEncoding = 108,
+    Id = 112,
+    GenVersion = 116,
+    FirstNonBookIndex = 160,
+    NameOffset = 164,
+    NameLength = 168,
+    LanguageCode = 172,
+    InputLanguage = 176,
+    OutputLanguage = 180,
+    FormatVersion = 184,
+    FirstImageIndex = 188,
+    FirstHuffRecord = 192,
+    HuffRecordCount = 196,
+    FirstDataRecord = 200,
+    DataRecordCount = 204,
+    ExthFlags = 208,
+    DrmOffset = 248,
+    DrmCount = 252,
+    DrmSize = 256,
+    DrmFlags = 260,
+    LastImageRecord = 274,
+    FcisRecord = 280,
+    FlisRecord = 288,
 }
 impl HeaderField for MobiHeaderData {
     fn position(self) -> u64 {
-        match self {
-            // TODO: Check if this field is actually on position 0
-            MobiHeaderData::ExtraBytes => 0,
-            MobiHeaderData::Identifier => 96,
-            MobiHeaderData::HeaderLength => 100,
-            MobiHeaderData::MobiType => 104,
-            MobiHeaderData::TextEncoding => 108,
-            MobiHeaderData::Id => 112,
-            MobiHeaderData::GenVersion => 116,
-            MobiHeaderData::FirstNonBookIndex => 160,
-            MobiHeaderData::NameOffset => 164,
-            MobiHeaderData::NameLength => 168,
-            MobiHeaderData::LanguageCode => 172,
-            MobiHeaderData::InputLanguage => 176,
-            MobiHeaderData::OutputLanguage => 180,
-            MobiHeaderData::FormatVersion => 184,
-            MobiHeaderData::FirstImageIndex => 188,
-            MobiHeaderData::FirstHuffRecord => 192,
-            MobiHeaderData::HuffRecordCount => 196,
-            MobiHeaderData::FirstDataRecord => 200,
-            MobiHeaderData::DataRecordCount => 204,
-            MobiHeaderData::ExthFlags => 208,
-            MobiHeaderData::DrmOffset => 248,
-            MobiHeaderData::DrmCount => 252,
-            MobiHeaderData::DrmSize => 256,
-            MobiHeaderData::DrmFlags => 260,
-            MobiHeaderData::LastImageRecord => 274,
-            MobiHeaderData::FcisRecord => 280,
-            MobiHeaderData::FlisRecord => 288,
-        }
+        self as u64
     }
 }
 impl MobiHeader {
@@ -147,6 +118,7 @@ impl MobiHeader {
             extra_bytes: MobiHeader::extra_bytes(&mut reader)?,
         })
     }
+
     /// Returns the book name
     pub(crate) fn name(reader: &mut Reader) -> io::Result<String> {
         let name_offset = reader.read_u32_header(MobiHeaderData::NameOffset)?;
@@ -159,19 +131,23 @@ impl MobiHeader {
                 .to_string(),
         )
     }
+
     /// Checks if there is a Exth Header and changes the parameter
     pub(crate) fn has_exth_header(exth_flags: u32) -> bool {
         (exth_flags & EXTH_ON_FLAG) != 0
     }
+
     /// Checks if there is DRM on this book
     fn has_drm(drm_offset: u32) -> bool {
         drm_offset != DRM_ON_FLAG
     }
+
     /// Returns extra bytes for reading records
     fn extra_bytes(reader: &mut Reader) -> io::Result<u32> {
         let ex_bytes = reader.read_u16_header(MobiHeaderData::ExtraBytes)?;
         Ok(2 * (ex_bytes & EXTRA_BYTES_FLAG).count_ones())
     }
+
     /// Converts numerical value into a type
     pub(crate) fn mobi_type(&self) -> Option<String> {
         macro_rules! mtype {
@@ -195,6 +171,7 @@ impl MobiHeader {
             _ => None,
         }
     }
+
     // Mobi format only specifies this two encodings so
     // this should never panic
     pub(crate) fn text_encoding(&self) -> TextEncoding {
@@ -204,9 +181,11 @@ impl MobiHeader {
             n => panic!("Unknown encoding {}", n),
         }
     }
+
     fn lang_code(code: u32) -> u16 {
         (code & 0xFF) as u16
     }
+
     pub(crate) fn language(&self) -> Option<String> {
         macro_rules! lang {
             ($s:expr) => {
@@ -303,6 +282,7 @@ mod tests {
     fn has_exth_header() {
         assert_eq!(true, MobiHeader::has_exth_header(80));
     }
+
     #[test]
     fn parse() {
         let mobiheader = MobiHeader {
@@ -342,6 +322,7 @@ mod tests {
 
         assert_eq!(mobiheader, MobiHeader::parse(&mut reader).unwrap());
     }
+
     mod text_encoding {
         use super::*;
         #[test]
@@ -357,8 +338,9 @@ mod tests {
             assert_eq!(m.text_encoding(), TextEncoding::CP1252)
         }
     }
-    mod mobi_type {
-        use super::*;
+
+    #[test]
+    fn parses_mobi_types() {
         macro_rules! mtype {
             ($mt: expr, $s: expr) => {
                 let mut m = MobiHeader::default();
@@ -366,57 +348,22 @@ mod tests {
                 assert_eq!(m.mobi_type(), Some(String::from($s)))
             };
         }
-        #[test]
-        fn mobipocket_book() {
-            mtype!(2, "Mobipocket Book");
-        }
-        #[test]
-        fn palmdoc_book() {
-            mtype!(3, "PalmDoc Book");
-        }
-        #[test]
-        fn audio() {
-            mtype!(4, "Audio");
-        }
-        #[test]
-        fn news() {
-            mtype!(257, "News");
-        }
-        #[test]
-        fn news_feed() {
-            mtype!(258, "News Feed");
-        }
-        #[test]
-        fn news_magazine() {
-            mtype!(259, "News Magazine");
-        }
-        #[test]
-        fn pics() {
-            mtype!(513, "PICS");
-        }
-        #[test]
-        fn word() {
-            mtype!(514, "WORD");
-        }
-        #[test]
-        fn xls() {
-            mtype!(515, "XLS");
-        }
-        #[test]
-        fn ppt() {
-            mtype!(516, "PPT");
-        }
-        #[test]
-        fn text() {
-            mtype!(517, "TEXT");
-        }
-        #[test]
-        fn html() {
-            mtype!(518, "HTML");
-        }
+        mtype!(2, "Mobipocket Book");
+        mtype!(3, "PalmDoc Book");
+        mtype!(4, "Audio");
+        mtype!(257, "News");
+        mtype!(258, "News Feed");
+        mtype!(259, "News Magazine");
+        mtype!(513, "PICS");
+        mtype!(514, "WORD");
+        mtype!(515, "XLS");
+        mtype!(516, "PPT");
+        mtype!(517, "TEXT");
+        mtype!(518, "HTML");
     }
-    mod language {
-        use super::*;
+
+    #[test]
+    fn parses_languages() {
         macro_rules! lang {
             ($lc: expr, $s: expr) => {
                 let mut m = MobiHeader::default();
@@ -424,309 +371,82 @@ mod tests {
                 assert_eq!(m.language(), Some(String::from($s)))
             };
         }
-        #[test]
-        fn neutral() {
-            lang!(0, "NEUTRAL");
-        }
-        #[test]
-        fn afrikaans() {
-            lang!(54, "AFRIKAANS");
-        }
-        #[test]
-        fn albanian() {
-            lang!(28, "ALBANIAN");
-        }
-        #[test]
-        fn arabic() {
-            lang!(1, "ARABIC");
-        }
-        #[test]
-        fn armenian() {
-            lang!(43, "ARMENIAN");
-        }
-        #[test]
-        fn assamese() {
-            lang!(77, "ASSAMESE");
-        }
-        #[test]
-        fn azeri() {
-            lang!(44, "AZERI");
-        }
-        #[test]
-        fn basque() {
-            lang!(45, "BASQUE");
-        }
-        #[test]
-        fn belarusian() {
-            lang!(35, "BELARUSIAN");
-        }
-        #[test]
-        fn bengali() {
-            lang!(69, "BENGALI");
-        }
-        #[test]
-        fn bulgarian() {
-            lang!(2, "BULGARIAN");
-        }
-        #[test]
-        fn catalan() {
-            lang!(3, "CATALAN");
-        }
-        #[test]
-        fn chinese() {
-            lang!(4, "CHINESE");
-        }
-        #[test]
-        fn czech() {
-            lang!(5, "CZECH");
-        }
-        #[test]
-        fn danish() {
-            lang!(6, "DANISH");
-        }
-        #[test]
-        fn dutch() {
-            lang!(19, "DUTCH");
-        }
-        #[test]
-        fn english() {
-            lang!(9, "ENGLISH");
-        }
-        #[test]
-        fn estonian() {
-            lang!(37, "ESTONIAN");
-        }
-        #[test]
-        fn faeroese() {
-            lang!(56, "FAEROESE");
-        }
-        #[test]
-        fn farsi() {
-            lang!(41, "FARSI");
-        }
-        #[test]
-        fn finnish() {
-            lang!(11, "FINNISH");
-        }
-        #[test]
-        fn french() {
-            lang!(12, "FRENCH");
-        }
-        #[test]
-        fn georgian() {
-            lang!(55, "GEORGIAN");
-        }
-        #[test]
-        fn german() {
-            lang!(7, "GERMAN");
-        }
-        #[test]
-        fn greek() {
-            lang!(8, "GREEK");
-        }
-        #[test]
-        fn gujarati() {
-            lang!(71, "GUJARATI");
-        }
-        #[test]
-        fn hebrew() {
-            lang!(13, "HEBREW");
-        }
-        #[test]
-        fn hindi() {
-            lang!(57, "HINDI");
-        }
-        #[test]
-        fn hungarian() {
-            lang!(14, "HUNGARIAN");
-        }
-        #[test]
-        fn icelandic() {
-            lang!(15, "ICELANDIC");
-        }
-        #[test]
-        fn indonesian() {
-            lang!(33, "INDONESIAN");
-        }
-        #[test]
-        fn italian() {
-            lang!(16, "ITALIAN");
-        }
-        #[test]
-        fn japanese() {
-            lang!(17, "JAPANESE");
-        }
-        #[test]
-        fn kannada() {
-            lang!(75, "KANNADA");
-        }
-        #[test]
-        fn kazak() {
-            lang!(63, "KAZAK");
-        }
-        #[test]
-        fn konkani() {
-            lang!(87, "KONKANI");
-        }
-        #[test]
-        fn korean() {
-            lang!(18, "KOREAN");
-        }
-        #[test]
-        fn latvian() {
-            lang!(38, "LATVIAN");
-        }
-        #[test]
-        fn lithuanian() {
-            lang!(39, "LITHUANIAN");
-        }
-        #[test]
-        fn macedonian() {
-            lang!(47, "MACEDONIAN");
-        }
-        #[test]
-        fn malay() {
-            lang!(62, "MALAY");
-        }
-        #[test]
-        fn malayalam() {
-            lang!(76, "MALAYALAM");
-        }
-        #[test]
-        fn maltese() {
-            lang!(58, "MALTESE");
-        }
-        #[test]
-        fn marathi() {
-            lang!(78, "MARATHI");
-        }
-        #[test]
-        fn nepali() {
-            lang!(97, "NEPALI");
-        }
-        #[test]
-        fn norwegian() {
-            lang!(20, "NORWEGIAN");
-        }
-        #[test]
-        fn oriya() {
-            lang!(72, "ORIYA");
-        }
-        #[test]
-        fn polish() {
-            lang!(21, "POLISH");
-        }
-        #[test]
-        fn portuguese() {
-            lang!(22, "PORTUGUESE");
-        }
-        #[test]
-        fn punjabi() {
-            lang!(70, "PUNJABI");
-        }
-        #[test]
-        fn rhaetoromanic() {
-            lang!(23, "RHAETOROMANIC");
-        }
-        #[test]
-        fn romanian() {
-            lang!(24, "ROMANIAN");
-        }
-        #[test]
-        fn russian() {
-            lang!(25, "RUSSIAN");
-        }
-        #[test]
-        fn sami() {
-            lang!(59, "SAMI");
-        }
-        #[test]
-        fn sanskrit() {
-            lang!(79, "SANSKRIT");
-        }
-        #[test]
-        fn serbian() {
-            lang!(26, "SERBIAN");
-        }
-        #[test]
-        fn slovak() {
-            lang!(27, "SLOVAK");
-        }
-        #[test]
-        fn slovenian() {
-            lang!(36, "SLOVENIAN");
-        }
-        #[test]
-        fn sorbian() {
-            lang!(46, "SORBIAN");
-        }
-        #[test]
-        fn spanish() {
-            lang!(10, "SPANISH");
-        }
-        #[test]
-        fn sutu() {
-            lang!(48, "SUTU");
-        }
-        #[test]
-        fn swahili() {
-            lang!(65, "SWAHILI");
-        }
-        #[test]
-        fn swedish() {
-            lang!(29, "SWEDISH");
-        }
-        #[test]
-        fn tamil() {
-            lang!(73, "TAMIL");
-        }
-        #[test]
-        fn tatar() {
-            lang!(68, "TATAR");
-        }
-        #[test]
-        fn telugu() {
-            lang!(74, "TELUGU");
-        }
-        #[test]
-        fn thai() {
-            lang!(30, "THAI");
-        }
-        #[test]
-        fn tsonga() {
-            lang!(49, "TSONGA");
-        }
-        #[test]
-        fn tswana() {
-            lang!(50, "TSWANA");
-        }
-        #[test]
-        fn turkish() {
-            lang!(31, "TURKISH");
-        }
-        #[test]
-        fn ukrainian() {
-            lang!(34, "UKRAINIAN");
-        }
-        #[test]
-        fn urdu() {
-            lang!(32, "URDU");
-        }
-        #[test]
-        fn uzbek() {
-            lang!(67, "UZBEK");
-        }
-        #[test]
-        fn vietnamese() {
-            lang!(42, "VIETNAMESE");
-        }
-        #[test]
-        fn xhosa() {
-            lang!(52, "XHOSA");
-        }
-        #[test]
-        fn zulu() {
-            lang!(53, "ZULU");
-        }
+
+        lang!(0, "NEUTRAL");
+        lang!(54, "AFRIKAANS");
+        lang!(28, "ALBANIAN");
+        lang!(1, "ARABIC");
+        lang!(43, "ARMENIAN");
+        lang!(77, "ASSAMESE");
+        lang!(44, "AZERI");
+        lang!(45, "BASQUE");
+        lang!(35, "BELARUSIAN");
+        lang!(69, "BENGALI");
+        lang!(2, "BULGARIAN");
+        lang!(3, "CATALAN");
+        lang!(4, "CHINESE");
+        lang!(5, "CZECH");
+        lang!(6, "DANISH");
+        lang!(19, "DUTCH");
+        lang!(9, "ENGLISH");
+        lang!(37, "ESTONIAN");
+        lang!(56, "FAEROESE");
+        lang!(41, "FARSI");
+        lang!(11, "FINNISH");
+        lang!(12, "FRENCH");
+        lang!(55, "GEORGIAN");
+        lang!(7, "GERMAN");
+        lang!(8, "GREEK");
+        lang!(71, "GUJARATI");
+        lang!(13, "HEBREW");
+        lang!(57, "HINDI");
+        lang!(14, "HUNGARIAN");
+        lang!(15, "ICELANDIC");
+        lang!(33, "INDONESIAN");
+        lang!(16, "ITALIAN");
+        lang!(17, "JAPANESE");
+        lang!(75, "KANNADA");
+        lang!(63, "KAZAK");
+        lang!(87, "KONKANI");
+        lang!(18, "KOREAN");
+        lang!(38, "LATVIAN");
+        lang!(39, "LITHUANIAN");
+        lang!(47, "MACEDONIAN");
+        lang!(62, "MALAY");
+        lang!(76, "MALAYALAM");
+        lang!(58, "MALTESE");
+        lang!(78, "MARATHI");
+        lang!(97, "NEPALI");
+        lang!(20, "NORWEGIAN");
+        lang!(72, "ORIYA");
+        lang!(21, "POLISH");
+        lang!(22, "PORTUGUESE");
+        lang!(70, "PUNJABI");
+        lang!(23, "RHAETOROMANIC");
+        lang!(24, "ROMANIAN");
+        lang!(25, "RUSSIAN");
+        lang!(59, "SAMI");
+        lang!(79, "SANSKRIT");
+        lang!(26, "SERBIAN");
+        lang!(27, "SLOVAK");
+        lang!(36, "SLOVENIAN");
+        lang!(46, "SORBIAN");
+        lang!(10, "SPANISH");
+        lang!(48, "SUTU");
+        lang!(65, "SWAHILI");
+        lang!(29, "SWEDISH");
+        lang!(73, "TAMIL");
+        lang!(68, "TATAR");
+        lang!(74, "TELUGU");
+        lang!(30, "THAI");
+        lang!(49, "TSONGA");
+        lang!(50, "TSWANA");
+        lang!(31, "TURKISH");
+        lang!(34, "UKRAINIAN");
+        lang!(32, "URDU");
+        lang!(67, "UZBEK");
+        lang!(42, "VIETNAMESE");
+        lang!(52, "XHOSA");
+        lang!(53, "ZULU");
     }
 }

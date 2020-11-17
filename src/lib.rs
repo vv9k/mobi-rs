@@ -118,26 +118,32 @@ impl MobiMetadata {
     pub fn author(&self) -> Option<&String> {
         self.exth.get_record(exth::ExthRecord::Author)
     }
+
     /// Returns publisher record if such exists
     pub fn publisher(&self) -> Option<&String> {
         self.exth.get_record(exth::ExthRecord::Publisher)
     }
+
     /// Returns description record if such exists
     pub fn description(&self) -> Option<&String> {
         self.exth.get_record(exth::ExthRecord::Description)
     }
+
     /// Returns isbn record if such exists
     pub fn isbn(&self) -> Option<&String> {
         self.exth.get_record(exth::ExthRecord::Isbn)
     }
+
     /// Returns publish_date record if such exists
     pub fn publish_date(&self) -> Option<&String> {
         self.exth.get_record(exth::ExthRecord::PublishDate)
     }
+
     /// Returns contributor record if such exists
     pub fn contributor(&self) -> Option<&String> {
         self.exth.get_record(exth::ExthRecord::Contributor)
     }
+
     /// Returns title record if such exists
     pub fn title(&self) -> Option<&String> {
         self.exth.get_record(exth::ExthRecord::Title)
@@ -147,20 +153,24 @@ impl MobiMetadata {
     pub fn text_encoding(&self) -> TextEncoding {
         self.mobi.text_encoding()
     }
+
     /// Returns type of this ebook
     pub fn mobi_type(&self) -> Option<String> {
         self.mobi.mobi_type()
     }
+
     /// Returns language of the ebook
     pub fn language(&self) -> Option<String> {
         self.mobi.language()
     }
+
     #[cfg(feature = "time")]
     /// Returns creation datetime
     /// This field is only available using `time` feature
     pub fn created_datetime(&self) -> NaiveDateTime {
         self.header.created_datetime()
     }
+
     #[cfg(feature = "time")]
     /// Returns modification datetime
     /// This field is only available using `time` feature

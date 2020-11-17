@@ -24,6 +24,7 @@ impl Record {
             length: 0,
         }
     }
+
     /// Reads the content of a record at specified offset
     fn record_data(
         record_data_offset: u32,
@@ -52,6 +53,7 @@ impl Record {
             Compression::Huff => panic!("Huff compression is currently not supported"),
         }
     }
+
     /// Parses a record from the reader at current position
     fn parse_record(reader: &mut Cursor<&[u8]>) -> io::Result<Record> {
         Ok(Record {
@@ -61,6 +63,7 @@ impl Record {
             length: 0,
         })
     }
+
     /// Gets all records in the specified content
     pub(crate) fn parse_records(
         content: &[u8],
