@@ -66,8 +66,8 @@ impl<'r> Reader<'r> {
     }
 
     #[inline]
-    pub(crate) fn read_u32_header_offset<F: HeaderField>(&mut self, field: F, offset: i64) -> io::Result<u32> {
-        self.set_position((((self.position_after_records() + field.position()) as i64) + offset) as u64);
+    pub(crate) fn read_u32_header_offset(&mut self, offset: u64) -> io::Result<u32> {
+        self.set_position(self.position_after_records() + offset);
         self.read_u32_be()
     }
 

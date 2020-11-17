@@ -17,18 +17,14 @@ pub(crate) enum ExthRecord {
 
 /// Parameters of Exth Header
 pub(crate) enum ExtHeaderData {
-    Identifier,
-    HeaderLength,
-    RecordCount,
+    Identifier = 96,
+    HeaderLength = 100,
+    RecordCount = 104,
 }
 
 impl HeaderField for ExtHeaderData {
     fn position(self) -> u64 {
-        match self {
-            ExtHeaderData::Identifier => 328,
-            ExtHeaderData::HeaderLength => 332,
-            ExtHeaderData::RecordCount => 336,
-        }
+        self as u64
     }
 }
 
@@ -46,38 +42,26 @@ pub struct ExtHeader {
 impl ExtHeader {
     /// Parse a EXTH header from the content
     pub(crate) fn parse_no_hint(mut reader: &mut Reader) -> io::Result<ExtHeader> {
-        use ExtHeaderData::*;
-        let mut extheader = ExtHeader {
-            identifier: reader.read_u32_header(Identifier)?,
-            header_length: reader.read_u32_header(HeaderLength)?,
-            record_count: reader.read_u32_header(RecordCount)?,
-            records: HashMap::new(),
-        };
-
-        extheader.get_records(&mut reader, 0);
-        Ok(extheader)
+        ExtHeader::parse(reader, 232)
     }
 
     pub(crate) fn parse(mut reader: &mut Reader, header_length: u32) -> io::Result<ExtHeader> {
         use ExtHeaderData::*;
 
-        let offset = (header_length as i64) - 232;
-
+        let header_length = header_length as u64;
         let mut extheader = ExtHeader {
-            identifier: reader.read_u32_header_offset(Identifier, offset)?,
-            header_length: reader.read_u32_header_offset(HeaderLength, offset)?,
-            record_count: reader.read_u32_header_offset(RecordCount, offset)?,
+            identifier: reader.read_u32_header_offset(Identifier.position() + header_length)?,
+            header_length: reader.read_u32_header_offset(HeaderLength.position() + header_length)?,
+            record_count: reader.read_u32_header_offset(RecordCount.position() + header_length)?,
             records: HashMap::new(),
         };
 
-        extheader.get_records(&mut reader, offset);
+        extheader.populate_records(&mut reader, (header_length as i64) - 232);
         Ok(extheader)
     }
 
     /// Gets header records
-    fn get_records(&mut self, reader: &mut Reader, offset: i64) {
-        let mut records = HashMap::new();
-
+    fn populate_records(&mut self, reader: &mut Reader, offset: i64) {
         let position = {
             let pos = RECORDS_OFFSET as u64 + u64::from(reader.num_of_records * 8);
             ((pos as i64) + offset) as u64
@@ -92,12 +76,11 @@ impl ExtHeader {
             for _j in 0..record_len - 8 {
                 record_data.push(reader.read_u8().unwrap_or(0));
             }
-            records.insert(
+            self.records.insert(
                 record_type,
                 String::from_utf8_lossy(&record_data[..]).to_owned().to_string(),
             );
         }
-        self.records = records;
     }
 
     pub(crate) fn get_record(&self, record: ExthRecord) -> Option<&String> {
