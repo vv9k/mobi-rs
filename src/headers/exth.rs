@@ -2,7 +2,7 @@ use super::HeaderField;
 use crate::Reader;
 use std::{collections::HashMap, io};
 
-const RECORDS_OFFSET: u16 = 108;
+const RECORDS_OFFSET: u64 = 108;
 
 // Records available in EXTH header
 pub(crate) enum ExthRecord {
@@ -58,7 +58,7 @@ impl ExtHeader {
 
     /// Gets header records
     fn populate_records(&mut self, reader: &mut Reader, header_length: u64) {
-        let position = RECORDS_OFFSET as u64 + u64::from(reader.num_of_records * 8) + header_length;
+        let position = RECORDS_OFFSET + u64::from(reader.num_of_records * 8) + header_length;
 
         reader.set_position(position);
 
