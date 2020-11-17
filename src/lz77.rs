@@ -23,7 +23,7 @@ pub fn decompress_lz77(data: &[u8]) -> Vec<u8> {
             // Data is LZ77-compressed
             0x80..=0xbf => {
                 offset += 1;
-                if offset > length {
+                if offset > text.len() {
                     return text;
                 }
 
