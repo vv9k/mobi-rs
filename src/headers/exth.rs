@@ -52,29 +52,31 @@ impl ExtHeader {
             records: HashMap::new(),
         };
 
-        extheader.populate_records(&mut reader, header_length);
+        extheader.populate_records(&mut reader, header_length)?;
         Ok(extheader)
     }
 
     /// Gets header records
-    fn populate_records(&mut self, reader: &mut Reader, header_length: u64) {
+    fn populate_records(&mut self, reader: &mut Reader, header_length: u64) -> io::Result<()> {
         let position = RECORDS_OFFSET + u64::from(reader.num_of_records * 8) + header_length;
 
         reader.set_position(position);
 
         for _i in 0..self.record_count {
-            let record_type = reader.read_u32_be().unwrap_or(0);
-            let record_len = reader.read_u32_be().unwrap_or(0);
+            let record_type = reader.read_u32_be()?;
+            let record_len = reader.read_u32_be()?;
 
             let mut record_data = Vec::with_capacity(record_len as usize - 8);
             for _j in 0..record_len - 8 {
-                record_data.push(reader.read_u8().unwrap_or(0));
+                record_data.push(reader.read_u8()?);
             }
             self.records.insert(
                 record_type,
                 String::from_utf8_lossy(&record_data[..]).to_owned().to_string(),
             );
         }
+
+        Ok(())
     }
 
     pub(crate) fn get_record(&self, record: ExthRecord) -> Option<&String> {
