@@ -2,7 +2,7 @@ use super::HeaderField;
 use crate::Reader;
 use std::{collections::HashMap, io};
 
-const RECORDS_OFFSET: u16 = 340;
+const RECORDS_OFFSET: u16 = 108;
 
 // Records available in EXTH header
 pub(crate) enum ExthRecord {
@@ -41,7 +41,7 @@ pub struct ExtHeader {
 
 impl ExtHeader {
     /// Parse a EXTH header from the content
-    pub(crate) fn parse_no_hint(mut reader: &mut Reader) -> io::Result<ExtHeader> {
+    pub(crate) fn parse_no_hint(reader: &mut Reader) -> io::Result<ExtHeader> {
         ExtHeader::parse(reader, 232)
     }
 
@@ -56,23 +56,21 @@ impl ExtHeader {
             records: HashMap::new(),
         };
 
-        extheader.populate_records(&mut reader, (header_length as i64) - 232);
+        extheader.populate_records(&mut reader, header_length);
         Ok(extheader)
     }
 
     /// Gets header records
-    fn populate_records(&mut self, reader: &mut Reader, offset: i64) {
-        let position = {
-            let pos = RECORDS_OFFSET as u64 + u64::from(reader.num_of_records * 8);
-            ((pos as i64) + offset) as u64
-        };
+    fn populate_records(&mut self, reader: &mut Reader, header_length: u64) {
+        let position = RECORDS_OFFSET as u64 + u64::from(reader.num_of_records * 8) + header_length;
 
         reader.set_position(position);
 
         for _i in 0..self.record_count {
-            let mut record_data = vec![];
             let record_type = reader.read_u32_be().unwrap_or(0);
             let record_len = reader.read_u32_be().unwrap_or(0);
+
+            let mut record_data = Vec::with_capacity(record_len as usize - 8);
             for _j in 0..record_len - 8 {
                 record_data.push(reader.read_u8().unwrap_or(0));
             }
