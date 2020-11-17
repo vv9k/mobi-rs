@@ -98,7 +98,6 @@ impl Metadata {
 pub struct Mobi {
     pub content: Vec<u8>,
     pub metadata: Metadata,
-    pub records: Vec<Record>,
 }
 impl Mobi {
     /// Construct a Mobi object from a slice of bytes
@@ -120,16 +119,9 @@ impl Mobi {
 
     fn from_reader(mut reader: Reader) -> io::Result<Mobi> {
         let metadata = Metadata::from_reader(&mut reader)?;
-        let records = Record::parse_records(
-            reader.content_ref(),
-            metadata.header.num_of_records,
-            metadata.mobi.extra_bytes,
-            metadata.palmdoc.compression_enum(),
-        )?;
         Ok(Mobi {
             content: reader.content(),
             metadata,
-            records,
         })
     }
 
@@ -227,20 +219,33 @@ impl Mobi {
         1..self.last_index()
     }
 
+    fn records(&self) -> io::Result<Vec<Record>> {
+        Record::parse_records(
+            &self.content,
+            self.metadata.header.num_of_records,
+            self.metadata.mobi.extra_bytes,
+            self.metadata.palmdoc.compression_enum(),
+        )
+    }
+
     /// Returns all readable records content decompressed as a String.
     /// There are only two supported encodings in mobi format (UTF8, WIN1252)
     /// and both are losely converted by this function
-    pub fn content_as_string(&self) -> String {
-        self.readable_records_range()
-            .map(|i| self.records[i as usize].to_string(self.text_encoding()))
-            .collect()
+    pub fn content_as_string(&self) -> io::Result<String> {
+        let records = self.records()?;
+        Ok(self
+            .readable_records_range()
+            .map(|i| records[i as usize].to_string(self.text_encoding()))
+            .collect())
     }
 
     /// Returns all readable records content decompressed as a Vec
-    pub fn content(&self) -> Vec<u8> {
-        self.readable_records_range()
-            .map(|i| self.records[i as usize].record_data.clone())
+    pub fn content(&self) -> io::Result<Vec<u8>> {
+        let records = self.records()?;
+        Ok(self
+            .readable_records_range()
+            .map(|i| records[i as usize].record_data.clone())
             .flatten()
-            .collect()
+            .collect())
     }
 }
