@@ -26,11 +26,11 @@ Text length:            {}
 Record count:           {}
 Record size:            {}
 Encryption type:        {}",
-            self.compression().unwrap_or_default(),
+            self.compression(),
             self.text_length,
             self.record_count,
             self.record_size,
-            self.encryption().unwrap_or_default(),
+            self.encryption(),
         )
     }
 }
