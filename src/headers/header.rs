@@ -6,39 +6,24 @@ use std::io;
 
 /// Parameters of Header
 pub(crate) enum HeaderData {
-    Name,
-    Attributes,
-    Version,
-    Created,
-    Modified,
-    Backup,
-    Modnum,
-    AppInfoId,
-    SortInfoId,
-    TypE,
-    Creator,
-    UniqueIdSeed,
-    NextRecordListId,
-    NumOfRecords,
+    Name = 0,
+    Attributes = 32,
+    Version = 34,
+    Created = 36,
+    Modified = 40,
+    Backup = 44,
+    Modnum = 48,
+    AppInfoId = 52,
+    SortInfoId = 56,
+    TypE = 60,
+    Creator = 64,
+    UniqueIdSeed = 68,
+    NextRecordListId = 72,
+    NumOfRecords = 76,
 }
 impl HeaderField for HeaderData {
     fn position(self) -> u64 {
-        match self {
-            HeaderData::Name => 0,
-            HeaderData::Attributes => 32,
-            HeaderData::Version => 34,
-            HeaderData::Created => 36,
-            HeaderData::Modified => 40,
-            HeaderData::Backup => 44,
-            HeaderData::Modnum => 48,
-            HeaderData::AppInfoId => 52,
-            HeaderData::SortInfoId => 56,
-            HeaderData::TypE => 60,
-            HeaderData::Creator => 64,
-            HeaderData::UniqueIdSeed => 68,
-            HeaderData::NextRecordListId => 72,
-            HeaderData::NumOfRecords => 76,
-        }
+        self as u64
     }
 }
 #[derive(Debug, PartialEq, Default)]
