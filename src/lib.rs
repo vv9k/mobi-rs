@@ -58,7 +58,6 @@ pub(crate) use reader::Reader;
 pub use record::Record;
 use std::{fs, io, io::Read, ops::Range, path::Path};
 
-
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
 pub struct Mobi {
