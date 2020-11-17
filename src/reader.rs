@@ -2,6 +2,7 @@ use crate::headers::HeaderField;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{self, Cursor};
 
+#[derive(Debug, Default)]
 /// Helper struct for reading header values from content
 pub(crate) struct Reader<'r> {
     pub cursor: Cursor<&'r [u8]>,
