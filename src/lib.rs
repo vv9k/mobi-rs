@@ -79,22 +79,18 @@ impl Mobi {
     /// Construct a Mobi object from an object that implements a Read trait
     pub fn from_read<R: Read>(reader: R) -> io::Result<Mobi> {
         // Temporary solution
-        let mut content = Vec::new();
-        for byte in reader.bytes() {
-            content.push(byte?);
-        }
+        let content: Vec<_> = reader.bytes().flatten().collect();
         Mobi::from_reader(Reader::new(&content))
     }
 
     fn from_reader(mut reader: Reader) -> io::Result<Mobi> {
         let header = Header::parse(&mut reader)?;
         reader.set_num_of_records(header.num_of_records);
-
         let palmdoc = PalmDocHeader::parse(&mut reader)?;
         let mobi = MobiHeader::parse(&mut reader)?;
         let exth = {
             if mobi.has_exth_header {
-                ExtHeader::parse(&mut reader)?
+                ExtHeader::parse(&mut reader, mobi.header_length)?
             } else {
                 ExtHeader::default()
             }

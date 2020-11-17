@@ -64,6 +64,13 @@ impl<'r> Reader<'r> {
         self.set_position(self.position_after_records() + field.position());
         self.read_u32_be()
     }
+
+    #[inline]
+    pub(crate) fn read_u32_header_offset(&mut self, offset: u64) -> io::Result<u32> {
+        self.set_position(self.position_after_records() + offset);
+        self.read_u32_be()
+    }
+
     pub(crate) fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> String {
         let position = field.position() as usize;
         let string_range = position..position + len as usize;
