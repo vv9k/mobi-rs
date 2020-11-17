@@ -59,6 +59,7 @@ pub use record::Record;
 use std::{fs, io, io::Read, ops::Range, path::Path};
 
 #[derive(Debug, Default)]
+/// Holds all headers containing low level metadata of a mobi book
 pub struct Metadata {
     pub header: Header,
     pub palmdoc: PalmDocHeader,
@@ -66,7 +67,7 @@ pub struct Metadata {
     pub exth: ExtHeader,
 }
 impl Metadata {
-    /// Construct a Metadata object from a slice
+    /// Construct a Metadata object from a slice of bytes
     pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<Metadata> {
         Metadata::from_reader(&mut Reader::new(bytes.as_ref()))
     }
@@ -100,7 +101,7 @@ pub struct Mobi {
     pub records: Vec<Record>,
 }
 impl Mobi {
-    /// Construct a Mobi object from a slice
+    /// Construct a Mobi object from a slice of bytes
     pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<Mobi> {
         Mobi::from_reader(Reader::new(bytes.as_ref()))
     }
@@ -132,12 +133,12 @@ impl Mobi {
         })
     }
 
-    /// Returns author record if such exists
+    /// Returns an author of this book
     pub fn author(&self) -> Option<&String> {
         self.metadata.exth.get_record(exth::ExthRecord::Author)
     }
 
-    /// Returns publisher record if such exists
+    /// Returns this books publisher
     pub fn publisher(&self) -> Option<&String> {
         self.metadata.exth.get_record(exth::ExthRecord::Publisher)
     }
