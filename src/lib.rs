@@ -96,7 +96,7 @@ impl Metadata {
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
 pub struct Mobi {
-    pub raw_content: Vec<u8>,
+    pub content: Vec<u8>,
     pub metadata: Metadata,
     pub records: Vec<Record>,
 }
@@ -127,7 +127,7 @@ impl Mobi {
             metadata.palmdoc.compression_enum(),
         )?;
         Ok(Mobi {
-            raw_content: reader.content(),
+            content: reader.content(),
             metadata,
             records,
         })
