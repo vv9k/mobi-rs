@@ -1,9 +1,5 @@
-use byteorder::{BigEndian, ReadBytesExt};
-use std::io::{self, Cursor};
-
-pub fn decompress_lz77(data: &[u8]) -> io::Result<Vec<u8>> {
+pub fn decompress_lz77(data: &[u8]) -> Vec<u8> {
     let length = data.len();
-    let mut reader = Cursor::new(data);
     let mut offset: usize = 0;
     let mut text: Vec<u8> = vec![];
     while offset < length {
@@ -28,10 +24,10 @@ pub fn decompress_lz77(data: &[u8]) -> io::Result<Vec<u8>> {
             0x80..=0xbf => {
                 offset += 1;
                 if offset > length {
-                    return Ok(text);
+                    return text;
                 }
-                reader.set_position((offset - 2) as u64);
-                let mut lz77 = reader.read_u16::<BigEndian>().unwrap();
+
+                let mut lz77 = u16::from_be_bytes([byte, text[offset-1]]);
 
                 lz77 &= 0x3fff; // Leftmost two bits are ID bits and need to be dropped
                 let lz77length = (lz77 & 0x0007) + 3; // Length is  rightmost three bits + 3
@@ -39,7 +35,7 @@ pub fn decompress_lz77(data: &[u8]) -> io::Result<Vec<u8>> {
 
                 if lz77offset < 1 {
                     // Decompression offset is invalid?
-                    return Ok(text);
+                    return text;
                 }
 
                 for _lz77pos in 0..lz77length {
@@ -63,5 +59,5 @@ pub fn decompress_lz77(data: &[u8]) -> io::Result<Vec<u8>> {
         }
     }
 
-    Ok(text)
+    text
 }
