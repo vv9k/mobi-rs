@@ -2,33 +2,32 @@ use super::HeaderField;
 use crate::Reader;
 use std::{collections::HashMap, io};
 
-const RECORDS_OFFSET: u16 = 340;
+const RECORDS_OFFSET: u16 = 108;
 
 // Records available in EXTH header
 pub(crate) enum ExthRecord {
-    Author,
-    Publisher,
-    Description,
-    Isbn,
-    PublishDate,
-    Contributor,
-    Title,
+    Author = 100,
+    Publisher = 101,
+    Description = 103,
+    Isbn = 104,
+    PublishDate = 106,
+    Contributor = 108,
+    Title = 503,
 }
+
 /// Parameters of Exth Header
 pub(crate) enum ExtHeaderData {
-    Identifier,
-    HeaderLength,
-    RecordCount,
+    Identifier = 96,
+    HeaderLength = 100,
+    RecordCount = 104,
 }
+
 impl HeaderField for ExtHeaderData {
     fn position(self) -> u64 {
-        match self {
-            ExtHeaderData::Identifier => 328,
-            ExtHeaderData::HeaderLength => 332,
-            ExtHeaderData::RecordCount => 336,
-        }
+        self as u64
     }
 }
+
 #[derive(Debug, Default, PartialEq)]
 /// Optional header containing extended information. If the MOBI header
 /// indicates that there's an EXTH header, it follows immediately after
@@ -39,50 +38,47 @@ pub struct ExtHeader {
     pub record_count: u32,
     pub records: HashMap<u32, String>,
 }
+
 impl ExtHeader {
     /// Parse a EXTH header from the content
-    pub(crate) fn parse(mut reader: &mut Reader) -> io::Result<ExtHeader> {
+    pub(crate) fn parse(mut reader: &mut Reader, header_length: u32) -> io::Result<ExtHeader> {
         use ExtHeaderData::*;
 
+        let header_length = header_length as u64;
         let mut extheader = ExtHeader {
-            identifier: reader.read_u32_header(Identifier)?,
-            header_length: reader.read_u32_header(HeaderLength)?,
-            record_count: reader.read_u32_header(RecordCount)?,
+            identifier: reader.read_u32_header_offset(Identifier.position() + header_length)?,
+            header_length: reader.read_u32_header_offset(HeaderLength.position() + header_length)?,
+            record_count: reader.read_u32_header_offset(RecordCount.position() + header_length)?,
             records: HashMap::new(),
         };
-        extheader.get_records(&mut reader);
+
+        extheader.populate_records(&mut reader, header_length);
         Ok(extheader)
     }
+
     /// Gets header records
-    fn get_records(&mut self, reader: &mut Reader) {
-        let mut records = HashMap::new();
-        let position: u64 = RECORDS_OFFSET as u64 + u64::from(reader.num_of_records * 8);
+    fn populate_records(&mut self, reader: &mut Reader, header_length: u64) {
+        let position = RECORDS_OFFSET as u64 + u64::from(reader.num_of_records * 8) + header_length;
+
         reader.set_position(position);
+
         for _i in 0..self.record_count {
-            let mut record_data = vec![];
             let record_type = reader.read_u32_be().unwrap_or(0);
             let record_len = reader.read_u32_be().unwrap_or(0);
+
+            let mut record_data = Vec::with_capacity(record_len as usize - 8);
             for _j in 0..record_len - 8 {
                 record_data.push(reader.read_u8().unwrap_or(0));
             }
-            records.insert(
+            self.records.insert(
                 record_type,
                 String::from_utf8_lossy(&record_data[..]).to_owned().to_string(),
             );
         }
-        self.records = records;
     }
+
     pub(crate) fn get_record(&self, record: ExthRecord) -> Option<&String> {
-        let record: u32 = match record {
-            ExthRecord::Author => 100,
-            ExthRecord::Publisher => 101,
-            ExthRecord::Description => 103,
-            ExthRecord::Isbn => 104,
-            ExthRecord::PublishDate => 106,
-            ExthRecord::Contributor => 108,
-            ExthRecord::Title => 503,
-        };
-        self.records.get(&record)
+        self.records.get(&(record as u32))
     }
 }
 
@@ -90,6 +86,8 @@ impl ExtHeader {
 mod tests {
     use super::*;
     use crate::book;
+    use crate::headers::MobiHeader;
+
     #[test]
     fn parse() {
         let records: HashMap<u32, String> = [
@@ -113,9 +111,11 @@ mod tests {
             records,
         };
         let mut reader = book::test_reader_after_header();
-        let parsed_header = ExtHeader::parse(&mut reader).unwrap();
+        let mobi = MobiHeader::parse(&mut reader).unwrap();
+        let parsed_header = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
         assert_eq!(extheader, parsed_header);
     }
+
     mod records {
         use super::*;
         use crate::book;
@@ -123,35 +123,43 @@ mod tests {
             ($t: ident, $s: expr) => {
                 let mut reader = book::test_reader();
                 reader.set_num_of_records(292);
-                let exth = ExtHeader::parse(&mut reader).unwrap();
+                let mobi = MobiHeader::parse(&mut reader).unwrap();
+                let exth = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
                 let data = exth.get_record(ExthRecord::$t);
                 assert_eq!(data, Some(&String::from($s)));
             };
         }
+
         #[test]
         fn author() {
             info!(Author, "J. R. R. Tolkien");
         }
+
         #[test]
         fn publisher() {
             info!(Publisher, "HarperCollins Publishers Ltd");
         }
+
         #[test]
         fn description() {
             info!(Description, "<h3>From Library Journal</h3><p>New Line Cinema will be releasing \"The Lord of the Rings\" trilogy in three separate installments, and Houghton Mifflin Tolkien\'s U.S. publisher since the release of The Hobbit in 1938 will be re-releasing each volume of the trilogy separately and in a boxed set (ISBN 0-618-15397-7. $22; pap. ISBN 0-618-15396-9. $12). <br />Copyright 2001 Reed Business Information, Inc. </p><h3>Review</h3><p>\'An extraordinary book. It deals with a stupendous theme. It leads us through a succession of strange and astonishing episodes, some of them magnificent, in a region where everything is invented, forest, moor, river, wilderness, town and the races which inhabit them.\' The Observer \'Among the greatest works of imaginative fiction of the twentieth century.\' Sunday Telegraph </p>");
         }
+
         #[test]
         fn isbn() {
             info!(Isbn, "9780261102316");
         }
+
         #[test]
         fn publish_date() {
             info!(PublishDate, "2010-12-21T00:00:00+00:00");
         }
+
         #[test]
         fn contributor() {
             info!(Contributor, "calibre (0.7.31) [http://calibre-ebook.com]");
         }
+
         #[test]
         fn title() {
             info!(Title, "Lord of the Rings - Fellowship of the Ring");
