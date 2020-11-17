@@ -27,7 +27,7 @@ pub fn decompress_lz77(data: &[u8]) -> Vec<u8> {
                     return text;
                 }
 
-                let mut lz77 = u16::from_be_bytes([byte, text[offset-1]]);
+                let mut lz77 = u16::from_be_bytes([byte, text[offset - 1]]);
 
                 lz77 &= 0x3fff; // Leftmost two bits are ID bits and need to be dropped
                 let lz77length = (lz77 & 0x0007) + 3; // Length is  rightmost three bits + 3
