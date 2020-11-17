@@ -39,9 +39,9 @@ impl Record {
                 if record_data_offset < content.len() as u32
                     && record_data_offset < next_record_data_offset - extra_bytes
                 {
-                    lz77::decompress_lz77(
+                    Ok(lz77::decompress_lz77(
                         &content[record_data_offset as usize..(next_record_data_offset - extra_bytes) as usize],
-                    )
+                    ))
                 } else {
                     Err(io::Error::new(
                         ErrorKind::NotFound,
