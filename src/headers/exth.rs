@@ -41,10 +41,6 @@ pub struct ExtHeader {
 
 impl ExtHeader {
     /// Parse a EXTH header from the content
-    pub(crate) fn parse_no_hint(reader: &mut Reader) -> io::Result<ExtHeader> {
-        ExtHeader::parse(reader, 232)
-    }
-
     pub(crate) fn parse(mut reader: &mut Reader, header_length: u32) -> io::Result<ExtHeader> {
         use ExtHeaderData::*;
 
@@ -90,6 +86,8 @@ impl ExtHeader {
 mod tests {
     use super::*;
     use crate::book;
+    use crate::headers::MobiHeader;
+
     #[test]
     fn parse() {
         let records: HashMap<u32, String> = [
@@ -113,9 +111,11 @@ mod tests {
             records,
         };
         let mut reader = book::test_reader_after_header();
-        let parsed_header = ExtHeader::parse_no_hint(&mut reader).unwrap();
+        let mobi = MobiHeader::parse(&mut reader).unwrap();
+        let parsed_header = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
         assert_eq!(extheader, parsed_header);
     }
+
     mod records {
         use super::*;
         use crate::book;
@@ -123,35 +123,43 @@ mod tests {
             ($t: ident, $s: expr) => {
                 let mut reader = book::test_reader();
                 reader.set_num_of_records(292);
-                let exth = ExtHeader::parse_no_hint(&mut reader).unwrap();
+                let mobi = MobiHeader::parse(&mut reader).unwrap();
+                let exth = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
                 let data = exth.get_record(ExthRecord::$t);
                 assert_eq!(data, Some(&String::from($s)));
             };
         }
+
         #[test]
         fn author() {
             info!(Author, "J. R. R. Tolkien");
         }
+
         #[test]
         fn publisher() {
             info!(Publisher, "HarperCollins Publishers Ltd");
         }
+
         #[test]
         fn description() {
             info!(Description, "<h3>From Library Journal</h3><p>New Line Cinema will be releasing \"The Lord of the Rings\" trilogy in three separate installments, and Houghton Mifflin Tolkien\'s U.S. publisher since the release of The Hobbit in 1938 will be re-releasing each volume of the trilogy separately and in a boxed set (ISBN 0-618-15397-7. $22; pap. ISBN 0-618-15396-9. $12). <br />Copyright 2001 Reed Business Information, Inc. </p><h3>Review</h3><p>\'An extraordinary book. It deals with a stupendous theme. It leads us through a succession of strange and astonishing episodes, some of them magnificent, in a region where everything is invented, forest, moor, river, wilderness, town and the races which inhabit them.\' The Observer \'Among the greatest works of imaginative fiction of the twentieth century.\' Sunday Telegraph </p>");
         }
+
         #[test]
         fn isbn() {
             info!(Isbn, "9780261102316");
         }
+
         #[test]
         fn publish_date() {
             info!(PublishDate, "2010-12-21T00:00:00+00:00");
         }
+
         #[test]
         fn contributor() {
             info!(Contributor, "calibre (0.7.31) [http://calibre-ebook.com]");
         }
+
         #[test]
         fn title() {
             info!(Title, "Lord of the Rings - Fellowship of the Ring");
