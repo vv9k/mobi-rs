@@ -92,9 +92,11 @@ impl PalmDocHeader {
     pub(crate) fn compression(&self) -> String {
         Compression::from(self.compression).to_string()
     }
+
     pub(crate) fn encryption(&self) -> String {
         Encryption::from(self.encryption_type).to_string()
     }
+
     pub(crate) fn compression_enum(&self) -> Compression {
         Compression::from(self.compression)
     }
@@ -104,6 +106,7 @@ impl PalmDocHeader {
 mod tests {
     use super::*;
     use crate::book;
+
     #[test]
     fn parse() {
         let pdheader = PalmDocHeader {
@@ -118,6 +121,7 @@ mod tests {
 
         assert_eq!(pdheader, PalmDocHeader::parse(&mut reader).unwrap());
     }
+
     mod compression_type {
         use super::*;
         macro_rules! compression {
@@ -140,6 +144,7 @@ mod tests {
             compression!(17480, "HUFF/CFIC Compression");
         }
     }
+
     mod encryption_type {
         use super::*;
         macro_rules! encryption {
