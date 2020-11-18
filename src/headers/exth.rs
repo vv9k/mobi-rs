@@ -134,8 +134,16 @@ impl ExtHeader {
         Ok(())
     }
 
-    pub(crate) fn get_record(&self, record: ExthRecord) -> Option<&Vec<u8>> {
-        self.records.get(&(record as u32))
+    /// Returns exth record data located at position. This is a low level function intended
+    /// to use with wrapper get_record, but exposed for convienience.
+    pub fn get_record_position(&self, position: u32) -> Option<&Vec<u8>> {
+        self.records.get(&position)
+    }
+
+    /// Returns exth record data. This function limits possible queried records to only those
+    /// commonly available among mobi ebooks.
+    pub fn get_record(&self, record: ExthRecord) -> Option<&Vec<u8>> {
+        self.get_record_position(record as u32)
     }
 
     pub(crate) fn get_record_string_lossy(&self, record: ExthRecord) -> Option<String> {
