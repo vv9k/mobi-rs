@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use super::HeaderField;
 use crate::Reader;
 use std::{collections::HashMap, io};
@@ -6,13 +7,70 @@ const RECORDS_OFFSET: u64 = 108;
 
 // Records available in EXTH header
 pub(crate) enum ExthRecord {
+    // source - https://wiki.mobileread.com/wiki/MOBI#EXTH_Header
+    DrmServerId = 1,
+    DrmCommerceId = 2,
+    DrmEbookbaseBookId = 3,
     Author = 100,
     Publisher = 101,
+    Imprint = 102,
     Description = 103,
     Isbn = 104,
+    Subject = 105,
     PublishDate = 106,
+    Review = 107,
     Contributor = 108,
+    Rights = 109,
+    Subjectcode = 110,
+    Type = 111,
+    Source = 112,
+    Asin = 113,
+    VersionNumber = 114,
+    /// 0x0001 if the book content is only a sample of the full book
+    Sample = 115,
+    /// Position (4-byte offset) in file at which to open when first opened
+    Startreading = 116,
+    /// Mobipocket Creator adds this if Adult only is checked on its GUI; contents: "yes"
+    Adult = 117,
+    /// As text, e.g. "4.99"
+    RetailPrice = 118,
+    /// As text, e.g. "USD"
+    RetailPriceCurrency = 119,
+    KF8BoundaryOffset = 121,
+    CountOfResources = 125,
+    KF8CoverURI = 129,
+    DictionaryShortName = 200,
+    /// Add to first image field in Mobi Header to find PDB record containing the cover image
+    CoverOffset = 201,
+    /// Add to first image field in Mobi Header to find PDB record containing the thumbnail cover image
+    ThumbOffset = 202,
+    HasFakeCover = 203,
+    ///Known Values: 1=mobigen, 2=Mobipocket Creator, 200=kindlegen (Windows), 201=kindlegen (Linux), 202=kindlegen (Mac). Warning: Calibre creates fake creator entries, pretending to be a Linux kindlegen 1.2 (201, 1, 2, 33307) for normal ebooks and a non-public Linux kindlegen 2.0 (201, 2, 0, 101) for periodicals.
+    CreatorSoftware = 204,
+    CreatoreMajorVersion = 205,
+    CreatorMinorVersion = 206,
+    CreatorBuildNumber = 207,
+    Watermark = 208,
+    /// Used by the Kindle (and Android app) for generating book-specific PIDs.
+    TamperProofKeys = 209,
+    FontSignature = 300,
+    /// Integer percentage of the text allowed to be clipped. Usually 10.
+    ClippingLimit = 401,
+    PublisherLimit = 402,
+    /// 1 - Text to Speech disabled; 0 - Text to Speech enabled
+    TtsFlag = 404,
+
+    // This fields are unsure
+    /// 1 in this field seems to indicate a rental book
+    IsRented = 405,
+    /// If this field is removed from a rental, the book says it expired in 1969
+    BorrowExpirationDate = 406,
+    //
+    ///PDOC - Personal Doc; EBOK - ebook; EBSP - ebook sample;
+    Cdetype = 501,
+    LastUpdateTime = 502,
     Title = 503,
+    Language = 524,
 }
 
 /// Parameters of Exth Header
