@@ -70,14 +70,21 @@ impl MobiMetadata {
     //################################################################################//
     // Not available in Mobi
 
-    /// Returns raw ExthRecord data located at appropriate position if it exists.
+    /// Returns raw ExthRecord data located at appropriate position if it exists. It is
+    /// highly recommended to use public api provided here to access those records but
+    /// in case where lower level access is needed this method provides access to all fields.
     pub fn exth_record(&self, record: ExthRecord) -> Option<&Vec<u8>> {
         self.exth.get_record(record)
     }
 
-    /// Returns raw ExthRecord data located at passed position if it exists. If
-    /// unsure where the wanted record is located at use exth_record method that
+    /// Returns raw ExthRecord data located at passed position if it exists.
+    ///
+    /// If unsure where the wanted record is located at use exth_record method that
     /// limits possible position to those commonly available on mobi books.
+    ///
+    /// It is highly recommended to instead use public api provided here to access
+    /// those records but in case where lower level access is needed this method
+    /// provides access to all fields.
     pub fn exth_record_at(&self, position: u32) -> Option<&Vec<u8>> {
         self.exth.get_record_position(position)
     }
