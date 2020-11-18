@@ -20,6 +20,7 @@ impl<'r> Reader<'r> {
         self.cursor.clone().into_inner().to_vec()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn content_ref(&self) -> &[u8] {
         self.cursor.clone().into_inner()
     }
