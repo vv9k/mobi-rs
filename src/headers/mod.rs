@@ -4,7 +4,7 @@ pub(crate) mod mobih;
 pub(crate) mod palmdoch;
 
 pub use self::{
-    exth::ExtHeader,
+    exth::{ExtHeader, ExthRecord},
     header::Header,
     mobih::{MobiHeader, TextEncoding},
     palmdoch::PalmDocHeader,
@@ -66,6 +66,24 @@ impl MobiMetadata {
             exth,
         })
     }
+
+    //################################################################################//
+    // Not available in Mobi
+
+    /// Returns raw ExthRecord data located at appropriate position if it exists.
+    pub fn exth_record(&self, record: ExthRecord) -> Option<&Vec<u8>> {
+        self.exth.get_record(record)
+    }
+
+    /// Returns raw ExthRecord data located at passed position if it exists. If
+    /// unsure where the wanted record is located at use exth_record method that
+    /// limits possible position to those commonly available on mobi books.
+    pub fn exth_record_at(&self, position: u32) -> Option<&Vec<u8>> {
+        self.exth.get_record_position(position)
+    }
+
+    //################################################################################//
+    // Available in Mobi
 
     /// Returns an author of this book
     pub fn author(&self) -> Option<String> {
