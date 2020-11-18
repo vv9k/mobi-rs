@@ -52,8 +52,8 @@ pub(crate) mod lz77;
 pub(crate) mod reader;
 pub(crate) mod record;
 #[cfg(feature = "time")]
-use chrono::prelude::*;
-use headers::{exth, Metadata, TextEncoding};
+use chrono::NaiveDateTime;
+use headers::{Metadata, TextEncoding};
 pub(crate) use reader::Reader;
 pub use record::Record;
 use std::{fs, io, io::Read, ops::Range, path::Path};
@@ -92,87 +92,87 @@ impl Mobi {
 
     /// Returns an author of this book
     pub fn author(&self) -> Option<&String> {
-        self.metadata.exth.get_record(exth::ExthRecord::Author)
+        self.metadata.author()
     }
 
     /// Returns this books publisher
     pub fn publisher(&self) -> Option<&String> {
-        self.metadata.exth.get_record(exth::ExthRecord::Publisher)
+        self.metadata.publisher()
     }
 
     /// Returns description record if such exists
     pub fn description(&self) -> Option<&String> {
-        self.metadata.exth.get_record(exth::ExthRecord::Description)
+        self.metadata.description()
     }
 
     /// Returns isbn record if such exists
     pub fn isbn(&self) -> Option<&String> {
-        self.metadata.exth.get_record(exth::ExthRecord::Isbn)
+        self.metadata.isbn()
     }
 
     /// Returns publish_date record if such exists
     pub fn publish_date(&self) -> Option<&String> {
-        self.metadata.exth.get_record(exth::ExthRecord::PublishDate)
+        self.metadata.publish_date()
     }
 
     /// Returns contributor record if such exists
     pub fn contributor(&self) -> Option<&String> {
-        self.metadata.exth.get_record(exth::ExthRecord::Contributor)
+        self.metadata.contributor()
     }
 
     /// Returns title record if such exists
     pub fn title(&self) -> Option<&String> {
-        self.metadata.exth.get_record(exth::ExthRecord::Title)
+        self.metadata.title()
     }
 
     /// Returns text encoding used in ebook
     pub fn text_encoding(&self) -> TextEncoding {
-        self.metadata.mobi.text_encoding()
+        self.metadata.text_encoding()
     }
 
     /// Returns type of this ebook
     pub fn mobi_type(&self) -> Option<String> {
-        self.metadata.mobi.mobi_type()
+        self.metadata.mobi_type()
     }
 
     /// Returns language of the ebook
     pub fn language(&self) -> Option<String> {
-        self.metadata.mobi.language()
+        self.metadata.language()
     }
 
     #[cfg(feature = "time")]
     /// Returns creation datetime
     /// This field is only available using `time` feature
     pub fn created_datetime(&self) -> NaiveDateTime {
-        self.metadata.header.created_datetime()
+        self.metadata.created_datetime()
     }
 
     #[cfg(feature = "time")]
     /// Returns modification datetime
     /// This field is only available using `time` feature
     pub fn mod_datetime(&self) -> NaiveDateTime {
-        self.metadata.header.mod_datetime()
+        self.metadata.mod_datetime()
     }
 
     #[cfg(not(feature = "time"))]
     /// Returns creation time as u32 timestamp
     pub fn created_time(&self) -> u32 {
-        self.metadata.header.created_datetime()
+        self.metadata.created_time()
     }
 
     #[cfg(not(feature = "time"))]
     /// Returns last modification time as u32 timestamp
     pub fn mod_time(&self) -> u32 {
-        self.metadata.header.mod_datetime()
+        self.metadata.mod_time()
     }
 
     /// Returns compression method used on this file
     pub fn compression(&self) -> String {
-        self.metadata.palmdoc.compression()
+        self.metadata.compression()
     }
     /// Returns encryption method used on this file
     pub fn encryption(&self) -> String {
-        self.metadata.palmdoc.encryption()
+        self.metadata.encryption()
     }
 
     /// Returns last readable index of the book
