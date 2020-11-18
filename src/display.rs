@@ -1,5 +1,6 @@
 #![cfg(feature = "fmt")]
-use super::{ExtHeader, Header, Mobi, MobiHeader, PalmDocHeader, TextEncoding};
+use super::headers::{ExtHeader, Header, MobiHeader, PalmDocHeader};
+use super::{Mobi, TextEncoding};
 use std::fmt;
 
 impl fmt::Display for ExtHeader {
@@ -212,10 +213,10 @@ Contributor:            {}
             self.isbn().unwrap_or(&empty_str),
             self.publish_date().unwrap_or(&empty_str),
             self.contributor().unwrap_or(&empty_str),
-            self.header,
-            self.palmdoc,
-            self.mobi,
-            self.exth,
+            self.metadata.header,
+            self.metadata.palmdoc,
+            self.metadata.mobi,
+            self.metadata.exth,
         )
     }
 }
