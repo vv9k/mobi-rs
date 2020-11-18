@@ -24,30 +24,30 @@ pub(crate) trait HeaderField {
 
 #[derive(Debug, Default)]
 /// Holds all headers containing low level metadata of a mobi book
-pub struct Metadata {
+pub struct MobiMetadata {
     pub header: Header,
     pub palmdoc: PalmDocHeader,
     pub mobi: MobiHeader,
     pub exth: ExtHeader,
 }
-impl Metadata {
+impl MobiMetadata {
     /// Construct a Metadata object from a slice of bytes
-    pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<Metadata> {
-        Metadata::from_reader(&mut Reader::new(bytes.as_ref()))
+    pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<MobiMetadata> {
+        MobiMetadata::from_reader(&mut Reader::new(bytes.as_ref()))
     }
 
     /// Construct a Metadata object from passed file path
-    pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<Metadata> {
-        Metadata::new(&fs::read(file_path)?)
+    pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<MobiMetadata> {
+        MobiMetadata::new(&fs::read(file_path)?)
     }
 
     /// Construct a Metadata object from an object that implements a Read trait
-    pub fn from_read<R: Read>(reader: R) -> io::Result<Metadata> {
+    pub fn from_read<R: Read>(reader: R) -> io::Result<MobiMetadata> {
         let content: Vec<_> = reader.bytes().flatten().collect();
-        Metadata::from_reader(&mut Reader::new(&content))
+        MobiMetadata::from_reader(&mut Reader::new(&content))
     }
 
-    pub(crate) fn from_reader(mut reader: &mut Reader) -> io::Result<Metadata> {
+    pub(crate) fn from_reader(mut reader: &mut Reader) -> io::Result<MobiMetadata> {
         let header = Header::parse(&mut reader)?;
         reader.set_num_of_records(header.num_of_records);
         let palmdoc = PalmDocHeader::parse(&mut reader)?;
@@ -59,7 +59,7 @@ impl Metadata {
                 ExtHeader::default()
             }
         };
-        Ok(Metadata {
+        Ok(MobiMetadata {
             header,
             palmdoc,
             mobi,

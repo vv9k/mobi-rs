@@ -45,7 +45,7 @@
 /// Module with headers from book containg more extracted data not
 /// available through public API.
 pub mod headers;
-pub use headers::Metadata;
+pub use headers::MobiMetadata;
 pub use record::Record;
 
 pub(crate) mod book;
@@ -64,7 +64,7 @@ use std::{fs, io, io::Read, ops::Range, path::Path};
 /// Structure that holds parsed ebook information and contents
 pub struct Mobi {
     pub content: Vec<u8>,
-    pub metadata: Metadata,
+    pub metadata: MobiMetadata,
 }
 impl Mobi {
     /// Construct a Mobi object from a slice of bytes
@@ -85,7 +85,7 @@ impl Mobi {
     }
 
     fn from_reader(mut reader: Reader) -> io::Result<Mobi> {
-        let metadata = Metadata::from_reader(&mut reader)?;
+        let metadata = MobiMetadata::from_reader(&mut reader)?;
         Ok(Mobi {
             content: reader.content(),
             metadata,
