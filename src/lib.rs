@@ -19,15 +19,14 @@
 //!     // Or from filesystem
 //!     let m = Mobi::from_path("/some/path/to/book.mobi")?;
 //!
-//!     let empty = "".to_string();
 //!     // Access metadata
-//!     let title = m.title().unwrap_or(&empty);
-//!     let author = m.author().unwrap_or(&empty);
-//!     let publisher = m.publisher().unwrap_or(&empty);
-//!     let desc = m.description().unwrap_or(&empty);
-//!     let isbn = m.isbn().unwrap_or(&empty);
-//!     let pub_date = m.publish_date().unwrap_or(&empty);
-//!     let contributor = m.contributor().unwrap_or(&empty);
+//!     let title = m.title().unwrap_or_default();
+//!     let author = m.author().unwrap_or_default();
+//!     let publisher = m.publisher().unwrap_or_default();
+//!     let desc = m.description().unwrap_or_default();
+//!     let isbn = m.isbn().unwrap_or_default();
+//!     let pub_date = m.publish_date().unwrap_or_default();
+//!     let contributor = m.contributor().unwrap_or_default();
 //!
 //!     // Access Headers
 //!     let metadata = &m.metadata;
@@ -94,37 +93,37 @@ impl Mobi {
     }
 
     /// Returns an author of this book
-    pub fn author(&self) -> Option<&String> {
+    pub fn author(&self) -> Option<String> {
         self.metadata.author()
     }
 
     /// Returns this books publisher
-    pub fn publisher(&self) -> Option<&String> {
+    pub fn publisher(&self) -> Option<String> {
         self.metadata.publisher()
     }
 
     /// Returns description record if such exists
-    pub fn description(&self) -> Option<&String> {
+    pub fn description(&self) -> Option<String> {
         self.metadata.description()
     }
 
     /// Returns isbn record if such exists
-    pub fn isbn(&self) -> Option<&String> {
+    pub fn isbn(&self) -> Option<String> {
         self.metadata.isbn()
     }
 
     /// Returns publish_date record if such exists
-    pub fn publish_date(&self) -> Option<&String> {
+    pub fn publish_date(&self) -> Option<String> {
         self.metadata.publish_date()
     }
 
     /// Returns contributor record if such exists
-    pub fn contributor(&self) -> Option<&String> {
+    pub fn contributor(&self) -> Option<String> {
         self.metadata.contributor()
     }
 
     /// Returns title record if such exists
-    pub fn title(&self) -> Option<&String> {
+    pub fn title(&self) -> Option<String> {
         self.metadata.title()
     }
 

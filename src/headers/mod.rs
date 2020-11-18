@@ -68,38 +68,38 @@ impl Metadata {
     }
 
     /// Returns an author of this book
-    pub fn author(&self) -> Option<&String> {
-        self.exth.get_record(exth::ExthRecord::Author)
+    pub fn author(&self) -> Option<String> {
+        self.exth.get_record_string_lossy(exth::ExthRecord::Author)
     }
 
     /// Returns this books publisher
-    pub fn publisher(&self) -> Option<&String> {
-        self.exth.get_record(exth::ExthRecord::Publisher)
+    pub fn publisher(&self) -> Option<String> {
+        self.exth.get_record_string_lossy(exth::ExthRecord::Publisher)
     }
 
     /// Returns description record if such exists
-    pub fn description(&self) -> Option<&String> {
-        self.exth.get_record(exth::ExthRecord::Description)
+    pub fn description(&self) -> Option<String> {
+        self.exth.get_record_string_lossy(exth::ExthRecord::Description)
     }
 
     /// Returns isbn record if such exists
-    pub fn isbn(&self) -> Option<&String> {
-        self.exth.get_record(exth::ExthRecord::Isbn)
+    pub fn isbn(&self) -> Option<String> {
+        self.exth.get_record_string_lossy(exth::ExthRecord::Isbn)
     }
 
     /// Returns publish_date record if such exists
-    pub fn publish_date(&self) -> Option<&String> {
-        self.exth.get_record(exth::ExthRecord::PublishDate)
+    pub fn publish_date(&self) -> Option<String> {
+        self.exth.get_record_string_lossy(exth::ExthRecord::PublishDate)
     }
 
     /// Returns contributor record if such exists
-    pub fn contributor(&self) -> Option<&String> {
-        self.exth.get_record(exth::ExthRecord::Contributor)
+    pub fn contributor(&self) -> Option<String> {
+        self.exth.get_record_string_lossy(exth::ExthRecord::Contributor)
     }
 
     /// Returns title record if such exists
-    pub fn title(&self) -> Option<&String> {
-        self.exth.get_record(exth::ExthRecord::Title)
+    pub fn title(&self) -> Option<String> {
+        self.exth.get_record_string_lossy(exth::ExthRecord::Title)
     }
 
     /// Returns text encoding used in ebook
