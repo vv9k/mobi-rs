@@ -53,45 +53,10 @@ pub(crate) mod reader;
 pub(crate) mod record;
 #[cfg(feature = "time")]
 use chrono::prelude::*;
-use headers::{exth, ExtHeader, Header, MobiHeader, PalmDocHeader, TextEncoding};
+use headers::{exth, Metadata, TextEncoding};
 pub(crate) use reader::Reader;
 pub use record::Record;
 use std::{fs, io, io::Read, ops::Range, path::Path};
-
-#[derive(Debug, Default)]
-/// Holds all headers containing low level metadata of a mobi book
-pub struct Metadata {
-    pub header: Header,
-    pub palmdoc: PalmDocHeader,
-    pub mobi: MobiHeader,
-    pub exth: ExtHeader,
-}
-impl Metadata {
-    /// Construct a Metadata object from a slice of bytes
-    pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<Metadata> {
-        Metadata::from_reader(&mut Reader::new(bytes.as_ref()))
-    }
-
-    fn from_reader(mut reader: &mut Reader) -> io::Result<Metadata> {
-        let header = Header::parse(&mut reader)?;
-        reader.set_num_of_records(header.num_of_records);
-        let palmdoc = PalmDocHeader::parse(&mut reader)?;
-        let mobi = MobiHeader::parse(&mut reader)?;
-        let exth = {
-            if mobi.has_exth_header {
-                ExtHeader::parse(&mut reader, mobi.header_length)?
-            } else {
-                ExtHeader::default()
-            }
-        };
-        Ok(Metadata {
-            header,
-            palmdoc,
-            mobi,
-            exth,
-        })
-    }
-}
 
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
