@@ -42,20 +42,23 @@
 //!     Ok(())
 //! }
 //! ```
-pub(crate) mod book;
-#[cfg(feature = "fmt")]
-mod display;
+
 /// Module with headers from book containg more extracted data not
 /// available through public API.
 pub mod headers;
+pub use headers::Metadata;
+pub use record::Record;
+
+pub(crate) mod book;
+#[cfg(feature = "fmt")]
+mod display;
 pub(crate) mod lz77;
 pub(crate) mod reader;
 pub(crate) mod record;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
-use headers::{Metadata, TextEncoding};
+use headers::TextEncoding;
 pub(crate) use reader::Reader;
-pub use record::Record;
 use std::{fs, io, io::Read, ops::Range, path::Path};
 
 #[derive(Debug, Default)]
