@@ -6,7 +6,7 @@ use std::{collections::HashMap, io};
 const RECORDS_OFFSET: u64 = 108;
 
 // Records available in EXTH header
-pub(crate) enum ExthRecord {
+pub enum ExthRecord {
     // source - https://wiki.mobileread.com/wiki/MOBI#EXTH_Header
     DrmServerId = 1,
     DrmCommerceId = 2,
