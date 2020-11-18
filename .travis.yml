@@ -1,7 +1,12 @@
 language: rust
-
+rust:
+  - stable
+  - 1.40.0
+  
 os:
   - linux
+  - windows
+  - osx
 
 before_install:
   - rustup component add clippy rustfmt
