@@ -199,20 +199,19 @@ impl Mobi {
     /// There are only two supported encodings in mobi format (UTF8, WIN1252)
     /// and both are losely converted by this function
     pub fn content_as_string(&self) -> io::Result<String> {
-        let records = self.records()?;
-        Ok(self
-            .readable_records_range()
-            .map(|i| records[i as usize].to_string(self.text_encoding()))
+        Ok(self.records()?[self.readable_records_range()]
+            .iter()
+            .map(|record| record.to_string(self.text_encoding()))
             .collect())
     }
 
     /// Returns all readable records content decompressed as a Vec
     pub fn content(&self) -> io::Result<Vec<u8>> {
-        let records = self.records()?;
-        Ok(self
-            .readable_records_range()
-            .map(|i| records[i as usize].record_data.clone())
-            .flatten()
-            .collect())
+        let records = &self.records()?[self.readable_records_range()];
+        let mut record_data = Vec::with_capacity(records.iter().map(|r| r.record_data.len()).sum());
+        for record in records {
+            record_data.extend_from_slice(&record.record_data);
+        }
+        Ok(record_data)
     }
 }

@@ -55,51 +55,59 @@ impl Record {
     }
 
     /// Parses a record from the reader at current position
-    fn parse_record(reader: &mut Cursor<&[u8]>) -> io::Result<Record> {
-        Ok(Record {
-            record_data_offset: reader.read_u32::<BigEndian>()?,
-            id: reader.read_u32::<BigEndian>()?,
-            record_data: Vec::new(),
-            length: 0,
-        })
+    fn parse_record_info(reader: &mut Cursor<&[u8]>) -> io::Result<(u32, u32)> {
+        Ok((reader.read_u32::<BigEndian>()?, reader.read_u32::<BigEndian>()?))
     }
 
     /// Gets all records in the specified content
     pub(crate) fn parse_records(
         content: &[u8],
-        num_of_records: u16,
+        num_records: u16,
         _extra_bytes: u32,
         compression_type: Compression,
     ) -> io::Result<Vec<Record>> {
-        let mut records_content = vec![];
         let mut reader = Cursor::new(content);
         reader.set_position(RECORDS_START_INDEX);
-        for _i in 0..num_of_records {
-            records_content.push(Record::parse_record(&mut reader)?);
-        }
-        for i in 0..records_content.len() {
-            let mut current_rec = records_content[i].clone();
-            if i != records_content.len() - 1 {
-                let next_offset = records_content[i + 1].record_data_offset;
-                if _extra_bytes < next_offset {
-                    current_rec.record_data = match Record::record_data(
-                        current_rec.record_data_offset,
-                        next_offset,
-                        _extra_bytes,
-                        &compression_type,
-                        content,
-                    ) {
-                        Ok(record) => record,
-                        Err(_) => Vec::new(),
-                    };
 
-                    current_rec.length = current_rec.record_data.len();
-                }
-                records_content.insert(i, current_rec);
-                records_content.remove(i + 1);
-            }
+        let mut record_info = vec![];
+
+        for _i in 0..num_records {
+            record_info.push(Record::parse_record_info(&mut reader)?);
         }
-        Ok(records_content)
+
+        let mut new_records = vec![];
+        for records in record_info.windows(2) {
+            let (curr_offset, id) = records[0];
+            let (next_offset, _) = records[1];
+            let record_data = if _extra_bytes < next_offset {
+                match Record::record_data(curr_offset, next_offset, _extra_bytes, &compression_type, content) {
+                    Ok(record) => record,
+                    Err(_) => Vec::new(),
+                }
+            } else {
+                Vec::new()
+            };
+
+            let record = Record {
+                record_data_offset: curr_offset,
+                id,
+                length: record_data.len(),
+                record_data,
+            };
+
+            new_records.push(record);
+        }
+
+        if let Some(&(record_data_offset, id)) = record_info.last() {
+            new_records.push(Record {
+                record_data_offset,
+                id,
+                record_data: vec![],
+                length: 0,
+            });
+        }
+
+        Ok(new_records)
     }
 
     pub(crate) fn to_string(&self, encoding: TextEncoding) -> String {

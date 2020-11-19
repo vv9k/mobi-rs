@@ -185,7 +185,6 @@ Flis record:            {}",
 
 impl fmt::Display for Mobi {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let empty_str = String::from("");
         write!(
             f,
             "
@@ -206,13 +205,13 @@ Contributor:            {}
 ------------------------------------------------------------------------------------
 {}
 ------------------------------------------------------------------------------------",
-            self.title().unwrap_or(&empty_str),
-            self.author().unwrap_or(&empty_str),
-            self.publisher().unwrap_or(&empty_str),
-            self.description().unwrap_or(&empty_str),
-            self.isbn().unwrap_or(&empty_str),
-            self.publish_date().unwrap_or(&empty_str),
-            self.contributor().unwrap_or(&empty_str),
+            self.title().unwrap_or_default(),
+            self.author().unwrap_or_default(),
+            self.publisher().unwrap_or_default(),
+            self.description().unwrap_or_default(),
+            self.isbn().unwrap_or_default(),
+            self.publish_date().unwrap_or_default(),
+            self.contributor().unwrap_or_default(),
             self.metadata.header,
             self.metadata.palmdoc,
             self.metadata.mobi,
