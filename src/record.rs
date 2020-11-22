@@ -3,6 +3,7 @@ use crate::headers::palmdoch::Compression;
 use byteorder::{BigEndian, ReadBytesExt};
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
 use std::borrow::Cow;
+use std::error::Error;
 use std::fmt;
 use std::io::{self, Cursor, ErrorKind};
 
@@ -23,6 +24,8 @@ impl fmt::Display for DecodeError {
         }
     }
 }
+
+impl Error for DecodeError {}
 
 #[derive(Debug, Clone)]
 /// A "cell" in the whole books content
