@@ -134,4 +134,15 @@ impl Record {
             TextEncoding::CP1252 => WINDOWS_1252.decode(&self.record_data, DecoderTrap::Ignore).unwrap(),
         }
     }
+
+    pub(crate) fn to_string(&self, encoding: TextEncoding) -> Result<String, DecodeError> {
+        match encoding {
+            TextEncoding::UTF8 => {
+                String::from_utf8(self.record_data.clone()).map_err(|e| DecodeError::UTF8(e.to_string()))
+            }
+            TextEncoding::CP1252 => WINDOWS_1252
+                .decode(&self.record_data, DecoderTrap::Strict)
+                .map_err(|e| DecodeError::CP1252(e)),
+        }
+    }
 }
