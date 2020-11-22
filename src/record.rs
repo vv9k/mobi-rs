@@ -2,9 +2,27 @@ use super::{lz77, TextEncoding};
 use crate::headers::palmdoch::Compression;
 use byteorder::{BigEndian, ReadBytesExt};
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
+use std::borrow::Cow;
+use std::fmt;
 use std::io::{self, Cursor, ErrorKind};
 
 const RECORDS_START_INDEX: u64 = 78;
+
+#[derive(Debug, Clone)]
+/// A wrapper error type for unified error across multiple encodings.
+pub enum DecodeError {
+    UTF8(String),
+    CP1252(Cow<'static, str>),
+}
+
+impl fmt::Display for DecodeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DecodeError::UTF8(e) => write!(f, "Failed decoding utf8 content - {}", e),
+            DecodeError::CP1252(e) => write!(f, "Failed decoding win-cp1252 content - {}", e),
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 /// A "cell" in the whole books content
