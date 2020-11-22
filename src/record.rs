@@ -2,9 +2,30 @@ use super::{lz77, TextEncoding};
 use crate::headers::palmdoch::Compression;
 use byteorder::{BigEndian, ReadBytesExt};
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
+use std::borrow::Cow;
+use std::error::Error;
+use std::fmt;
 use std::io::{self, Cursor, ErrorKind};
 
 const RECORDS_START_INDEX: u64 = 78;
+
+#[derive(Debug, Clone)]
+/// A wrapper error type for unified error across multiple encodings.
+pub enum DecodeError {
+    UTF8(String),
+    CP1252(Cow<'static, str>),
+}
+
+impl fmt::Display for DecodeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DecodeError::UTF8(e) => write!(f, "Failed decoding utf8 content - {}", e),
+            DecodeError::CP1252(e) => write!(f, "Failed decoding win-cp1252 content - {}", e),
+        }
+    }
+}
+
+impl Error for DecodeError {}
 
 #[derive(Debug, Clone)]
 /// A "cell" in the whole books content
@@ -110,10 +131,21 @@ impl Record {
         Ok(new_records)
     }
 
-    pub(crate) fn to_string(&self, encoding: TextEncoding) -> String {
+    pub(crate) fn to_string_lossy(&self, encoding: TextEncoding) -> String {
         match encoding {
             TextEncoding::UTF8 => String::from_utf8_lossy(&self.record_data).to_owned().to_string(),
             TextEncoding::CP1252 => WINDOWS_1252.decode(&self.record_data, DecoderTrap::Ignore).unwrap(),
+        }
+    }
+
+    pub(crate) fn to_string(&self, encoding: TextEncoding) -> Result<String, DecodeError> {
+        match encoding {
+            TextEncoding::UTF8 => {
+                String::from_utf8(self.record_data.clone()).map_err(|e| DecodeError::UTF8(e.to_string()))
+            }
+            TextEncoding::CP1252 => WINDOWS_1252
+                .decode(&self.record_data, DecoderTrap::Strict)
+                .map_err(|e| DecodeError::CP1252(e)),
         }
     }
 }

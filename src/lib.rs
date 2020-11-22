@@ -198,11 +198,23 @@ impl Mobi {
     /// Returns all readable records content decompressed as a String.
     /// There are only two supported encodings in mobi format (UTF8, WIN1252)
     /// and both are losely converted by this function
-    pub fn content_as_string(&self) -> io::Result<String> {
+    pub fn content_as_string_lossy(&self) -> io::Result<String> {
         Ok(self.records()?[self.readable_records_range()]
             .iter()
-            .map(|record| record.to_string(self.text_encoding()))
+            .map(|record| record.to_string_lossy(self.text_encoding()))
             .collect())
+    }
+
+    /// Returns all readable records content decompressed as a String.
+    /// This function is a strict version returning error on first encountered
+    /// decoding error.
+    pub fn content_as_string(&self) -> Result<String, Box<dyn std::error::Error>> {
+        let mut content = String::new();
+        for record in &self.records()?[self.readable_records_range()] {
+            content.push_str(&record.to_string(self.text_encoding())?);
+        }
+
+        Ok(content)
     }
 
     /// Returns all readable records content decompressed as a Vec
