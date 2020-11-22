@@ -110,7 +110,7 @@ impl Record {
         Ok(new_records)
     }
 
-    pub(crate) fn to_string(&self, encoding: TextEncoding) -> String {
+    pub(crate) fn to_string_lossy(&self, encoding: TextEncoding) -> String {
         match encoding {
             TextEncoding::UTF8 => String::from_utf8_lossy(&self.record_data).to_owned().to_string(),
             TextEncoding::CP1252 => WINDOWS_1252.decode(&self.record_data, DecoderTrap::Ignore).unwrap(),
