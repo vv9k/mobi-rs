@@ -135,9 +135,9 @@ impl ExtHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{book, Reader};
     use crate::headers::records::Records;
     use crate::headers::{Header, MobiHeader, PalmDocHeader};
+    use crate::{book, Reader};
 
     #[test]
     fn parse() {
