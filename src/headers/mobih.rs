@@ -77,11 +77,11 @@ impl HeaderField for MobiHeaderData {
     }
 }
 impl MobiHeader {
-    /// Parse a Mobi header from the content
-    pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<MobiHeader> {
+    /// Partially parse a Mobi header from the content
+    pub(crate) fn partial_parse(reader: &mut impl MobiReader) -> io::Result<MobiHeader> {
         use MobiHeaderData::*;
 
-        let mut m = MobiHeader {
+        Ok(MobiHeader {
             identifier: reader.read_u32_header(Identifier)?,
             header_length: reader.read_u32_header(HeaderLength)?,
             mobi_type: reader.read_u32_header(MobiType)?,
@@ -109,12 +109,14 @@ impl MobiHeader {
             fcis_record: reader.read_u32_header(FcisRecord)?,
             flis_record: reader.read_u32_header(FlisRecord)?,
             name: String::new(),
-        };
+        })
+    }
 
-        let offset = m.name_offset as u64 + (reader.get_num_records() * 8) as u64 + 80;
+    pub(crate) fn finish_parse(&mut self, reader: &mut impl MobiReader) -> io::Result<()> {
+        let offset = self.name_offset as u64 + (reader.get_num_records() * 8) as u64 + 80;
         // TODO: figure out why is this exactly `+ 80` and it works?
-        m.name = reader.read_range(offset as u64, offset + m.name_length as u64)?;
-        Ok(m)
+        self.name = reader.read_range(offset as u64, offset + self.name_length as u64)?;
+        Ok(())
     }
 
     /// Checks if there is a Exth Header and changes the parameter
@@ -290,8 +292,10 @@ mod tests {
         };
 
         let mut reader = book::test_reader_after_header();
+        let mut test_header = MobiHeader::partial_parse(&mut reader).unwrap();
+        test_header.finish_parse(&mut reader).expect("Should find name");
 
-        assert_eq!(mobiheader, MobiHeader::parse(&mut reader).unwrap());
+        assert_eq!(mobiheader, test_header);
     }
 
     mod text_encoding {

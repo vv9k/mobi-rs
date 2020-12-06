@@ -58,7 +58,7 @@ impl MobiMetadata {
         reader.set_num_records(header.num_records);
         let records = Records::parse(reader)?;
         let palmdoc = PalmDocHeader::parse(reader)?;
-        let mobi = MobiHeader::parse(reader)?;
+        let mut mobi = MobiHeader::partial_parse(reader)?;
 
         let exth = {
             if mobi.has_exth_header() {
@@ -67,6 +67,8 @@ impl MobiMetadata {
                 ExtHeader::default()
             }
         };
+
+        mobi.finish_parse(reader)?;
 
         Ok(MobiMetadata {
             header,

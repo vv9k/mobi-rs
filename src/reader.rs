@@ -17,6 +17,7 @@ pub(crate) trait MobiReader {
     fn get_num_records(&self) -> u16;
 
     fn set_position(&mut self, n: u64);
+    fn get_position(&mut self) -> u64;
 
     fn read_u32_be(&mut self) -> io::Result<u32>;
 
@@ -136,6 +137,10 @@ impl<'r> MobiReader for Reader<'r> {
                 .to_string(),
         )
     }
+
+    fn get_position(&mut self) -> u64 {
+        self.cursor.position()
+    }
 }
 
 #[derive(Debug, Default)]
@@ -157,14 +162,14 @@ impl<R: std::io::Read> ReaderPrime<R> {
 
     // Will read from ?..p, so p itself will not be read, but p - 1 will exist.
     fn read_to_point(&mut self, p: usize) -> io::Result<()> {
-        debug_assert!(p as usize >= self.position, "{}, {}", p, self.position);
+        debug_assert!(p >= self.position, "{}, {}", p, self.position);
 
         if p > self.position {
             std::io::copy(
                 &mut self.reader.by_ref().take((p - self.position) as u64),
                 &mut io::sink(),
             )?;
-            self.position = p as usize;
+            self.position = p;
         }
 
         Ok(())
@@ -172,6 +177,10 @@ impl<R: std::io::Read> ReaderPrime<R> {
 }
 
 impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
+    fn get_position(&mut self) -> u64 {
+        self.position as u64
+    }
+
     fn read_to_end(&mut self) -> io::Result<Vec<u8>> {
         let mut first_buf = vec![0; self.position];
         let mut second_buf = vec![];
@@ -213,8 +222,8 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
     #[inline]
     fn read_i16_be(&mut self) -> io::Result<i16> {
         let mut bytes = [0; 2];
-        self.position += 2;
         self.reader.read_exact(&mut bytes)?;
+        self.position += 2;
         Ok(i16::from_be_bytes(bytes))
     }
 
@@ -260,13 +269,14 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
     }
 
     fn read_range(&mut self, start: u64, end: u64) -> io::Result<String> {
-        let _ = self.read_to_point(start as usize);
+        self.read_to_point(start as usize)?;
         let len = (end - start) as usize;
         let mut buf = vec![0; len];
-
         self.position += len;
 
         self.reader.read_exact(&mut buf)?;
-        Ok(String::from_utf8_lossy(&buf).to_owned().to_string())
+        let s = String::from_utf8_lossy(&buf).to_owned().to_string();
+        println!("{} : ({} {:?})", s, len, buf);
+        Ok(s)
     }
 }

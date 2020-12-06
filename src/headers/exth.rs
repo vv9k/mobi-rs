@@ -184,8 +184,9 @@ mod tests {
             records,
         };
         let mut reader = book::test_reader_after_header();
-        let mobi = MobiHeader::parse(&mut reader).unwrap();
+        let mut mobi = MobiHeader::partial_parse(&mut reader).unwrap();
         let parsed_header = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
+        mobi.finish_parse(&mut reader).expect("Should find a name.");
         for (k, v) in &extheader.records {
             let record = parsed_header.get_record_position(*k);
             assert!(record.is_some());
@@ -201,8 +202,9 @@ mod tests {
             ($t: ident, $s: expr) => {
                 let mut reader = book::test_reader();
                 reader.set_num_records(292);
-                let mobi = MobiHeader::parse(&mut reader).unwrap();
+                let mut mobi = MobiHeader::partial_parse(&mut reader).unwrap();
                 let exth = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
+                mobi.finish_parse(&mut reader).expect("Should find name");
                 let data = exth.get_record_string_lossy(ExthRecord::$t);
                 assert_eq!(data, Some(String::from($s)));
             };
