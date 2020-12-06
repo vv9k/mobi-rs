@@ -59,7 +59,9 @@ use crate::reader::{MobiReader, ReaderPrime};
 use chrono::NaiveDateTime;
 use headers::TextEncoding;
 pub(crate) use reader::Reader;
-use std::{fs, io, io::Read, ops::Range, path::Path};
+use std::fs::File;
+use std::io::BufReader;
+use std::{io, io::Read, ops::Range, path::Path};
 
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
@@ -75,7 +77,8 @@ impl Mobi {
 
     /// Construct a Mobi object from passed file path
     pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<Mobi> {
-        Mobi::new(&fs::read(file_path)?)
+        let mut reader = ReaderPrime::new(BufReader::new(File::open(file_path)?));
+        Mobi::from_reader(&mut reader)
     }
 
     /// Construct a Mobi object from an object that implements a Read trait
@@ -189,8 +192,8 @@ impl Mobi {
     fn records(&self) -> io::Result<Vec<Record>> {
         Record::parse_records(
             &self.content,
-            self.metadata.header.num_of_records,
-            self.metadata.mobi.extra_bytes,
+            &self.metadata.records.records,
+            self.metadata.records.extra_bytes,
             self.metadata.palmdoc.compression_enum(),
         )
     }
