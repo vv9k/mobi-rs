@@ -4,9 +4,7 @@ use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
 use std::borrow::Cow;
 use std::error::Error;
 use std::fmt;
-use std::io::{self, Cursor, ErrorKind};
-
-const RECORDS_START_INDEX: u64 = 78;
+use std::io::{self, ErrorKind};
 
 #[derive(Debug, Clone)]
 /// A wrapper error type for unified error across multiple encodings.
@@ -81,9 +79,6 @@ impl Record {
         _extra_bytes: u32,
         compression_type: Compression,
     ) -> io::Result<Vec<Record>> {
-        let mut reader = Cursor::new(content);
-        reader.set_position(RECORDS_START_INDEX);
-
         let mut new_records = vec![];
         for records in record_info.windows(2) {
             let (curr_offset, id) = records[0];
