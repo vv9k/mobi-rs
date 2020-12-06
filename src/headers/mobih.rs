@@ -1,5 +1,4 @@
 use super::HeaderField;
-use crate::Reader;
 use std::io;
 use crate::reader::MobiReader;
 
@@ -84,7 +83,7 @@ impl HeaderField for MobiHeaderData {
 }
 impl MobiHeader {
     /// Parse a Mobi header from the content
-    pub(crate) fn parse(mut reader: &mut impl MobiReader) -> io::Result<MobiHeader> {
+    pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<MobiHeader> {
         use MobiHeaderData::*;
         Ok(MobiHeader {
             identifier: reader.read_u32_header(Identifier)?,

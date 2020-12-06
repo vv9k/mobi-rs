@@ -1,5 +1,4 @@
 use super::HeaderField;
-use crate::Reader;
 use std::io;
 use crate::reader::MobiReader;
 

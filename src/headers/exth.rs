@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use super::HeaderField;
-use crate::Reader;
 use std::{collections::HashMap, io};
 use crate::reader::MobiReader;
 
@@ -100,7 +99,7 @@ pub struct ExtHeader {
 
 impl ExtHeader {
     /// Parse a EXTH header from the content
-    pub(crate) fn parse(mut reader: &mut impl MobiReader, header_length: u32) -> io::Result<ExtHeader> {
+    pub(crate) fn parse(reader: &mut impl MobiReader, header_length: u32) -> io::Result<ExtHeader> {
         use ExtHeaderData::*;
 
         let header_length = header_length as u64;

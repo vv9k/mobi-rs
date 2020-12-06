@@ -1,5 +1,4 @@
 use super::HeaderField;
-use crate::Reader;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::io;
