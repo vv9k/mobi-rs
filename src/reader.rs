@@ -136,7 +136,7 @@ impl<'r> MobiReader for Reader<'r> {
 /// Helper struct for reading header values from content
 pub(crate) struct ReaderPrime<R> {
     pub reader: R,
-    pub num_of_records: u16,
+    pub num_records: u16,
     buf: Vec<u8>,
     position: usize,
 }
@@ -145,7 +145,7 @@ impl<R: std::io::Read> ReaderPrime<R> {
     pub(crate) fn new(content: R) -> ReaderPrime<R> {
         ReaderPrime {
             reader: content,
-            num_of_records: 0,
+            num_records: 0,
             buf: Vec::with_capacity(2 << 11),
             position: 0,
         }
@@ -170,12 +170,12 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
     }
 
     fn get_num_records(&self) -> u16 {
-        self.num_of_records
+        self.num_records
     }
 
     #[inline]
     fn set_num_records(&mut self, n: u16) {
-        self.num_of_records = n;
+        self.num_records = n;
     }
 
     #[inline]
@@ -223,7 +223,7 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
     }
 
     fn position_after_records(&self) -> u64 {
-        self.num_of_records as u64 * 8
+        self.num_records as u64 * 8
     }
 
     #[inline]
