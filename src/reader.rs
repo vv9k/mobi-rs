@@ -66,6 +66,7 @@ impl<'r> MobiReader for Reader<'r> {
 
     #[inline]
     fn set_position(&mut self, n: u64) {
+        debug_assert!(n >= self.cursor.position(), "{}, {}", n, self.cursor.position());
         self.cursor.set_position(n);
     }
 
@@ -133,7 +134,7 @@ impl<'r> MobiReader for Reader<'r> {
 
 #[derive(Debug, Default)]
 /// Helper struct for reading header values from content
-pub(crate) struct ReaderPrime<R: std::io::Read> {
+pub(crate) struct ReaderPrime<R> {
     pub reader: R,
     pub num_of_records: u16,
     buf: Vec<u8>,
@@ -179,6 +180,7 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
 
     #[inline]
     fn set_position(&mut self, n: u64) {
+        debug_assert!(n as usize >= self.position, "{}, {}", n, self.position);
         self.position = n as usize;
     }
 

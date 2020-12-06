@@ -35,8 +35,6 @@ pub struct MobiHeader {
     pub first_data_record: u32,
     pub data_record_count: u32,
     pub exth_flags: u32,
-    pub has_exth_header: bool,
-    pub has_drm: bool,
     pub drm_offset: u32,
     pub drm_count: u32,
     pub drm_size: u32,
@@ -85,7 +83,9 @@ impl MobiHeader {
     /// Parse a Mobi header from the content
     pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<MobiHeader> {
         use MobiHeaderData::*;
-        Ok(MobiHeader {
+
+        let mut m = MobiHeader {
+            extra_bytes: MobiHeader::extra_bytes(reader)?,
             identifier: reader.read_u32_header(Identifier)?,
             header_length: reader.read_u32_header(HeaderLength)?,
             mobi_type: reader.read_u32_header(MobiType)?,
@@ -93,7 +93,6 @@ impl MobiHeader {
             id: reader.read_u32_header(Id)?,
             gen_version: reader.read_u32_header(GenVersion)?,
             first_non_book_index: reader.read_u32_header(FirstNonBookIndex)?,
-            name: MobiHeader::name(reader)?,
             name_offset: reader.read_u32_header(NameOffset)?,
             name_length: reader.read_u32_header(NameLength)?,
             language_code: MobiHeader::lang_code(reader.read_u32_header(LanguageCode)?),
@@ -106,36 +105,30 @@ impl MobiHeader {
             first_data_record: reader.read_u32_header(FirstDataRecord)?,
             data_record_count: reader.read_u32_header(DataRecordCount)?,
             exth_flags: reader.read_u32_header(ExthFlags)?,
-            has_exth_header: MobiHeader::has_exth_header(reader.read_u32_header(ExthFlags)?),
             drm_offset: reader.read_u32_header(DrmOffset)?,
             drm_count: reader.read_u32_header(DrmCount)?,
             drm_size: reader.read_u32_header(DrmSize)?,
             drm_flags: reader.read_u32_header(DrmFlags)?,
-            has_drm: MobiHeader::has_drm(reader.read_u32_header(DrmOffset)?),
             last_image_record: reader.read_u16_header(LastImageRecord)?,
             fcis_record: reader.read_u32_header(FcisRecord)?,
             flis_record: reader.read_u32_header(FlisRecord)?,
-            extra_bytes: MobiHeader::extra_bytes(reader)?,
-        })
-    }
+            name: String::new(),
+        };
 
-    /// Returns the book name
-    pub(crate) fn name(reader: &mut impl MobiReader) -> io::Result<String> {
-        let name_offset = reader.read_u32_header(MobiHeaderData::NameOffset)?;
-        let name_length = reader.read_u32_header(MobiHeaderData::NameLength)?;
+        let offset = m.name_offset as u64 + (reader.get_num_records() * 8) as u64 + 80;
         // TODO: figure out why is this exactly `+ 80` and it works?
-        let offset = name_offset as u64 + (reader.get_num_records() * 8) as u64 + 80;
-        Ok(reader.read_range(offset as u64, offset + name_length as u64))
+        m.name = reader.read_range(offset as u64, offset + m.name_length as u64);
+        Ok(m)
     }
 
     /// Checks if there is a Exth Header and changes the parameter
-    pub(crate) fn has_exth_header(exth_flags: u32) -> bool {
-        (exth_flags & EXTH_ON_FLAG) != 0
+    pub(crate) fn has_exth_header(&self) -> bool {
+        (self.exth_flags & EXTH_ON_FLAG) != 0
     }
 
     /// Checks if there is DRM on this book
-    fn has_drm(drm_offset: u32) -> bool {
-        drm_offset != DRM_ON_FLAG
+    pub(crate) fn has_drm(&self) -> bool {
+        self.drm_offset != DRM_ON_FLAG
     }
 
     /// Returns extra bytes for reading records
@@ -275,11 +268,6 @@ mod tests {
     use crate::{book, TextEncoding};
 
     #[test]
-    fn has_exth_header() {
-        assert_eq!(true, MobiHeader::has_exth_header(80));
-    }
-
-    #[test]
     fn parse() {
         let mobiheader = MobiHeader {
             identifier: 1297039945,
@@ -302,8 +290,6 @@ mod tests {
             first_data_record: 0,
             data_record_count: 0,
             exth_flags: 80,
-            has_exth_header: true,
-            has_drm: false,
             drm_offset: 4294967295,
             drm_count: 0,
             drm_size: 0,

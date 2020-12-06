@@ -35,7 +35,7 @@ pub struct MobiMetadata {
 impl MobiMetadata {
     /// Construct a Metadata object from a slice of bytes
     pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<MobiMetadata> {
-        MobiMetadata::from_reader(&mut Reader::new(bytes.as_ref()))
+        MobiMetadata::from_reader(&mut ReaderPrime::new(std::io::Cursor::new(bytes.as_ref())))
     }
 
     /// Construct a Metadata object from passed file path
@@ -56,7 +56,7 @@ impl MobiMetadata {
         let palmdoc = PalmDocHeader::parse(reader)?;
         let mobi = MobiHeader::parse(reader)?;
         let exth = {
-            if mobi.has_exth_header {
+            if mobi.has_exth_header() {
                 ExtHeader::parse(reader, mobi.header_length)?
             } else {
                 ExtHeader::default()

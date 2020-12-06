@@ -55,10 +55,10 @@ impl ToString for Encryption {
 /// Parameters of PalmDOC Header
 pub(crate) enum PalmDocHeaderData {
     Compression = 80,
+    TextLength = 84,
     RecordCount = 88,
     RecordSize = 90,
     EncryptionType = 92,
-    TextLength = 84,
 }
 impl HeaderField for PalmDocHeaderData {
     fn position(self) -> u64 {
