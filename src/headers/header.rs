@@ -51,7 +51,7 @@ impl Header {
     pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<Header> {
         use HeaderData::*;
         Ok(Header {
-            name: reader.read_string_header(Name, 32)?,
+            name: reader.read_string_header(Name.position(), 32)?,
             attributes: reader.read_i16_header(Attributes)?,
             version: reader.read_i16_header(Version)?,
             created: reader.read_u32_header(Created)?,
@@ -60,8 +60,8 @@ impl Header {
             modnum: reader.read_u32_header(Modnum)?,
             app_info_id: reader.read_u32_header(AppInfoId)?,
             sort_info_id: reader.read_u32_header(SortInfoId)?,
-            typ_e: reader.read_string_header(TypE, 4)?,
-            creator: reader.read_string_header(Creator, 4)?,
+            typ_e: reader.read_string_header(TypE.position(), 4)?,
+            creator: reader.read_string_header(Creator.position(), 4)?,
             unique_id_seed: reader.read_u32_header(UniqueIdSeed)?,
             next_record_list_id: reader.read_u32_header(NextRecordListId)?,
             num_records: reader.read_u16_header(NumRecords)?,

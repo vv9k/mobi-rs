@@ -38,9 +38,7 @@ pub(crate) trait MobiReader {
 
     fn read_u32_header_offset(&mut self, offset: u64) -> io::Result<u32>;
 
-    fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> io::Result<String>;
-
-    fn read_range(&mut self, start: u64, end: u64) -> io::Result<String>;
+    fn read_string_header(&mut self, start: u64, len: usize) -> io::Result<String>;
 }
 
 impl<'r> Reader<'r> {
@@ -124,14 +122,9 @@ impl<'r> MobiReader for Reader<'r> {
         self.read_u32_be()
     }
 
-    fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> io::Result<String> {
-        let start = field.position();
-        let end = start + len;
+    fn read_string_header(&mut self, start: u64, len: usize) -> io::Result<String> {
+        let end = start + len as u64;
 
-        self.read_range(start, end)
-    }
-
-    fn read_range(&mut self, start: u64, end: u64) -> io::Result<String> {
         Ok(
             String::from_utf8_lossy(&self.cursor.get_ref()[start as usize..end as usize])
                 .to_owned()
@@ -262,21 +255,13 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
         self.read_u32_be()
     }
 
-    fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> io::Result<String> {
-        let start = field.position();
-        let end = start + len;
-
-        self.read_range(start, end)
-    }
-
-    fn read_range(&mut self, start: u64, end: u64) -> io::Result<String> {
+    fn read_string_header(&mut self, start: u64, len: usize) -> io::Result<String> {
         self.read_to_point(start as usize)?;
-        let len = (end - start) as usize;
         let mut buf = vec![0; len];
-        self.position += len;
 
         self.reader.read_exact(&mut buf)?;
-        let s = String::from_utf8_lossy(&buf).to_owned().to_string();
-        Ok(s)
+        self.position += len;
+
+        Ok(String::from_utf8_lossy(&buf).to_owned().to_string())
     }
 }
