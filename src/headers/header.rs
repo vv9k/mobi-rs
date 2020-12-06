@@ -1,4 +1,4 @@
-use crate::reader::MobiReader;
+use crate::reader::Reader;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::io;
@@ -24,7 +24,7 @@ pub struct Header {
 
 impl Header {
     /// Parse a header from the content
-    pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<Header> {
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Header> {
         reader.set_position(0);
         Ok(Header {
             name: reader.read_string_header(0, 32)?,
@@ -76,7 +76,7 @@ impl Header {
 #[cfg(test)]
 mod tests {
     use super::Header;
-    use crate::{book, Reader};
+    use crate::book;
 
     #[test]
     fn parse() {
@@ -96,7 +96,7 @@ mod tests {
             next_record_list_id: 0,
             num_records: 292,
         };
-        let mut reader = Reader::new(&book::HEADER);
+        let mut reader = book::u8_reader(book::HEADER.to_vec());
         let parsed_header = Header::parse(&mut reader);
         assert_eq!(header, parsed_header.unwrap())
     }

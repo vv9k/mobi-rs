@@ -54,14 +54,11 @@ mod display;
 pub(crate) mod lz77;
 pub(crate) mod reader;
 pub(crate) mod record;
-use crate::reader::{MobiReader, ReaderPrime};
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use headers::TextEncoding;
 pub(crate) use reader::Reader;
-use std::fs::File;
-use std::io::BufReader;
-use std::{io, io::Read, ops::Range, path::Path};
+use std::{fs::File, io, io::BufReader, ops::Range, path::Path};
 
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
@@ -69,25 +66,25 @@ pub struct Mobi {
     pub content: Vec<u8>,
     pub metadata: MobiMetadata,
 }
+
 impl Mobi {
     /// Construct a Mobi object from a slice of bytes
     pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<Mobi> {
-        Mobi::from_reader(&mut Reader::new(bytes.as_ref()))
+        Mobi::from_reader(&mut Reader::new(std::io::Cursor::new(bytes.as_ref())))
     }
 
     /// Construct a Mobi object from passed file path
     pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<Mobi> {
-        let mut reader = ReaderPrime::new(BufReader::new(File::open(file_path)?));
+        let mut reader = Reader::new(BufReader::new(File::open(file_path)?));
         Mobi::from_reader(&mut reader)
     }
 
     /// Construct a Mobi object from an object that implements a Read trait
-    pub fn from_read<R: Read>(reader: R) -> io::Result<Mobi> {
-        // Temporary solution
-        Mobi::from_reader(&mut ReaderPrime::new(reader))
+    pub fn from_read<R: io::Read>(reader: R) -> io::Result<Mobi> {
+        Mobi::from_reader(&mut Reader::new(reader))
     }
 
-    fn from_reader(reader: &mut impl MobiReader) -> io::Result<Mobi> {
+    fn from_reader<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Mobi> {
         let metadata = MobiMetadata::from_reader(reader)?;
         Ok(Mobi {
             content: reader.read_to_end()?,

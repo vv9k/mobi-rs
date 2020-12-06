@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::reader::MobiReader;
+use crate::reader::Reader;
 use std::{collections::HashMap, io};
 
 const RECORDS_OFFSET: u64 = 108;
@@ -85,7 +85,7 @@ pub struct ExtHeader {
 
 impl ExtHeader {
     /// Parse a EXTH header from the content
-    pub(crate) fn parse(reader: &mut impl MobiReader, header_length: u32) -> io::Result<ExtHeader> {
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>, header_length: u32) -> io::Result<ExtHeader> {
         let header_length = header_length as u64;
         reader.set_position(reader.position_after_records() + header_length + 96);
         let mut extheader = ExtHeader {
@@ -100,7 +100,7 @@ impl ExtHeader {
     }
 
     /// Gets header records
-    fn populate_records(&mut self, reader: &mut impl MobiReader) -> io::Result<()> {
+    fn populate_records<R: io::Read>(&mut self, reader: &mut Reader<R>) -> io::Result<()> {
         for _i in 0..self.record_count {
             let record_type = reader.read_u32_be()?;
             let record_len = reader.read_u32_be()?;
@@ -135,9 +135,9 @@ impl ExtHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::book;
     use crate::headers::records::Records;
     use crate::headers::{Header, MobiHeader, PalmDocHeader};
-    use crate::{book, Reader};
 
     #[test]
     fn parse() {
@@ -165,8 +165,7 @@ mod tests {
             record_count: 11,
             records,
         };
-        let book = book::full_book();
-        let mut reader = Reader::new(&book);
+        let mut reader = book::u8_reader(book::full_book());
         let h = Header::parse(&mut reader).unwrap();
         reader.set_num_records(h.num_records);
         let _ = Records::parse(&mut reader).unwrap();
@@ -185,12 +184,10 @@ mod tests {
     mod records {
         use super::*;
         use crate::book;
-        use crate::{reader::MobiReader, Reader};
 
         macro_rules! info {
             ($t: ident, $s: expr) => {
-                let book = book::full_book();
-                let mut reader = Reader::new(&book);
+                let mut reader = book::u8_reader(book::full_book());
                 let h = Header::parse(&mut reader).unwrap();
                 reader.set_num_records(h.num_records);
                 let _ = Records::parse(&mut reader).unwrap();

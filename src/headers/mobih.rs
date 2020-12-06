@@ -1,4 +1,4 @@
-use crate::reader::MobiReader;
+use crate::Reader;
 use std::io;
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
@@ -44,7 +44,7 @@ pub struct MobiHeader {
 
 impl MobiHeader {
     /// Partially parse a Mobi header from the content
-    pub(crate) fn partial_parse(reader: &mut impl MobiReader) -> io::Result<MobiHeader> {
+    pub(crate) fn partial_parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<MobiHeader> {
         Ok(MobiHeader {
             identifier: reader.read_u32_be()?,
             header_length: reader.read_u32_be()?,
@@ -91,7 +91,7 @@ impl MobiHeader {
         })
     }
 
-    pub(crate) fn finish_parse(&mut self, reader: &mut impl MobiReader) -> io::Result<()> {
+    pub(crate) fn finish_parse<R: io::Read>(&mut self, reader: &mut Reader<R>) -> io::Result<()> {
         // TODO: figure out why is this exactly `+ 80` and it works?
         let offset = reader.position_after_records() + 80 + self.name_offset as u64;
         self.name = reader.read_string_header(offset, self.name_length as usize)?;
@@ -236,7 +236,7 @@ impl MobiHeader {
 #[cfg(test)]
 mod tests {
     use super::MobiHeader;
-    use crate::{book, Reader, TextEncoding};
+    use crate::{book, TextEncoding};
 
     #[test]
     fn parse() {
@@ -271,7 +271,7 @@ mod tests {
             flis_record: 289,
         };
 
-        let mut reader = Reader::new(&book::MOBIHEADER);
+        let mut reader = book::u8_reader(book::MOBIHEADER.to_vec());
         let test_header = MobiHeader::partial_parse(&mut reader).unwrap();
         // test_header.finish_parse(&mut reader).expect("Should find name");
 

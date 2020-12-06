@@ -1,4 +1,4 @@
-use crate::reader::MobiReader;
+use crate::reader::Reader;
 use std::io;
 
 /// Compression types available in MOBI format.
@@ -64,7 +64,7 @@ pub struct PalmDocHeader {
 impl PalmDocHeader {
     /// Parse a PalmDOC header from a reader. Reader must have num_of_records set
     /// to value from header.num_of_records
-    pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<PalmDocHeader> {
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<PalmDocHeader> {
         Ok(PalmDocHeader {
             compression: reader.read_u16_be()?,
             text_length: {
@@ -97,7 +97,7 @@ impl PalmDocHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{book, Reader};
+    use crate::book;
 
     #[test]
     fn parse() {
@@ -109,7 +109,7 @@ mod tests {
             encryption_type: 0,
         };
 
-        let mut reader = Reader::new(&book::PALMDOCHEADER);
+        let mut reader = book::u8_reader(book::PALMDOCHEADER.to_vec());
 
         assert_eq!(pdheader, PalmDocHeader::parse(&mut reader).unwrap());
     }

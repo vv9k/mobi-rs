@@ -12,8 +12,7 @@ pub use self::{
 };
 
 use crate::headers::records::Records;
-use crate::reader::{MobiReader, ReaderPrime};
-use crate::Reader;
+use crate::reader::Reader;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::fs::File;
@@ -32,22 +31,21 @@ pub struct MobiMetadata {
 impl MobiMetadata {
     /// Construct a Metadata object from a slice of bytes
     pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<MobiMetadata> {
-        MobiMetadata::from_reader(&mut ReaderPrime::new(std::io::Cursor::new(bytes.as_ref())))
+        MobiMetadata::from_reader(&mut Reader::new(std::io::Cursor::new(bytes.as_ref())))
     }
 
     /// Construct a Metadata object from passed file path
     pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<MobiMetadata> {
-        let mut reader = ReaderPrime::new(BufReader::new(File::open(file_path)?));
+        let mut reader = Reader::new(BufReader::new(File::open(file_path)?));
         MobiMetadata::from_reader(&mut reader)
     }
 
     /// Construct a Metadata object from an object that implements a Read trait
     pub fn from_read<R: Read>(reader: R) -> io::Result<MobiMetadata> {
-        let content: Vec<_> = reader.bytes().flatten().collect();
-        MobiMetadata::from_reader(&mut Reader::new(&content))
+        MobiMetadata::from_reader(&mut Reader::new(reader))
     }
 
-    pub(crate) fn from_reader(reader: &mut impl MobiReader) -> io::Result<MobiMetadata> {
+    pub(crate) fn from_reader<R: Read>(reader: &mut Reader<R>) -> io::Result<MobiMetadata> {
         let header = Header::parse(reader)?;
         reader.set_num_records(header.num_records);
         let records = Records::parse(reader)?;
@@ -196,8 +194,7 @@ mod test {
 
     #[test]
     fn test_mobi_metadata() {
-        let book = book::full_book();
-        let mut reader = Reader::new(&book);
+        let mut reader = book::u8_reader(book::full_book());
         assert!(MobiMetadata::from_reader(&mut reader).is_ok());
     }
 }

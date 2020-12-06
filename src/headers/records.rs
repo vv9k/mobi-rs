@@ -1,4 +1,4 @@
-use crate::reader::MobiReader;
+use crate::reader::Reader;
 use std::io;
 
 const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
@@ -16,7 +16,7 @@ pub struct Records {
 }
 
 impl Records {
-    pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<Records> {
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Records> {
         let mut records = Vec::with_capacity(reader.get_num_records() as usize);
 
         for _ in 0..reader.get_num_records() {
@@ -34,11 +34,11 @@ impl Records {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{book, Reader};
+    use crate::book;
 
     #[test]
     fn parse() {
-        let mut reader = Reader::new(&book::RECORDS);
+        let mut reader = book::u8_reader(book::RECORDS.to_vec());
         reader.set_num_records(292);
 
         assert!(Records::parse(&mut reader).is_ok());

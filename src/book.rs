@@ -1,4 +1,8 @@
 #![cfg(test)]
+
+use crate::Reader;
+use std::io::Cursor;
+
 pub const HEADER: [u8; 78] = [
     76, 111, 114, 100, 95, 111, 102, 95, 116, 104, 101, 95, 82, 105, 110, 103, 115, 95, 45, 95, 70, 101, 108, 108, 111,
     119, 115, 104, 105, 112, 95, 0, 0, 0, 0, 0, 77, 120, 0, 27, 77, 120, 0, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -151,4 +155,8 @@ pub(crate) fn full_book() -> Vec<u8> {
     res.extend_from_slice(&MOBIHEADER);
     res.extend_from_slice(&BOOK);
     res
+}
+
+pub(crate) fn u8_reader(bytes: Vec<u8>) -> Reader<Cursor<Vec<u8>>> {
+    Reader::new(Cursor::new(bytes))
 }
