@@ -1,6 +1,6 @@
 use crate::headers::HeaderField;
 use byteorder::{BigEndian, ReadBytesExt};
-use std::io::{self, Cursor};
+use std::io::{self, Cursor, Read};
 
 #[derive(Debug, Default)]
 /// Helper struct for reading header values from content
@@ -10,7 +10,7 @@ pub(crate) struct Reader<'r> {
 }
 
 pub(crate) trait MobiReader {
-    fn content(&mut self) -> Vec<u8>;
+    fn read_to_end(&mut self) -> io::Result<Vec<u8>>;
 
     fn set_num_records(&mut self, n: u16);
 
@@ -36,9 +36,9 @@ pub(crate) trait MobiReader {
 
     fn read_u32_header_offset(&mut self, offset: u64) -> io::Result<u32>;
 
-    fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> String;
+    fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> io::Result<String>;
 
-    fn read_range(&mut self, start: u64, end: u64) -> String;
+    fn read_range(&mut self, start: u64, end: u64) -> io::Result<String>;
 }
 
 impl<'r> Reader<'r> {
@@ -51,8 +51,12 @@ impl<'r> Reader<'r> {
 }
 
 impl<'r> MobiReader for Reader<'r> {
-    fn content(&mut self) -> Vec<u8> {
-        self.cursor.clone().into_inner().to_vec()
+    fn read_to_end(&mut self) -> io::Result<Vec<u8>> {
+        let mut first_buf = vec![0; self.cursor.position() as usize];
+        let mut second_buf = vec![];
+        self.cursor.read_to_end(&mut second_buf)?;
+        first_buf.extend_from_slice(&second_buf);
+        Ok(first_buf)
     }
 
     fn get_num_records(&self) -> u16 {
@@ -118,17 +122,19 @@ impl<'r> MobiReader for Reader<'r> {
         self.read_u32_be()
     }
 
-    fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> String {
+    fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> io::Result<String> {
         let start = field.position();
         let end = start + len;
 
         self.read_range(start, end)
     }
 
-    fn read_range(&mut self, start: u64, end: u64) -> String {
-        String::from_utf8_lossy(&self.cursor.get_ref()[start as usize..end as usize])
-            .to_owned()
-            .to_string()
+    fn read_range(&mut self, start: u64, end: u64) -> io::Result<String> {
+        Ok(
+            String::from_utf8_lossy(&self.cursor.get_ref()[start as usize..end as usize])
+                .to_owned()
+                .to_string(),
+        )
     }
 }
 
@@ -137,7 +143,6 @@ impl<'r> MobiReader for Reader<'r> {
 pub(crate) struct ReaderPrime<R> {
     pub reader: R,
     pub num_records: u16,
-    buf: Vec<u8>,
     position: usize,
 }
 
@@ -146,17 +151,20 @@ impl<R: std::io::Read> ReaderPrime<R> {
         ReaderPrime {
             reader: content,
             num_records: 0,
-            buf: Vec::with_capacity(2 << 11),
             position: 0,
         }
     }
 
     // Will read from ?..p, so p itself will not be read, but p - 1 will exist.
     fn read_to_point(&mut self, p: usize) -> io::Result<()> {
-        if p > self.buf.len() {
-            let mut temp = vec![0; p - self.buf.len()];
-            self.reader.read_exact(&mut temp)?;
-            self.buf.extend(temp);
+        debug_assert!(p as usize >= self.position, "{}, {}", p, self.position);
+
+        if p > self.position {
+            std::io::copy(
+                &mut self.reader.by_ref().take((p - self.position) as u64),
+                &mut io::sink(),
+            )?;
+            self.position = p as usize;
         }
 
         Ok(())
@@ -164,9 +172,12 @@ impl<R: std::io::Read> ReaderPrime<R> {
 }
 
 impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
-    fn content(&mut self) -> Vec<u8> {
-        let _ = self.reader.read_to_end(&mut self.buf);
-        self.buf.clone()
+    fn read_to_end(&mut self) -> io::Result<Vec<u8>> {
+        let mut first_buf = vec![0; self.position];
+        let mut second_buf = vec![];
+        self.reader.read_to_end(&mut second_buf)?;
+        first_buf.extend_from_slice(&second_buf);
+        Ok(first_buf)
     }
 
     fn get_num_records(&self) -> u16 {
@@ -180,46 +191,37 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
 
     #[inline]
     fn set_position(&mut self, n: u64) {
-        debug_assert!(n as usize >= self.position, "{}, {}", n, self.position);
-        self.position = n as usize;
+        self.read_to_point(n as usize).unwrap();
     }
 
     #[inline]
     fn read_u32_be(&mut self) -> io::Result<u32> {
-        let p = self.position;
-        self.read_to_point(p + 4)?;
         let mut bytes = [0; 4];
-        bytes.clone_from_slice(&self.buf[p..p + 4]);
+        self.reader.read_exact(&mut bytes)?;
         self.position += 4;
         Ok(u32::from_be_bytes(bytes))
     }
 
     #[inline]
     fn read_u16_be(&mut self) -> io::Result<u16> {
-        let p = self.position;
-        self.read_to_point(p + 2)?;
         let mut bytes = [0; 2];
-        bytes.clone_from_slice(&self.buf[p..p + 2]);
+        self.reader.read_exact(&mut bytes)?;
         self.position += 2;
         Ok(u16::from_be_bytes(bytes))
     }
 
     #[inline]
     fn read_i16_be(&mut self) -> io::Result<i16> {
-        let p = self.position;
-        self.read_to_point(p + 2)?;
         let mut bytes = [0; 2];
-        bytes.clone_from_slice(&self.buf[p..p + 2]);
         self.position += 2;
+        self.reader.read_exact(&mut bytes)?;
         Ok(i16::from_be_bytes(bytes))
     }
 
     #[inline]
     fn read_u8(&mut self) -> io::Result<u8> {
-        let p = self.position;
-        self.read_to_point(p + 1)?;
         self.position += 1;
-        Ok(self.buf[p])
+        self.reader.read_u8()
     }
 
     fn position_after_records(&self) -> u64 {
@@ -250,18 +252,21 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
         self.read_u32_be()
     }
 
-    fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> String {
+    fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> io::Result<String> {
         let start = field.position();
         let end = start + len;
 
         self.read_range(start, end)
     }
 
-    fn read_range(&mut self, start: u64, end: u64) -> String {
-        let _ = self.read_to_point(end as usize);
+    fn read_range(&mut self, start: u64, end: u64) -> io::Result<String> {
+        let _ = self.read_to_point(start as usize);
+        let len = (end - start) as usize;
+        let mut buf = vec![0; len];
 
-        String::from_utf8_lossy(&self.buf[start as usize..end as usize])
-            .to_owned()
-            .to_string()
+        self.position += len;
+
+        self.reader.read_exact(&mut buf)?;
+        Ok(String::from_utf8_lossy(&buf).to_owned().to_string())
     }
 }

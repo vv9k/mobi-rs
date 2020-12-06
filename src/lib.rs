@@ -90,7 +90,7 @@ impl Mobi {
     fn from_reader(reader: &mut impl MobiReader) -> io::Result<Mobi> {
         let metadata = MobiMetadata::from_reader(reader)?;
         Ok(Mobi {
-            content: reader.content(),
+            content: reader.read_to_end()?,
             metadata,
         })
     }
