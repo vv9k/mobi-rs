@@ -1,8 +1,8 @@
 use super::HeaderField;
+use crate::reader::MobiReader;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::io;
-use crate::reader::MobiReader;
 
 /// Parameters of Header
 pub(crate) enum HeaderData {

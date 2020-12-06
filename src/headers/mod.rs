@@ -10,13 +10,13 @@ pub use self::{
     palmdoch::PalmDocHeader,
 };
 
+use crate::reader::{MobiReader, ReaderPrime};
 use crate::Reader;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
-use std::io::{self, Read, BufReader};
-use std::path::Path;
-use crate::reader::{ReaderPrime, MobiReader};
 use std::fs::File;
+use std::io::{self, BufReader, Read};
+use std::path::Path;
 
 /// Trait allowing generic reading of header fields
 pub(crate) trait HeaderField {

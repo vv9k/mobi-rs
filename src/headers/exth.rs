@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use super::HeaderField;
-use std::{collections::HashMap, io};
 use crate::reader::MobiReader;
+use std::{collections::HashMap, io};
 
 const RECORDS_OFFSET: u64 = 108;
 

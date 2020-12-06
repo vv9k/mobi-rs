@@ -1,6 +1,6 @@
 use super::HeaderField;
-use std::io;
 use crate::reader::MobiReader;
+use std::io;
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
 const EXTH_ON_FLAG: u32 = 0x40;

@@ -54,12 +54,12 @@ mod display;
 pub(crate) mod lz77;
 pub(crate) mod reader;
 pub(crate) mod record;
+use crate::reader::{MobiReader, ReaderPrime};
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use headers::TextEncoding;
 pub(crate) use reader::Reader;
 use std::{fs, io, io::Read, ops::Range, path::Path};
-use crate::reader::{MobiReader, ReaderPrime};
 
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents

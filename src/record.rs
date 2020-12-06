@@ -145,7 +145,7 @@ impl Record {
             }
             TextEncoding::CP1252 => WINDOWS_1252
                 .decode(&self.record_data, DecoderTrap::Strict)
-                .map_err(|e| DecodeError::CP1252(e)),
+                .map_err(DecodeError::CP1252),
         }
     }
 }

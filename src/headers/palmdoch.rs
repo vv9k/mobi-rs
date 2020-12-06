@@ -1,6 +1,6 @@
 use super::HeaderField;
-use std::io;
 use crate::reader::MobiReader;
+use std::io;
 
 /// Compression types available in MOBI format.
 pub(crate) enum Compression {

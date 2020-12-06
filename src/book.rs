@@ -1,5 +1,5 @@
 #![cfg(test)]
-use crate::{headers::header::HeaderData, Reader, reader::MobiReader};
+use crate::{headers::header::HeaderData, reader::MobiReader, Reader};
 
 pub const BOOK: &[u8] = &[
     76, 111, 114, 100, 95, 111, 102, 95, 116, 104, 101, 95, 82, 105, 110, 103, 115, 95, 45, 95, 70, 101, 108, 108, 111,

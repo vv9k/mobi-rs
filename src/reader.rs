@@ -41,7 +41,7 @@ pub(crate) trait MobiReader {
     fn read_range(&mut self, start: u64, end: u64) -> String;
 }
 
-impl <'r> Reader<'r> {
+impl<'r> Reader<'r> {
     pub(crate) fn new(content: &'r [u8]) -> Reader<'r> {
         Reader {
             cursor: Cursor::new(content),
@@ -129,7 +129,6 @@ impl<'r> MobiReader for Reader<'r> {
             .to_owned()
             .to_string()
     }
-
 }
 
 #[derive(Debug, Default)]
@@ -188,7 +187,7 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
         let p = self.position;
         self.read_to_point(p + 4)?;
         let mut bytes = [0; 4];
-        bytes.clone_from_slice(&self.buf[p..p+4]);
+        bytes.clone_from_slice(&self.buf[p..p + 4]);
         self.position += 4;
         Ok(u32::from_be_bytes(bytes))
     }
@@ -198,7 +197,7 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
         let p = self.position;
         self.read_to_point(p + 2)?;
         let mut bytes = [0; 2];
-        bytes.clone_from_slice(&self.buf[p..p+2]);
+        bytes.clone_from_slice(&self.buf[p..p + 2]);
         self.position += 2;
         Ok(u16::from_be_bytes(bytes))
     }
@@ -208,7 +207,7 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
         let p = self.position;
         self.read_to_point(p + 2)?;
         let mut bytes = [0; 2];
-        bytes.clone_from_slice(&self.buf[p..p+2]);
+        bytes.clone_from_slice(&self.buf[p..p + 2]);
         self.position += 2;
         Ok(i16::from_be_bytes(bytes))
     }
@@ -216,7 +215,7 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
     #[inline]
     fn read_u8(&mut self) -> io::Result<u8> {
         let p = self.position;
-        self.read_to_point(p+1)?;
+        self.read_to_point(p + 1)?;
         self.position += 1;
         Ok(self.buf[p])
     }
