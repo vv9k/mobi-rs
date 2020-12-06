@@ -1,4 +1,3 @@
-use crate::headers::HeaderField;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{self, Cursor, Read};
 
@@ -24,19 +23,9 @@ pub(crate) trait MobiReader {
 
     fn read_u16_be(&mut self) -> io::Result<u16>;
 
-    fn read_i16_be(&mut self) -> io::Result<i16>;
-
     fn read_u8(&mut self) -> io::Result<u8>;
 
     fn position_after_records(&self) -> u64;
-
-    fn read_i16_header<F: HeaderField>(&mut self, field: F) -> io::Result<i16>;
-
-    fn read_u16_header<F: HeaderField>(&mut self, field: F) -> io::Result<u16>;
-
-    fn read_u32_header<F: HeaderField>(&mut self, field: F) -> io::Result<u32>;
-
-    fn read_u32_header_offset(&mut self, offset: u64) -> io::Result<u32>;
 
     fn read_string_header(&mut self, start: u64, len: usize) -> io::Result<String>;
 }
@@ -85,11 +74,6 @@ impl<'r> MobiReader for Reader<'r> {
     }
 
     #[inline]
-    fn read_i16_be(&mut self) -> io::Result<i16> {
-        self.cursor.read_i16::<BigEndian>()
-    }
-
-    #[inline]
     fn read_u8(&mut self) -> io::Result<u8> {
         self.cursor.read_u8()
     }
@@ -98,38 +82,11 @@ impl<'r> MobiReader for Reader<'r> {
         self.num_records as u64 * 8
     }
 
-    #[inline]
-    fn read_i16_header<F: HeaderField>(&mut self, field: F) -> io::Result<i16> {
-        self.set_position(self.position_after_records() + field.position());
-        self.read_i16_be()
-    }
-
-    #[inline]
-    fn read_u16_header<F: HeaderField>(&mut self, field: F) -> io::Result<u16> {
-        self.set_position(self.position_after_records() + field.position());
-        self.read_u16_be()
-    }
-
-    #[inline]
-    fn read_u32_header<F: HeaderField>(&mut self, field: F) -> io::Result<u32> {
-        self.set_position(self.position_after_records() + field.position());
-        self.read_u32_be()
-    }
-
-    #[inline]
-    fn read_u32_header_offset(&mut self, offset: u64) -> io::Result<u32> {
-        self.set_position(self.position_after_records() + offset);
-        self.read_u32_be()
-    }
-
     fn read_string_header(&mut self, start: u64, len: usize) -> io::Result<String> {
-        let end = start + len as u64;
-
-        Ok(
-            String::from_utf8_lossy(&self.cursor.get_ref()[start as usize..end as usize])
-                .to_owned()
-                .to_string(),
-        )
+        self.cursor.set_position(start);
+        let mut buf = vec![0; len];
+        self.cursor.read_exact(&mut buf)?;
+        Ok(String::from_utf8_lossy(&buf).to_owned().to_string())
     }
 
     fn get_position(&self) -> u64 {
@@ -214,14 +171,6 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
     }
 
     #[inline]
-    fn read_i16_be(&mut self) -> io::Result<i16> {
-        let mut bytes = [0; 2];
-        self.reader.read_exact(&mut bytes)?;
-        self.position += 2;
-        Ok(i16::from_be_bytes(bytes))
-    }
-
-    #[inline]
     fn read_u8(&mut self) -> io::Result<u8> {
         self.position += 1;
         self.reader.read_u8()
@@ -229,30 +178,6 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
 
     fn position_after_records(&self) -> u64 {
         self.num_records as u64 * 8
-    }
-
-    #[inline]
-    fn read_i16_header<F: HeaderField>(&mut self, field: F) -> io::Result<i16> {
-        self.set_position(self.position_after_records() + field.position());
-        self.read_i16_be()
-    }
-
-    #[inline]
-    fn read_u16_header<F: HeaderField>(&mut self, field: F) -> io::Result<u16> {
-        self.set_position(self.position_after_records() + field.position());
-        self.read_u16_be()
-    }
-
-    #[inline]
-    fn read_u32_header<F: HeaderField>(&mut self, field: F) -> io::Result<u32> {
-        self.set_position(self.position_after_records() + field.position());
-        self.read_u32_be()
-    }
-
-    #[inline]
-    fn read_u32_header_offset(&mut self, offset: u64) -> io::Result<u32> {
-        self.set_position(self.position_after_records() + offset);
-        self.read_u32_be()
     }
 
     fn read_string_header(&mut self, start: u64, len: usize) -> io::Result<String> {

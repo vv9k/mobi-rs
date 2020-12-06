@@ -1,5 +1,4 @@
 #![allow(dead_code)]
-use super::HeaderField;
 use crate::reader::MobiReader;
 use std::{collections::HashMap, io};
 
@@ -73,19 +72,6 @@ pub enum ExthRecord {
     Language = 524,
 }
 
-/// Parameters of Exth Header
-pub(crate) enum ExtHeaderData {
-    Identifier = 96,
-    HeaderLength = 100,
-    RecordCount = 104,
-}
-
-impl HeaderField for ExtHeaderData {
-    fn position(self) -> u64 {
-        self as u64
-    }
-}
-
 #[derive(Debug, Default, PartialEq)]
 /// Optional header containing extended information. If the MOBI header
 /// indicates that there's an EXTH header, it follows immediately after
@@ -100,26 +86,21 @@ pub struct ExtHeader {
 impl ExtHeader {
     /// Parse a EXTH header from the content
     pub(crate) fn parse(reader: &mut impl MobiReader, header_length: u32) -> io::Result<ExtHeader> {
-        use ExtHeaderData::*;
-
         let header_length = header_length as u64;
+        reader.set_position(reader.position_after_records() + header_length + 96);
         let mut extheader = ExtHeader {
-            identifier: reader.read_u32_header_offset(Identifier.position() + header_length)?,
-            header_length: reader.read_u32_header_offset(HeaderLength.position() + header_length)?,
-            record_count: reader.read_u32_header_offset(RecordCount.position() + header_length)?,
+            identifier: reader.read_u32_be()?,
+            header_length: reader.read_u32_be()?,
+            record_count: reader.read_u32_be()?,
             records: HashMap::new(),
         };
 
-        extheader.populate_records(reader, header_length)?;
+        extheader.populate_records(reader)?;
         Ok(extheader)
     }
 
     /// Gets header records
-    fn populate_records(&mut self, reader: &mut impl MobiReader, header_length: u64) -> io::Result<()> {
-        let position = RECORDS_OFFSET + u64::from(reader.get_num_records() * 8) + header_length;
-
-        reader.set_position(position);
-
+    fn populate_records(&mut self, reader: &mut impl MobiReader) -> io::Result<()> {
         for _i in 0..self.record_count {
             let record_type = reader.read_u32_be()?;
             let record_len = reader.read_u32_be()?;
@@ -154,8 +135,9 @@ impl ExtHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::book;
-    use crate::headers::MobiHeader;
+    use crate::{book, Reader};
+    use crate::headers::records::Records;
+    use crate::headers::{Header, MobiHeader, PalmDocHeader};
 
     #[test]
     fn parse() {
@@ -183,7 +165,12 @@ mod tests {
             record_count: 11,
             records,
         };
-        let mut reader = book::test_reader_after_header();
+        let book = book::full_book();
+        let mut reader = Reader::new(&book);
+        let h = Header::parse(&mut reader).unwrap();
+        reader.set_num_records(h.num_records);
+        let _ = Records::parse(&mut reader).unwrap();
+        let _ = PalmDocHeader::parse(&mut reader).unwrap();
         let mut mobi = MobiHeader::partial_parse(&mut reader).unwrap();
         let parsed_header = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
         mobi.finish_parse(&mut reader).expect("Should find a name.");
@@ -198,10 +185,16 @@ mod tests {
     mod records {
         use super::*;
         use crate::book;
+        use crate::{reader::MobiReader, Reader};
+
         macro_rules! info {
             ($t: ident, $s: expr) => {
-                let mut reader = book::test_reader();
-                reader.set_num_records(292);
+                let book = book::full_book();
+                let mut reader = Reader::new(&book);
+                let h = Header::parse(&mut reader).unwrap();
+                reader.set_num_records(h.num_records);
+                let _ = Records::parse(&mut reader).unwrap();
+                let _ = PalmDocHeader::parse(&mut reader).unwrap();
                 let mut mobi = MobiHeader::partial_parse(&mut reader).unwrap();
                 let exth = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
                 mobi.finish_parse(&mut reader).expect("Should find name");

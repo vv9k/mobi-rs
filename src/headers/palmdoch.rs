@@ -1,4 +1,3 @@
-use super::HeaderField;
 use crate::reader::MobiReader;
 use std::io;
 
@@ -52,20 +51,6 @@ impl ToString for Encryption {
     }
 }
 
-/// Parameters of PalmDOC Header
-pub(crate) enum PalmDocHeaderData {
-    Compression = 80,
-    TextLength = 84,
-    RecordCount = 88,
-    RecordSize = 90,
-    EncryptionType = 92,
-}
-impl HeaderField for PalmDocHeaderData {
-    fn position(self) -> u64 {
-        self as u64
-    }
-}
-
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds PalmDOC header information
 pub struct PalmDocHeader {
@@ -80,13 +65,19 @@ impl PalmDocHeader {
     /// Parse a PalmDOC header from a reader. Reader must have num_of_records set
     /// to value from header.num_of_records
     pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<PalmDocHeader> {
-        use PalmDocHeaderData::*;
         Ok(PalmDocHeader {
-            compression: reader.read_u16_header(Compression)?,
-            text_length: reader.read_u32_header(TextLength)?,
-            record_count: reader.read_u16_header(RecordCount)?,
-            record_size: reader.read_u16_header(RecordSize)?,
-            encryption_type: reader.read_u16_header(EncryptionType)?,
+            compression: reader.read_u16_be()?,
+            text_length: {
+                reader.read_u16_be()?;
+                reader.read_u32_be()?
+            },
+            record_count: reader.read_u16_be()?,
+            record_size: reader.read_u16_be()?,
+            encryption_type: {
+                let b = reader.read_u16_be()?;
+                reader.read_u16_be()?;
+                b
+            },
         })
     }
 
@@ -106,7 +97,7 @@ impl PalmDocHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::book;
+    use crate::{book, Reader};
 
     #[test]
     fn parse() {
@@ -118,7 +109,7 @@ mod tests {
             encryption_type: 0,
         };
 
-        let mut reader = book::test_reader_after_header();
+        let mut reader = Reader::new(&book::PALMDOCHEADER);
 
         assert_eq!(pdheader, PalmDocHeader::parse(&mut reader).unwrap());
     }

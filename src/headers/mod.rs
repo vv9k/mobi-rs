@@ -20,12 +20,6 @@ use std::fs::File;
 use std::io::{self, BufReader, Read};
 use std::path::Path;
 
-/// Trait allowing generic reading of header fields
-pub(crate) trait HeaderField {
-    /// Returns a position in the text where this field can be read
-    fn position(self) -> u64;
-}
-
 #[derive(Debug, Default)]
 /// Holds all headers containing low level metadata of a mobi book
 pub struct MobiMetadata {
@@ -68,6 +62,10 @@ impl MobiMetadata {
             }
         };
 
+        let offset1 = reader.position_after_records() + 80 + mobi.name_offset as u64;
+        let offset = records.records[0].0 + mobi.name_offset;
+
+        assert_eq!(offset as u64, offset1);
         mobi.finish_parse(reader)?;
 
         Ok(MobiMetadata {
@@ -188,5 +186,18 @@ impl MobiMetadata {
     /// Returns encryption method used on this file
     pub fn encryption(&self) -> String {
         self.palmdoc.encryption()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::book;
+
+    #[test]
+    fn test_mobi_metadata() {
+        let book = book::full_book();
+        let mut reader = Reader::new(&book);
+        assert!(MobiMetadata::from_reader(&mut reader).is_ok());
     }
 }

@@ -1,39 +1,14 @@
-use super::HeaderField;
 use crate::reader::MobiReader;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::io;
 
-/// Parameters of Header
-pub(crate) enum HeaderData {
-    Name = 0,
-    Attributes = 32,
-    Version = 34,
-    Created = 36,
-    Modified = 40,
-    Backup = 44,
-    Modnum = 48,
-    AppInfoId = 52,
-    SortInfoId = 56,
-    TypE = 60,
-    Creator = 64,
-    UniqueIdSeed = 68,
-    NextRecordListId = 72,
-    NumRecords = 76,
-}
-
-impl HeaderField for HeaderData {
-    fn position(self) -> u64 {
-        self as u64
-    }
-}
-
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds header information
 pub struct Header {
     pub name: String,
-    pub attributes: i16,
-    pub version: i16,
+    pub attributes: u16,
+    pub version: u16,
     pub created: u32,
     pub modified: u32,
     pub backup: u32,
@@ -46,25 +21,26 @@ pub struct Header {
     pub next_record_list_id: u32,
     pub num_records: u16,
 }
+
 impl Header {
     /// Parse a header from the content
     pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<Header> {
-        use HeaderData::*;
+        reader.set_position(0);
         Ok(Header {
-            name: reader.read_string_header(Name.position(), 32)?,
-            attributes: reader.read_i16_header(Attributes)?,
-            version: reader.read_i16_header(Version)?,
-            created: reader.read_u32_header(Created)?,
-            modified: reader.read_u32_header(Modified)?,
-            backup: reader.read_u32_header(Backup)?,
-            modnum: reader.read_u32_header(Modnum)?,
-            app_info_id: reader.read_u32_header(AppInfoId)?,
-            sort_info_id: reader.read_u32_header(SortInfoId)?,
-            typ_e: reader.read_string_header(TypE.position(), 4)?,
-            creator: reader.read_string_header(Creator.position(), 4)?,
-            unique_id_seed: reader.read_u32_header(UniqueIdSeed)?,
-            next_record_list_id: reader.read_u32_header(NextRecordListId)?,
-            num_records: reader.read_u16_header(NumRecords)?,
+            name: reader.read_string_header(0, 32)?,
+            attributes: reader.read_u16_be()?,
+            version: reader.read_u16_be()?,
+            created: reader.read_u32_be()?,
+            modified: reader.read_u32_be()?,
+            backup: reader.read_u32_be()?,
+            modnum: reader.read_u32_be()?,
+            app_info_id: reader.read_u32_be()?,
+            sort_info_id: reader.read_u32_be()?,
+            typ_e: reader.read_string_header(reader.get_position(), 4)?,
+            creator: reader.read_string_header(reader.get_position(), 4)?,
+            unique_id_seed: reader.read_u32_be()?,
+            next_record_list_id: reader.read_u32_be()?,
+            num_records: reader.read_u16_be()?,
         })
     }
 
@@ -100,7 +76,7 @@ impl Header {
 #[cfg(test)]
 mod tests {
     use super::Header;
-    use crate::book;
+    use crate::{book, Reader};
 
     #[test]
     fn parse() {
@@ -120,7 +96,7 @@ mod tests {
             next_record_list_id: 0,
             num_records: 292,
         };
-        let mut reader = book::test_reader();
+        let mut reader = Reader::new(&book::HEADER);
         let parsed_header = Header::parse(&mut reader);
         assert_eq!(header, parsed_header.unwrap())
     }
