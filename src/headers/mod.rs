@@ -2,6 +2,7 @@ pub(crate) mod exth;
 pub(crate) mod header;
 pub(crate) mod mobih;
 pub(crate) mod palmdoch;
+pub(crate) mod records;
 
 pub use self::{
     exth::{ExtHeader, ExthRecord},
@@ -10,6 +11,7 @@ pub use self::{
     palmdoch::PalmDocHeader,
 };
 
+use crate::headers::records::Records;
 use crate::reader::{MobiReader, ReaderPrime};
 use crate::Reader;
 #[cfg(feature = "time")]
@@ -28,6 +30,7 @@ pub(crate) trait HeaderField {
 /// Holds all headers containing low level metadata of a mobi book
 pub struct MobiMetadata {
     pub header: Header,
+    pub records: Records,
     pub palmdoc: PalmDocHeader,
     pub mobi: MobiHeader,
     pub exth: ExtHeader,
@@ -52,9 +55,11 @@ impl MobiMetadata {
 
     pub(crate) fn from_reader(reader: &mut impl MobiReader) -> io::Result<MobiMetadata> {
         let header = Header::parse(reader)?;
-        reader.set_num_of_records(header.num_of_records);
+        reader.set_num_records(header.num_records);
+        let records = Records::parse(reader)?;
         let palmdoc = PalmDocHeader::parse(reader)?;
         let mobi = MobiHeader::parse(reader)?;
+
         let exth = {
             if mobi.has_exth_header() {
                 ExtHeader::parse(reader, mobi.header_length)?
@@ -62,8 +67,10 @@ impl MobiMetadata {
                 ExtHeader::default()
             }
         };
+
         Ok(MobiMetadata {
             header,
+            records,
             palmdoc,
             mobi,
             exth,

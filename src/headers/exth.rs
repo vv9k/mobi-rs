@@ -200,7 +200,7 @@ mod tests {
         macro_rules! info {
             ($t: ident, $s: expr) => {
                 let mut reader = book::test_reader();
-                reader.set_num_of_records(292);
+                reader.set_num_records(292);
                 let mobi = MobiHeader::parse(&mut reader).unwrap();
                 let exth = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
                 let data = exth.get_record_string_lossy(ExthRecord::$t);

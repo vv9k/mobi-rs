@@ -75,6 +75,7 @@ pub struct PalmDocHeader {
     pub record_size: u16,
     pub encryption_type: u16,
 }
+
 impl PalmDocHeader {
     /// Parse a PalmDOC header from a reader. Reader must have num_of_records set
     /// to value from header.num_of_records

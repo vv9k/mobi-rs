@@ -6,13 +6,13 @@ use std::io::{self, Cursor};
 /// Helper struct for reading header values from content
 pub(crate) struct Reader<'r> {
     pub cursor: Cursor<&'r [u8]>,
-    pub num_of_records: u16,
+    pub num_records: u16,
 }
 
 pub(crate) trait MobiReader {
     fn content(&mut self) -> Vec<u8>;
 
-    fn set_num_of_records(&mut self, n: u16);
+    fn set_num_records(&mut self, n: u16);
 
     fn get_num_records(&self) -> u16;
 
@@ -45,7 +45,7 @@ impl<'r> Reader<'r> {
     pub(crate) fn new(content: &'r [u8]) -> Reader<'r> {
         Reader {
             cursor: Cursor::new(content),
-            num_of_records: 0,
+            num_records: 0,
         }
     }
 }
@@ -56,12 +56,12 @@ impl<'r> MobiReader for Reader<'r> {
     }
 
     fn get_num_records(&self) -> u16 {
-        self.num_of_records
+        self.num_records
     }
 
     #[inline]
-    fn set_num_of_records(&mut self, n: u16) {
-        self.num_of_records = n;
+    fn set_num_records(&mut self, n: u16) {
+        self.num_records = n;
     }
 
     #[inline]
@@ -91,7 +91,7 @@ impl<'r> MobiReader for Reader<'r> {
     }
 
     fn position_after_records(&self) -> u64 {
-        self.num_of_records as u64 * 8
+        self.num_records as u64 * 8
     }
 
     #[inline]
@@ -174,7 +174,7 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
     }
 
     #[inline]
-    fn set_num_of_records(&mut self, n: u16) {
+    fn set_num_records(&mut self, n: u16) {
         self.num_of_records = n;
     }
 

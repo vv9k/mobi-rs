@@ -4,7 +4,6 @@ use std::io;
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
 const EXTH_ON_FLAG: u32 = 0x40;
-const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
 
 #[derive(Debug, PartialEq)]
 pub enum TextEncoding {
@@ -42,11 +41,9 @@ pub struct MobiHeader {
     pub last_image_record: u16,
     pub fcis_record: u32,
     pub flis_record: u32,
-    pub extra_bytes: u32,
 }
 /// Parameters of Mobi Header
 pub(crate) enum MobiHeaderData {
-    ExtraBytes = 0,
     Identifier = 96,
     HeaderLength = 100,
     MobiType = 104,
@@ -85,7 +82,6 @@ impl MobiHeader {
         use MobiHeaderData::*;
 
         let mut m = MobiHeader {
-            extra_bytes: MobiHeader::extra_bytes(reader)?,
             identifier: reader.read_u32_header(Identifier)?,
             header_length: reader.read_u32_header(HeaderLength)?,
             mobi_type: reader.read_u32_header(MobiType)?,
@@ -129,12 +125,6 @@ impl MobiHeader {
     /// Checks if there is DRM on this book
     pub(crate) fn has_drm(&self) -> bool {
         self.drm_offset != DRM_ON_FLAG
-    }
-
-    /// Returns extra bytes for reading records
-    fn extra_bytes(reader: &mut impl MobiReader) -> io::Result<u32> {
-        let ex_bytes = reader.read_u16_header(MobiHeaderData::ExtraBytes)?;
-        Ok(2 * (ex_bytes & EXTRA_BYTES_FLAG).count_ones())
     }
 
     /// Converts numerical value into a type
@@ -297,7 +287,6 @@ mod tests {
             last_image_record: 288,
             fcis_record: 290,
             flis_record: 289,
-            extra_bytes: 22,
         };
 
         let mut reader = book::test_reader_after_header();

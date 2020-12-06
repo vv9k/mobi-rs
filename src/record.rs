@@ -1,6 +1,5 @@
 use super::{lz77, TextEncoding};
 use crate::headers::palmdoch::Compression;
-use byteorder::{BigEndian, ReadBytesExt};
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
 use std::borrow::Cow;
 use std::error::Error;
@@ -75,26 +74,15 @@ impl Record {
         }
     }
 
-    /// Parses a record from the reader at current position
-    fn parse_record_info(reader: &mut Cursor<&[u8]>) -> io::Result<(u32, u32)> {
-        Ok((reader.read_u32::<BigEndian>()?, reader.read_u32::<BigEndian>()?))
-    }
-
     /// Gets all records in the specified content
     pub(crate) fn parse_records(
         content: &[u8],
-        num_records: u16,
+        record_info: &[(u32, u32)],
         _extra_bytes: u32,
         compression_type: Compression,
     ) -> io::Result<Vec<Record>> {
         let mut reader = Cursor::new(content);
         reader.set_position(RECORDS_START_INDEX);
-
-        let mut record_info = vec![];
-
-        for _i in 0..num_records {
-            record_info.push(Record::parse_record_info(&mut reader)?);
-        }
 
         let mut new_records = vec![];
         for records in record_info.windows(2) {

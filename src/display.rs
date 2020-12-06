@@ -69,7 +69,7 @@ Num_of_records:         {}",
             self.creator,
             self.unique_id_seed,
             self.next_record_list_id,
-            self.num_of_records,
+            self.num_records,
         )
     }
     #[cfg(not(feature = "time"))]
@@ -100,7 +100,7 @@ Num_of_records:         {}",
             self.creator,
             self.unique_id_seed,
             self.next_record_list_id,
-            self.num_of_records,
+            self.num_records,
         )
     }
 }

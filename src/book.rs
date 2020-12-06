@@ -139,7 +139,7 @@ pub(crate) fn test_reader() -> Reader<'static> {
 
 pub(crate) fn test_reader_after_header() -> Reader<'static> {
     let mut reader = test_reader();
-    let num_of_records = reader.read_u16_header(HeaderData::NumOfRecords).unwrap();
-    reader.set_num_of_records(num_of_records);
+    let num_of_records = reader.read_u16_header(HeaderData::NumRecords).unwrap();
+    reader.set_num_records(num_of_records);
     reader
 }

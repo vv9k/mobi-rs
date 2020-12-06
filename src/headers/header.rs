@@ -19,13 +19,15 @@ pub(crate) enum HeaderData {
     Creator = 64,
     UniqueIdSeed = 68,
     NextRecordListId = 72,
-    NumOfRecords = 76,
+    NumRecords = 76,
 }
+
 impl HeaderField for HeaderData {
     fn position(self) -> u64 {
         self as u64
     }
 }
+
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds header information
 pub struct Header {
@@ -42,7 +44,7 @@ pub struct Header {
     pub creator: String,
     pub unique_id_seed: u32,
     pub next_record_list_id: u32,
-    pub num_of_records: u16,
+    pub num_records: u16,
 }
 impl Header {
     /// Parse a header from the content
@@ -62,7 +64,7 @@ impl Header {
             creator: reader.read_string_header(Creator, 4),
             unique_id_seed: reader.read_u32_header(UniqueIdSeed)?,
             next_record_list_id: reader.read_u32_header(NextRecordListId)?,
-            num_of_records: reader.read_u16_header(NumOfRecords)?,
+            num_records: reader.read_u16_header(NumRecords)?,
         })
     }
 
@@ -116,7 +118,7 @@ mod tests {
             creator: String::from("MOBI"),
             unique_id_seed: 292,
             next_record_list_id: 0,
-            num_of_records: 292,
+            num_records: 292,
         };
         let mut reader = book::test_reader();
         let parsed_header = Header::parse(&mut reader);
