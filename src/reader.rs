@@ -276,7 +276,6 @@ impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
 
         self.reader.read_exact(&mut buf)?;
         let s = String::from_utf8_lossy(&buf).to_owned().to_string();
-        println!("{} : ({} {:?})", s, len, buf);
         Ok(s)
     }
 }
