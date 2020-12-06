@@ -2,6 +2,7 @@
 use super::HeaderField;
 use crate::Reader;
 use std::{collections::HashMap, io};
+use crate::reader::MobiReader;
 
 const RECORDS_OFFSET: u64 = 108;
 
@@ -99,7 +100,7 @@ pub struct ExtHeader {
 
 impl ExtHeader {
     /// Parse a EXTH header from the content
-    pub(crate) fn parse(mut reader: &mut Reader, header_length: u32) -> io::Result<ExtHeader> {
+    pub(crate) fn parse(mut reader: &mut impl MobiReader, header_length: u32) -> io::Result<ExtHeader> {
         use ExtHeaderData::*;
 
         let header_length = header_length as u64;
@@ -110,13 +111,13 @@ impl ExtHeader {
             records: HashMap::new(),
         };
 
-        extheader.populate_records(&mut reader, header_length)?;
+        extheader.populate_records(reader, header_length)?;
         Ok(extheader)
     }
 
     /// Gets header records
-    fn populate_records(&mut self, reader: &mut Reader, header_length: u64) -> io::Result<()> {
-        let position = RECORDS_OFFSET + u64::from(reader.num_of_records * 8) + header_length;
+    fn populate_records(&mut self, reader: &mut impl MobiReader, header_length: u64) -> io::Result<()> {
+        let position = RECORDS_OFFSET + u64::from(reader.get_num_records() * 8) + header_length;
 
         reader.set_position(position);
 

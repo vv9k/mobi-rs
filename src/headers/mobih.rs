@@ -1,6 +1,7 @@
 use super::HeaderField;
 use crate::Reader;
 use std::io;
+use crate::reader::MobiReader;
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
 const EXTH_ON_FLAG: u32 = 0x40;
@@ -83,7 +84,7 @@ impl HeaderField for MobiHeaderData {
 }
 impl MobiHeader {
     /// Parse a Mobi header from the content
-    pub(crate) fn parse(mut reader: &mut Reader) -> io::Result<MobiHeader> {
+    pub(crate) fn parse(mut reader: &mut impl MobiReader) -> io::Result<MobiHeader> {
         use MobiHeaderData::*;
         Ok(MobiHeader {
             identifier: reader.read_u32_header(Identifier)?,
@@ -93,7 +94,7 @@ impl MobiHeader {
             id: reader.read_u32_header(Id)?,
             gen_version: reader.read_u32_header(GenVersion)?,
             first_non_book_index: reader.read_u32_header(FirstNonBookIndex)?,
-            name: MobiHeader::name(&mut reader)?,
+            name: MobiHeader::name(reader)?,
             name_offset: reader.read_u32_header(NameOffset)?,
             name_length: reader.read_u32_header(NameLength)?,
             language_code: MobiHeader::lang_code(reader.read_u32_header(LanguageCode)?),
@@ -115,21 +116,17 @@ impl MobiHeader {
             last_image_record: reader.read_u16_header(LastImageRecord)?,
             fcis_record: reader.read_u32_header(FcisRecord)?,
             flis_record: reader.read_u32_header(FlisRecord)?,
-            extra_bytes: MobiHeader::extra_bytes(&mut reader)?,
+            extra_bytes: MobiHeader::extra_bytes(reader)?,
         })
     }
 
     /// Returns the book name
-    pub(crate) fn name(reader: &mut Reader) -> io::Result<String> {
+    pub(crate) fn name(reader: &mut impl MobiReader) -> io::Result<String> {
         let name_offset = reader.read_u32_header(MobiHeaderData::NameOffset)?;
         let name_length = reader.read_u32_header(MobiHeaderData::NameLength)?;
         // TODO: figure out why is this exactly `+ 80` and it works?
-        let offset = name_offset as usize + (reader.num_of_records * 8) as usize + 80;
-        Ok(
-            String::from_utf8_lossy(&reader.cursor.get_mut()[offset..offset + name_length as usize])
-                .to_owned()
-                .to_string(),
-        )
+        let offset = name_offset as u64 + (reader.get_num_records() * 8) as u64 + 80;
+        Ok(reader.read_range(offset as u64, offset + name_length as u64))
     }
 
     /// Checks if there is a Exth Header and changes the parameter
@@ -143,7 +140,7 @@ impl MobiHeader {
     }
 
     /// Returns extra bytes for reading records
-    fn extra_bytes(reader: &mut Reader) -> io::Result<u32> {
+    fn extra_bytes(reader: &mut impl MobiReader) -> io::Result<u32> {
         let ex_bytes = reader.read_u16_header(MobiHeaderData::ExtraBytes)?;
         Ok(2 * (ex_bytes & EXTRA_BYTES_FLAG).count_ones())
     }

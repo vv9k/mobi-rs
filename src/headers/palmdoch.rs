@@ -1,6 +1,7 @@
 use super::HeaderField;
 use crate::Reader;
 use std::io;
+use crate::reader::MobiReader;
 
 /// Compression types available in MOBI format.
 pub(crate) enum Compression {
@@ -78,7 +79,7 @@ pub struct PalmDocHeader {
 impl PalmDocHeader {
     /// Parse a PalmDOC header from a reader. Reader must have num_of_records set
     /// to value from header.num_of_records
-    pub(crate) fn parse(reader: &mut Reader) -> io::Result<PalmDocHeader> {
+    pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<PalmDocHeader> {
         use PalmDocHeaderData::*;
         Ok(PalmDocHeader {
             compression: reader.read_u16_header(Compression)?,

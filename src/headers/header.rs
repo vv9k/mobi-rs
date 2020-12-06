@@ -3,6 +3,7 @@ use crate::Reader;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::io;
+use crate::reader::MobiReader;
 
 /// Parameters of Header
 pub(crate) enum HeaderData {
@@ -46,7 +47,7 @@ pub struct Header {
 }
 impl Header {
     /// Parse a header from the content
-    pub(crate) fn parse(reader: &mut Reader) -> io::Result<Header> {
+    pub(crate) fn parse(reader: &mut impl MobiReader) -> io::Result<Header> {
         use HeaderData::*;
         Ok(Header {
             name: reader.read_string_header(Name, 32),

@@ -9,12 +9,15 @@ pub use self::{
     mobih::{MobiHeader, TextEncoding},
     palmdoch::PalmDocHeader,
 };
+
 use crate::Reader;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::fs;
-use std::io::{self, Read};
+use std::io::{self, Read, BufReader};
 use std::path::Path;
+use crate::reader::{ReaderPrime, MobiReader};
+use std::fs::File;
 
 /// Trait allowing generic reading of header fields
 pub(crate) trait HeaderField {
@@ -38,7 +41,8 @@ impl MobiMetadata {
 
     /// Construct a Metadata object from passed file path
     pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<MobiMetadata> {
-        MobiMetadata::new(&fs::read(file_path)?)
+        let mut reader = ReaderPrime::new(BufReader::new(File::open(file_path)?));
+        MobiMetadata::from_reader(&mut reader)
     }
 
     /// Construct a Metadata object from an object that implements a Read trait
@@ -47,14 +51,14 @@ impl MobiMetadata {
         MobiMetadata::from_reader(&mut Reader::new(&content))
     }
 
-    pub(crate) fn from_reader(mut reader: &mut Reader) -> io::Result<MobiMetadata> {
-        let header = Header::parse(&mut reader)?;
+    pub(crate) fn from_reader(reader: &mut impl MobiReader) -> io::Result<MobiMetadata> {
+        let header = Header::parse(reader)?;
         reader.set_num_of_records(header.num_of_records);
-        let palmdoc = PalmDocHeader::parse(&mut reader)?;
-        let mobi = MobiHeader::parse(&mut reader)?;
+        let palmdoc = PalmDocHeader::parse(reader)?;
+        let mobi = MobiHeader::parse(reader)?;
         let exth = {
             if mobi.has_exth_header {
-                ExtHeader::parse(&mut reader, mobi.header_length)?
+                ExtHeader::parse(reader, mobi.header_length)?
             } else {
                 ExtHeader::default()
             }
@@ -66,6 +70,26 @@ impl MobiMetadata {
             exth,
         })
     }
+
+    // pub(crate) fn from_reader_prime<R: std::io::Read + Copy>(mut reader: &mut ReaderPrime<R>) -> io::Result<MobiMetadata> {
+    //     let header = Header::parse(&mut reader)?;
+    //     reader.set_num_of_records(header.num_of_records);
+    //     let palmdoc = PalmDocHeader::parse(&mut reader)?;
+    //     let mobi = MobiHeader::parse(&mut reader)?;
+    //     let exth = {
+    //         if mobi.has_exth_header {
+    //             ExtHeader::parse(&mut reader, mobi.header_length)?
+    //         } else {
+    //             ExtHeader::default()
+    //         }
+    //     };
+    //     Ok(MobiMetadata {
+    //         header,
+    //         palmdoc,
+    //         mobi,
+    //         exth,
+    //     })
+    // }
 
     //################################################################################//
     // Not available in Mobi

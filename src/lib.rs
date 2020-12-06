@@ -59,6 +59,7 @@ use chrono::NaiveDateTime;
 use headers::TextEncoding;
 pub(crate) use reader::Reader;
 use std::{fs, io, io::Read, ops::Range, path::Path};
+use crate::reader::{MobiReader, ReaderPrime};
 
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
@@ -69,7 +70,7 @@ pub struct Mobi {
 impl Mobi {
     /// Construct a Mobi object from a slice of bytes
     pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<Mobi> {
-        Mobi::from_reader(Reader::new(bytes.as_ref()))
+        Mobi::from_reader(&mut Reader::new(bytes.as_ref()))
     }
 
     /// Construct a Mobi object from passed file path
@@ -80,12 +81,11 @@ impl Mobi {
     /// Construct a Mobi object from an object that implements a Read trait
     pub fn from_read<R: Read>(reader: R) -> io::Result<Mobi> {
         // Temporary solution
-        let content: Vec<_> = reader.bytes().flatten().collect();
-        Mobi::from_reader(Reader::new(&content))
+        Mobi::from_reader(&mut ReaderPrime::new(reader))
     }
 
-    fn from_reader(mut reader: Reader) -> io::Result<Mobi> {
-        let metadata = MobiMetadata::from_reader(&mut reader)?;
+    fn from_reader(reader: &mut impl MobiReader) -> io::Result<Mobi> {
+        let metadata = MobiMetadata::from_reader(reader)?;
         Ok(Mobi {
             content: reader.content(),
             metadata,
