@@ -17,7 +17,8 @@ pub(crate) trait MobiReader {
     fn get_num_records(&self) -> u16;
 
     fn set_position(&mut self, n: u64);
-    fn get_position(&mut self) -> u64;
+
+    fn get_position(&self) -> u64;
 
     fn read_u32_be(&mut self) -> io::Result<u32>;
 
@@ -138,7 +139,7 @@ impl<'r> MobiReader for Reader<'r> {
         )
     }
 
-    fn get_position(&mut self) -> u64 {
+    fn get_position(&self) -> u64 {
         self.cursor.position()
     }
 }
@@ -177,7 +178,7 @@ impl<R: std::io::Read> ReaderPrime<R> {
 }
 
 impl<R: std::io::Read> MobiReader for ReaderPrime<R> {
-    fn get_position(&mut self) -> u64 {
+    fn get_position(&self) -> u64 {
         self.position as u64
     }
 

@@ -113,8 +113,8 @@ impl MobiHeader {
     }
 
     pub(crate) fn finish_parse(&mut self, reader: &mut impl MobiReader) -> io::Result<()> {
-        let offset = self.name_offset as u64 + (reader.get_num_records() * 8) as u64 + 80;
         // TODO: figure out why is this exactly `+ 80` and it works?
+        let offset = reader.position_after_records() + 80 + self.name_offset as u64;
         self.name = reader.read_range(offset as u64, offset + self.name_length as u64)?;
         Ok(())
     }
