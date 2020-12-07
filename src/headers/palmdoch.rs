@@ -1,5 +1,4 @@
-use super::HeaderField;
-use crate::Reader;
+use crate::reader::Reader;
 use std::io;
 
 /// Compression types available in MOBI format.
@@ -52,20 +51,6 @@ impl ToString for Encryption {
     }
 }
 
-/// Parameters of PalmDOC Header
-pub(crate) enum PalmDocHeaderData {
-    Compression = 80,
-    RecordCount = 88,
-    RecordSize = 90,
-    EncryptionType = 92,
-    TextLength = 84,
-}
-impl HeaderField for PalmDocHeaderData {
-    fn position(self) -> u64 {
-        self as u64
-    }
-}
-
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds PalmDOC header information
 pub struct PalmDocHeader {
@@ -75,17 +60,24 @@ pub struct PalmDocHeader {
     pub record_size: u16,
     pub encryption_type: u16,
 }
+
 impl PalmDocHeader {
-    /// Parse a PalmDOC header from a reader. Reader must have num_of_records set
-    /// to value from header.num_of_records
-    pub(crate) fn parse(reader: &mut Reader) -> io::Result<PalmDocHeader> {
-        use PalmDocHeaderData::*;
+    /// Parse a PalmDOC header from a reader. Reader must be advanced to the starting position
+    /// of the PalmDocHeader, at byte 80 + 8 * num_records.
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<PalmDocHeader> {
         Ok(PalmDocHeader {
-            compression: reader.read_u16_header(Compression)?,
-            text_length: reader.read_u32_header(TextLength)?,
-            record_count: reader.read_u16_header(RecordCount)?,
-            record_size: reader.read_u16_header(RecordSize)?,
-            encryption_type: reader.read_u16_header(EncryptionType)?,
+            compression: reader.read_u16_be()?,
+            text_length: {
+                reader.read_u16_be()?;
+                reader.read_u32_be()?
+            },
+            record_count: reader.read_u16_be()?,
+            record_size: reader.read_u16_be()?,
+            encryption_type: {
+                let b = reader.read_u16_be()?;
+                reader.read_u16_be()?;
+                b
+            },
         })
     }
 
@@ -117,7 +109,7 @@ mod tests {
             encryption_type: 0,
         };
 
-        let mut reader = book::test_reader_after_header();
+        let mut reader = book::u8_reader(book::PALMDOCHEADER.to_vec());
 
         assert_eq!(pdheader, PalmDocHeader::parse(&mut reader).unwrap());
     }

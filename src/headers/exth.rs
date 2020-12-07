@@ -1,9 +1,6 @@
 #![allow(dead_code)]
-use super::HeaderField;
-use crate::Reader;
+use crate::reader::Reader;
 use std::{collections::HashMap, io};
-
-const RECORDS_OFFSET: u64 = 108;
 
 // Records available in EXTH header
 pub enum ExthRecord {
@@ -73,19 +70,6 @@ pub enum ExthRecord {
     Language = 524,
 }
 
-/// Parameters of Exth Header
-pub(crate) enum ExtHeaderData {
-    Identifier = 96,
-    HeaderLength = 100,
-    RecordCount = 104,
-}
-
-impl HeaderField for ExtHeaderData {
-    fn position(self) -> u64 {
-        self as u64
-    }
-}
-
 #[derive(Debug, Default, PartialEq)]
 /// Optional header containing extended information. If the MOBI header
 /// indicates that there's an EXTH header, it follows immediately after
@@ -98,36 +82,29 @@ pub struct ExtHeader {
 }
 
 impl ExtHeader {
-    /// Parse a EXTH header from the content
-    pub(crate) fn parse(mut reader: &mut Reader, header_length: u32) -> io::Result<ExtHeader> {
-        use ExtHeaderData::*;
-
-        let header_length = header_length as u64;
+    /// Parse a EXTH header from the content. Reader must be at starting
+    /// location of exth header.
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<ExtHeader> {
         let mut extheader = ExtHeader {
-            identifier: reader.read_u32_header_offset(Identifier.position() + header_length)?,
-            header_length: reader.read_u32_header_offset(HeaderLength.position() + header_length)?,
-            record_count: reader.read_u32_header_offset(RecordCount.position() + header_length)?,
+            identifier: reader.read_u32_be()?,
+            header_length: reader.read_u32_be()?,
+            record_count: reader.read_u32_be()?,
             records: HashMap::new(),
         };
 
-        extheader.populate_records(&mut reader, header_length)?;
+        extheader.populate_records(reader)?;
         Ok(extheader)
     }
 
     /// Gets header records
-    fn populate_records(&mut self, reader: &mut Reader, header_length: u64) -> io::Result<()> {
-        let position = RECORDS_OFFSET + u64::from(reader.num_of_records * 8) + header_length;
-
-        reader.set_position(position);
-
+    fn populate_records<R: io::Read>(&mut self, reader: &mut Reader<R>) -> io::Result<()> {
         for _i in 0..self.record_count {
             let record_type = reader.read_u32_be()?;
             let record_len = reader.read_u32_be()?;
 
-            let mut record_data = Vec::with_capacity(record_len as usize - 8);
-            for _j in 0..record_len - 8 {
-                record_data.push(reader.read_u8()?);
-            }
+            let mut record_data = vec![0; (record_len - 8) as usize];
+            reader.read_exact(&mut record_data)?;
+
             self.records.insert(record_type, record_data);
         }
 
@@ -155,7 +132,6 @@ impl ExtHeader {
 mod tests {
     use super::*;
     use crate::book;
-    use crate::headers::MobiHeader;
 
     #[test]
     fn parse() {
@@ -183,9 +159,8 @@ mod tests {
             record_count: 11,
             records,
         };
-        let mut reader = book::test_reader_after_header();
-        let mobi = MobiHeader::parse(&mut reader).unwrap();
-        let parsed_header = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
+        let mut reader = book::u8_reader(book::BOOK.to_vec());
+        let parsed_header = ExtHeader::parse(&mut reader).unwrap();
         for (k, v) in &extheader.records {
             let record = parsed_header.get_record_position(*k);
             assert!(record.is_some());
@@ -197,12 +172,11 @@ mod tests {
     mod records {
         use super::*;
         use crate::book;
+
         macro_rules! info {
             ($t: ident, $s: expr) => {
-                let mut reader = book::test_reader();
-                reader.set_num_of_records(292);
-                let mobi = MobiHeader::parse(&mut reader).unwrap();
-                let exth = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
+                let mut reader = book::u8_reader(book::BOOK.to_vec());
+                let exth = ExtHeader::parse(&mut reader).unwrap();
                 let data = exth.get_record_string_lossy(ExthRecord::$t);
                 assert_eq!(data, Some(String::from($s)));
             };

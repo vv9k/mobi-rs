@@ -2,6 +2,7 @@ pub(crate) mod exth;
 pub(crate) mod header;
 pub(crate) mod mobih;
 pub(crate) mod palmdoch;
+pub(crate) mod records;
 
 pub use self::{
     exth::{ExtHeader, ExthRecord},
@@ -9,23 +10,21 @@ pub use self::{
     mobih::{MobiHeader, TextEncoding},
     palmdoch::PalmDocHeader,
 };
-use crate::Reader;
+
+use crate::headers::records::Records;
+use crate::reader::Reader;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
-use std::fs;
-use std::io::{self, Read};
+use std::fs::File;
+use std::io::{self, BufReader, Read};
 use std::path::Path;
-
-/// Trait allowing generic reading of header fields
-pub(crate) trait HeaderField {
-    /// Returns a position in the text where this field can be read
-    fn position(self) -> u64;
-}
 
 #[derive(Debug, Default)]
 /// Holds all headers containing low level metadata of a mobi book
 pub struct MobiMetadata {
+    pub name: String,
     pub header: Header,
+    pub records: Records,
     pub palmdoc: PalmDocHeader,
     pub mobi: MobiHeader,
     pub exth: ExtHeader,
@@ -33,34 +32,38 @@ pub struct MobiMetadata {
 impl MobiMetadata {
     /// Construct a Metadata object from a slice of bytes
     pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<MobiMetadata> {
-        MobiMetadata::from_reader(&mut Reader::new(bytes.as_ref()))
+        MobiMetadata::from_reader(&mut Reader::new(std::io::Cursor::new(bytes.as_ref())))
     }
 
     /// Construct a Metadata object from passed file path
     pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<MobiMetadata> {
-        MobiMetadata::new(&fs::read(file_path)?)
+        let mut reader = Reader::new(BufReader::new(File::open(file_path)?));
+        MobiMetadata::from_reader(&mut reader)
     }
 
     /// Construct a Metadata object from an object that implements a Read trait
     pub fn from_read<R: Read>(reader: R) -> io::Result<MobiMetadata> {
-        let content: Vec<_> = reader.bytes().flatten().collect();
-        MobiMetadata::from_reader(&mut Reader::new(&content))
+        MobiMetadata::from_reader(&mut Reader::new(reader))
     }
 
-    pub(crate) fn from_reader(mut reader: &mut Reader) -> io::Result<MobiMetadata> {
-        let header = Header::parse(&mut reader)?;
-        reader.set_num_of_records(header.num_of_records);
-        let palmdoc = PalmDocHeader::parse(&mut reader)?;
-        let mobi = MobiHeader::parse(&mut reader)?;
-        let exth = {
-            if mobi.has_exth_header {
-                ExtHeader::parse(&mut reader, mobi.header_length)?
-            } else {
-                ExtHeader::default()
-            }
+    pub(crate) fn from_reader<R: Read>(reader: &mut Reader<R>) -> io::Result<MobiMetadata> {
+        let header = Header::parse(reader)?;
+        let records = Records::parse(reader, header.num_records)?;
+        let palmdoc = PalmDocHeader::parse(reader)?;
+        let mobi = MobiHeader::parse(reader)?;
+
+        let exth = if mobi.has_exth_header() {
+            ExtHeader::parse(reader)?
+        } else {
+            ExtHeader::default()
         };
+
+        reader.set_position((records.records[0].0 + mobi.name_offset) as usize)?;
+
         Ok(MobiMetadata {
+            name: reader.read_string_header(mobi.name_length as usize)?,
             header,
+            records,
             palmdoc,
             mobi,
             exth,
@@ -176,5 +179,17 @@ impl MobiMetadata {
     /// Returns encryption method used on this file
     pub fn encryption(&self) -> String {
         self.palmdoc.encryption()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::book;
+
+    #[test]
+    fn test_mobi_metadata() {
+        let mut reader = book::u8_reader(book::full_book());
+        assert!(MobiMetadata::from_reader(&mut reader).is_ok());
     }
 }
