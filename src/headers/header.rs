@@ -1,37 +1,14 @@
-use super::HeaderField;
-use crate::Reader;
+use crate::reader::Reader;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::io;
 
-/// Parameters of Header
-pub(crate) enum HeaderData {
-    Name = 0,
-    Attributes = 32,
-    Version = 34,
-    Created = 36,
-    Modified = 40,
-    Backup = 44,
-    Modnum = 48,
-    AppInfoId = 52,
-    SortInfoId = 56,
-    TypE = 60,
-    Creator = 64,
-    UniqueIdSeed = 68,
-    NextRecordListId = 72,
-    NumOfRecords = 76,
-}
-impl HeaderField for HeaderData {
-    fn position(self) -> u64 {
-        self as u64
-    }
-}
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds header information
 pub struct Header {
     pub name: String,
-    pub attributes: i16,
-    pub version: i16,
+    pub attributes: u16,
+    pub version: u16,
     pub created: u32,
     pub modified: u32,
     pub backup: u32,
@@ -42,27 +19,28 @@ pub struct Header {
     pub creator: String,
     pub unique_id_seed: u32,
     pub next_record_list_id: u32,
-    pub num_of_records: u16,
+    pub num_records: u16,
 }
+
 impl Header {
-    /// Parse a header from the content
-    pub(crate) fn parse(reader: &mut Reader) -> io::Result<Header> {
-        use HeaderData::*;
+    /// Parse a header from the content. The reader must be advanced to the starting position of the
+    /// header, at byte 0.
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Header> {
         Ok(Header {
-            name: reader.read_string_header(Name, 32),
-            attributes: reader.read_i16_header(Attributes)?,
-            version: reader.read_i16_header(Version)?,
-            created: reader.read_u32_header(Created)?,
-            modified: reader.read_u32_header(Modified)?,
-            backup: reader.read_u32_header(Backup)?,
-            modnum: reader.read_u32_header(Modnum)?,
-            app_info_id: reader.read_u32_header(AppInfoId)?,
-            sort_info_id: reader.read_u32_header(SortInfoId)?,
-            typ_e: reader.read_string_header(TypE, 4),
-            creator: reader.read_string_header(Creator, 4),
-            unique_id_seed: reader.read_u32_header(UniqueIdSeed)?,
-            next_record_list_id: reader.read_u32_header(NextRecordListId)?,
-            num_of_records: reader.read_u16_header(NumOfRecords)?,
+            name: reader.read_string_header(32)?,
+            attributes: reader.read_u16_be()?,
+            version: reader.read_u16_be()?,
+            created: reader.read_u32_be()?,
+            modified: reader.read_u32_be()?,
+            backup: reader.read_u32_be()?,
+            modnum: reader.read_u32_be()?,
+            app_info_id: reader.read_u32_be()?,
+            sort_info_id: reader.read_u32_be()?,
+            typ_e: reader.read_string_header(4)?,
+            creator: reader.read_string_header(4)?,
+            unique_id_seed: reader.read_u32_be()?,
+            next_record_list_id: reader.read_u32_be()?,
+            num_records: reader.read_u16_be()?,
         })
     }
 
@@ -116,9 +94,9 @@ mod tests {
             creator: String::from("MOBI"),
             unique_id_seed: 292,
             next_record_list_id: 0,
-            num_of_records: 292,
+            num_records: 292,
         };
-        let mut reader = book::test_reader();
+        let mut reader = book::u8_reader(book::HEADER.to_vec());
         let parsed_header = Header::parse(&mut reader);
         assert_eq!(header, parsed_header.unwrap())
     }

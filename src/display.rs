@@ -69,7 +69,7 @@ Num_of_records:         {}",
             self.creator,
             self.unique_id_seed,
             self.next_record_list_id,
-            self.num_of_records,
+            self.num_records,
         )
     }
     #[cfg(not(feature = "time"))]
@@ -100,7 +100,7 @@ Num_of_records:         {}",
             self.creator,
             self.unique_id_seed,
             self.next_record_list_id,
-            self.num_of_records,
+            self.num_records,
         )
     }
 }
@@ -170,8 +170,8 @@ Flis record:            {}",
             self.first_data_record,
             self.data_record_count,
             self.exth_flags,
-            self.has_exth_header,
-            self.has_drm,
+            self.has_exth_header(),
+            self.has_drm(),
             self.drm_offset,
             self.drm_count,
             self.drm_size,

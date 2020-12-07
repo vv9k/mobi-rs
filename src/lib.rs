@@ -58,7 +58,7 @@ pub(crate) mod record;
 use chrono::NaiveDateTime;
 use headers::TextEncoding;
 pub(crate) use reader::Reader;
-use std::{fs, io, io::Read, ops::Range, path::Path};
+use std::{fs::File, io, io::BufReader, ops::Range, path::Path};
 
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
@@ -66,28 +66,28 @@ pub struct Mobi {
     pub content: Vec<u8>,
     pub metadata: MobiMetadata,
 }
+
 impl Mobi {
     /// Construct a Mobi object from a slice of bytes
     pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<Mobi> {
-        Mobi::from_reader(Reader::new(bytes.as_ref()))
+        Mobi::from_reader(&mut Reader::new(std::io::Cursor::new(bytes.as_ref())))
     }
 
     /// Construct a Mobi object from passed file path
     pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<Mobi> {
-        Mobi::new(&fs::read(file_path)?)
+        let mut reader = Reader::new(BufReader::new(File::open(file_path)?));
+        Mobi::from_reader(&mut reader)
     }
 
     /// Construct a Mobi object from an object that implements a Read trait
-    pub fn from_read<R: Read>(reader: R) -> io::Result<Mobi> {
-        // Temporary solution
-        let content: Vec<_> = reader.bytes().flatten().collect();
-        Mobi::from_reader(Reader::new(&content))
+    pub fn from_read<R: io::Read>(reader: R) -> io::Result<Mobi> {
+        Mobi::from_reader(&mut Reader::new(reader))
     }
 
-    fn from_reader(mut reader: Reader) -> io::Result<Mobi> {
-        let metadata = MobiMetadata::from_reader(&mut reader)?;
+    fn from_reader<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Mobi> {
+        let metadata = MobiMetadata::from_reader(reader)?;
         Ok(Mobi {
-            content: reader.content(),
+            content: reader.read_to_end()?,
             metadata,
         })
     }
@@ -189,8 +189,8 @@ impl Mobi {
     fn records(&self) -> io::Result<Vec<Record>> {
         Record::parse_records(
             &self.content,
-            self.metadata.header.num_of_records,
-            self.metadata.mobi.extra_bytes,
+            &self.metadata.records.records,
+            self.metadata.records.extra_bytes,
             self.metadata.palmdoc.compression_enum(),
         )
     }

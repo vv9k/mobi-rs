@@ -1,93 +1,81 @@
-use crate::headers::HeaderField;
-use byteorder::{BigEndian, ReadBytesExt};
-use std::io::{self, Cursor};
+use std::io::{self, Read};
 
-#[derive(Debug, Default)]
-/// Helper struct for reading header values from content
-pub(crate) struct Reader<'r> {
-    pub cursor: Cursor<&'r [u8]>,
-    pub num_of_records: u16,
+#[derive(Debug, Default, Clone)]
+/// Helper struct for reading header values from content.
+/// Only allows forward reads.
+pub(crate) struct Reader<R> {
+    reader: R,
+    position: usize,
 }
-impl<'r> Reader<'r> {
-    pub(crate) fn new(content: &'r [u8]) -> Reader<'r> {
+
+impl<R: std::io::Read> Reader<R> {
+    pub(crate) fn new(content: R) -> Reader<R> {
         Reader {
-            cursor: Cursor::new(content),
-            num_of_records: 0,
+            reader: content,
+            position: 0,
         }
     }
 
-    pub(crate) fn content(&self) -> Vec<u8> {
-        self.cursor.clone().into_inner().to_vec()
+    pub(crate) fn read_to_end(&mut self) -> io::Result<Vec<u8>> {
+        // Zero-fill so that Records parsing works as expected.
+        let mut first_buf = vec![0; self.position];
+        // read_to_end appends to the end of the buffer.
+        self.reader.read_to_end(&mut first_buf)?;
+        self.position = first_buf.len();
+        Ok(first_buf)
     }
 
-    #[allow(dead_code)]
-    pub(crate) fn content_ref(&self) -> &[u8] {
-        self.cursor.clone().into_inner()
+    pub(crate) fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
+        self.reader.read_exact(buf)?;
+        self.position += buf.len();
+        Ok(())
+    }
+
+    pub(crate) fn get_position(&self) -> usize {
+        self.position as usize
     }
 
     #[inline]
-    pub(crate) fn set_num_of_records(&mut self, n: u16) {
-        self.num_of_records = n;
-    }
+    pub(crate) fn set_position(&mut self, p: usize) -> io::Result<()> {
+        debug_assert!(p >= self.position, "{}, {}", p, self.position);
 
-    #[inline]
-    pub(crate) fn set_position(&mut self, n: u64) {
-        self.cursor.set_position(n);
+        if p >= self.position {
+            std::io::copy(
+                &mut self.reader.by_ref().take((p - self.position) as u64),
+                &mut io::sink(),
+            )?;
+            self.position = p;
+        }
+
+        Ok(())
     }
 
     #[inline]
     pub(crate) fn read_u32_be(&mut self) -> io::Result<u32> {
-        self.cursor.read_u32::<BigEndian>()
+        let mut bytes = [0; 4];
+        self.read_exact(&mut bytes)?;
+        Ok(u32::from_be_bytes(bytes))
     }
 
     #[inline]
     pub(crate) fn read_u16_be(&mut self) -> io::Result<u16> {
-        self.cursor.read_u16::<BigEndian>()
+        let mut bytes = [0; 2];
+        self.read_exact(&mut bytes)?;
+        Ok(u16::from_be_bytes(bytes))
     }
 
     #[inline]
-    pub(crate) fn read_i16_be(&mut self) -> io::Result<i16> {
-        self.cursor.read_i16::<BigEndian>()
-    }
-
-    #[inline]
+    #[allow(dead_code)]
     pub(crate) fn read_u8(&mut self) -> io::Result<u8> {
-        self.cursor.read_u8()
+        let mut bytes = [0; 1];
+        self.read_exact(&mut bytes)?;
+        Ok(u8::from_be_bytes(bytes))
     }
 
-    fn position_after_records(&self) -> u64 {
-        self.num_of_records as u64 * 8
-    }
+    pub(crate) fn read_string_header(&mut self, len: usize) -> io::Result<String> {
+        let mut buf = vec![0; len];
+        self.read_exact(&mut buf)?;
 
-    #[inline]
-    pub(crate) fn read_i16_header<F: HeaderField>(&mut self, field: F) -> io::Result<i16> {
-        self.set_position(self.position_after_records() + field.position());
-        self.read_i16_be()
-    }
-
-    #[inline]
-    pub(crate) fn read_u16_header<F: HeaderField>(&mut self, field: F) -> io::Result<u16> {
-        self.set_position(self.position_after_records() + field.position());
-        self.read_u16_be()
-    }
-
-    #[inline]
-    pub(crate) fn read_u32_header<F: HeaderField>(&mut self, field: F) -> io::Result<u32> {
-        self.set_position(self.position_after_records() + field.position());
-        self.read_u32_be()
-    }
-
-    #[inline]
-    pub(crate) fn read_u32_header_offset(&mut self, offset: u64) -> io::Result<u32> {
-        self.set_position(self.position_after_records() + offset);
-        self.read_u32_be()
-    }
-
-    pub(crate) fn read_string_header<F: HeaderField>(&mut self, field: F, len: u64) -> String {
-        let position = field.position() as usize;
-        let string_range = position..position + len as usize;
-        String::from_utf8_lossy(&self.cursor.get_ref()[string_range])
-            .to_owned()
-            .to_string()
+        Ok(String::from_utf8_lossy(&buf).to_owned().to_string())
     }
 }

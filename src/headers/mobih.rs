@@ -1,10 +1,8 @@
-use super::HeaderField;
 use crate::Reader;
 use std::io;
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
 const EXTH_ON_FLAG: u32 = 0x40;
-const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
 
 #[derive(Debug, PartialEq)]
 pub enum TextEncoding {
@@ -22,7 +20,6 @@ pub struct MobiHeader {
     pub id: u32,
     pub gen_version: u32,
     pub first_non_book_index: u32,
-    pub name: String,
     pub name_offset: u32,
     pub name_length: u32,
     pub language_code: u16,
@@ -35,8 +32,6 @@ pub struct MobiHeader {
     pub first_data_record: u32,
     pub data_record_count: u32,
     pub exth_flags: u32,
-    pub has_exth_header: bool,
-    pub has_drm: bool,
     pub drm_offset: u32,
     pub drm_count: u32,
     pub drm_size: u32,
@@ -44,108 +39,71 @@ pub struct MobiHeader {
     pub last_image_record: u16,
     pub fcis_record: u32,
     pub flis_record: u32,
-    pub extra_bytes: u32,
 }
-/// Parameters of Mobi Header
-pub(crate) enum MobiHeaderData {
-    ExtraBytes = 0,
-    Identifier = 96,
-    HeaderLength = 100,
-    MobiType = 104,
-    TextEncoding = 108,
-    Id = 112,
-    GenVersion = 116,
-    FirstNonBookIndex = 160,
-    NameOffset = 164,
-    NameLength = 168,
-    LanguageCode = 172,
-    InputLanguage = 176,
-    OutputLanguage = 180,
-    FormatVersion = 184,
-    FirstImageIndex = 188,
-    FirstHuffRecord = 192,
-    HuffRecordCount = 196,
-    FirstDataRecord = 200,
-    DataRecordCount = 204,
-    ExthFlags = 208,
-    DrmOffset = 248,
-    DrmCount = 252,
-    DrmSize = 256,
-    DrmFlags = 260,
-    LastImageRecord = 274,
-    FcisRecord = 280,
-    FlisRecord = 288,
-}
-impl HeaderField for MobiHeaderData {
-    fn position(self) -> u64 {
-        self as u64
-    }
-}
-impl MobiHeader {
-    /// Parse a Mobi header from the content
-    pub(crate) fn parse(mut reader: &mut Reader) -> io::Result<MobiHeader> {
-        use MobiHeaderData::*;
-        Ok(MobiHeader {
-            identifier: reader.read_u32_header(Identifier)?,
-            header_length: reader.read_u32_header(HeaderLength)?,
-            mobi_type: reader.read_u32_header(MobiType)?,
-            text_encoding: reader.read_u32_header(TextEncoding)?,
-            id: reader.read_u32_header(Id)?,
-            gen_version: reader.read_u32_header(GenVersion)?,
-            first_non_book_index: reader.read_u32_header(FirstNonBookIndex)?,
-            name: MobiHeader::name(&mut reader)?,
-            name_offset: reader.read_u32_header(NameOffset)?,
-            name_length: reader.read_u32_header(NameLength)?,
-            language_code: MobiHeader::lang_code(reader.read_u32_header(LanguageCode)?),
-            input_language: reader.read_u32_header(InputLanguage)?,
-            output_language: reader.read_u32_header(OutputLanguage)?,
-            format_version: reader.read_u32_header(FormatVersion)?,
-            first_image_index: reader.read_u32_header(FirstImageIndex)?,
-            first_huff_record: reader.read_u32_header(FirstHuffRecord)?,
-            huff_record_count: reader.read_u32_header(HuffRecordCount)?,
-            first_data_record: reader.read_u32_header(FirstDataRecord)?,
-            data_record_count: reader.read_u32_header(DataRecordCount)?,
-            exth_flags: reader.read_u32_header(ExthFlags)?,
-            has_exth_header: MobiHeader::has_exth_header(reader.read_u32_header(ExthFlags)?),
-            drm_offset: reader.read_u32_header(DrmOffset)?,
-            drm_count: reader.read_u32_header(DrmCount)?,
-            drm_size: reader.read_u32_header(DrmSize)?,
-            drm_flags: reader.read_u32_header(DrmFlags)?,
-            has_drm: MobiHeader::has_drm(reader.read_u32_header(DrmOffset)?),
-            last_image_record: reader.read_u16_header(LastImageRecord)?,
-            fcis_record: reader.read_u32_header(FcisRecord)?,
-            flis_record: reader.read_u32_header(FlisRecord)?,
-            extra_bytes: MobiHeader::extra_bytes(&mut reader)?,
-        })
-    }
 
-    /// Returns the book name
-    pub(crate) fn name(reader: &mut Reader) -> io::Result<String> {
-        let name_offset = reader.read_u32_header(MobiHeaderData::NameOffset)?;
-        let name_length = reader.read_u32_header(MobiHeaderData::NameLength)?;
-        // TODO: figure out why is this exactly `+ 80` and it works?
-        let offset = name_offset as usize + (reader.num_of_records * 8) as usize + 80;
-        Ok(
-            String::from_utf8_lossy(&reader.cursor.get_mut()[offset..offset + name_length as usize])
-                .to_owned()
-                .to_string(),
-        )
+impl MobiHeader {
+    /// Parse a Mobi header from the content. The reader must be advanced to the starting
+    /// position of the Mobi header.
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<MobiHeader> {
+        let start_position = reader.get_position();
+
+        let m = MobiHeader {
+            identifier: reader.read_u32_be()?,
+            header_length: reader.read_u32_be()?,
+            mobi_type: reader.read_u32_be()?,
+            text_encoding: reader.read_u32_be()?,
+            id: reader.read_u32_be()?,
+            gen_version: reader.read_u32_be()?,
+            first_non_book_index: {
+                reader.set_position(reader.get_position() + 40)?;
+                reader.read_u32_be()?
+            },
+            name_offset: reader.read_u32_be()?,
+            name_length: reader.read_u32_be()?,
+            language_code: MobiHeader::lang_code(reader.read_u32_be()?),
+            input_language: reader.read_u32_be()?,
+            output_language: reader.read_u32_be()?,
+            format_version: reader.read_u32_be()?,
+            first_image_index: reader.read_u32_be()?,
+            first_huff_record: reader.read_u32_be()?,
+            huff_record_count: reader.read_u32_be()?,
+            first_data_record: reader.read_u32_be()?,
+            data_record_count: reader.read_u32_be()?,
+            exth_flags: reader.read_u32_be()?,
+            drm_offset: {
+                reader.set_position(reader.get_position() + 36)?;
+                reader.read_u32_be()?
+            },
+            drm_count: reader.read_u32_be()?,
+            drm_size: reader.read_u32_be()?,
+            drm_flags: reader.read_u32_be()?,
+            last_image_record: {
+                reader.set_position(reader.get_position() + 10)?;
+                reader.read_u16_be()?
+            },
+            fcis_record: {
+                reader.read_u32_be()?;
+                reader.read_u32_be()?
+            },
+            flis_record: {
+                reader.read_u32_be()?;
+                reader.read_u32_be()?
+            },
+        };
+
+        reader.set_position(start_position + m.header_length as usize)?;
+
+        Ok(m)
     }
 
     /// Checks if there is a Exth Header and changes the parameter
-    pub(crate) fn has_exth_header(exth_flags: u32) -> bool {
-        (exth_flags & EXTH_ON_FLAG) != 0
+    pub fn has_exth_header(&self) -> bool {
+        (self.exth_flags & EXTH_ON_FLAG) != 0
     }
 
     /// Checks if there is DRM on this book
-    fn has_drm(drm_offset: u32) -> bool {
-        drm_offset != DRM_ON_FLAG
-    }
-
-    /// Returns extra bytes for reading records
-    fn extra_bytes(reader: &mut Reader) -> io::Result<u32> {
-        let ex_bytes = reader.read_u16_header(MobiHeaderData::ExtraBytes)?;
-        Ok(2 * (ex_bytes & EXTRA_BYTES_FLAG).count_ones())
+    pub fn has_drm(&self) -> bool {
+        self.drm_offset != DRM_ON_FLAG
     }
 
     /// Converts numerical value into a type
@@ -279,11 +237,6 @@ mod tests {
     use crate::{book, TextEncoding};
 
     #[test]
-    fn has_exth_header() {
-        assert_eq!(true, MobiHeader::has_exth_header(80));
-    }
-
-    #[test]
     fn parse() {
         let mobiheader = MobiHeader {
             identifier: 1297039945,
@@ -293,7 +246,6 @@ mod tests {
             id: 3428045761,
             gen_version: 6,
             first_non_book_index: 284,
-            name: String::from("Lord of the Rings - Fellowship of the Ring"),
             name_offset: 1360,
             name_length: 42,
             language_code: 9,
@@ -306,8 +258,6 @@ mod tests {
             first_data_record: 0,
             data_record_count: 0,
             exth_flags: 80,
-            has_exth_header: true,
-            has_drm: false,
             drm_offset: 4294967295,
             drm_count: 0,
             drm_size: 0,
@@ -315,12 +265,80 @@ mod tests {
             last_image_record: 288,
             fcis_record: 290,
             flis_record: 289,
-            extra_bytes: 22,
         };
 
-        let mut reader = book::test_reader_after_header();
+        let mut reader = book::u8_reader(book::MOBIHEADER.to_vec());
+        let test_header = MobiHeader::parse(&mut reader).unwrap();
 
-        assert_eq!(mobiheader, MobiHeader::parse(&mut reader).unwrap());
+        assert_eq!(mobiheader, test_header);
+    }
+
+    #[test]
+    fn test_no_drm() {
+        let mobiheader = MobiHeader {
+            identifier: 1297039945,
+            header_length: 232,
+            mobi_type: 2,
+            text_encoding: 65001,
+            id: 3428045761,
+            gen_version: 6,
+            first_non_book_index: 284,
+            name_offset: 1360,
+            name_length: 42,
+            language_code: 9,
+            input_language: 0,
+            output_language: 0,
+            format_version: 6,
+            first_image_index: 287,
+            first_huff_record: 0,
+            huff_record_count: 0,
+            first_data_record: 0,
+            data_record_count: 0,
+            exth_flags: 80,
+            drm_offset: 4294967295,
+            drm_count: 0,
+            drm_size: 0,
+            drm_flags: 0,
+            last_image_record: 288,
+            fcis_record: 290,
+            flis_record: 289,
+        };
+
+        assert!(!mobiheader.has_drm());
+    }
+
+    #[test]
+    fn test_drm() {
+        let mobiheader = MobiHeader {
+            identifier: 1297039945,
+            header_length: 232,
+            mobi_type: 2,
+            text_encoding: 65001,
+            id: 3428045761,
+            gen_version: 6,
+            first_non_book_index: 284,
+            name_offset: 1360,
+            name_length: 42,
+            language_code: 9,
+            input_language: 0,
+            output_language: 0,
+            format_version: 6,
+            first_image_index: 287,
+            first_huff_record: 0,
+            huff_record_count: 0,
+            first_data_record: 0,
+            data_record_count: 0,
+            exth_flags: 80,
+            drm_offset: 1,
+            drm_count: 0,
+            drm_size: 0,
+            drm_flags: 0,
+            last_image_record: 288,
+            fcis_record: 290,
+            flis_record: 289,
+        };
+
+        assert!(mobiheader.has_drm());
     }
 
     mod text_encoding {
