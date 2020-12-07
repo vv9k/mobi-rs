@@ -31,13 +31,12 @@ impl<R: std::io::Read> Reader<R> {
         Ok(())
     }
 
-    pub(crate) fn get_position(&self) -> u64 {
-        self.position as u64
+    pub(crate) fn get_position(&self) -> usize {
+        self.position as usize
     }
 
     #[inline]
-    pub(crate) fn set_position(&mut self, n: u64) -> io::Result<()> {
-        let p = n as usize;
+    pub(crate) fn set_position(&mut self, p: usize) -> io::Result<()> {
         debug_assert!(p >= self.position, "{}, {}", p, self.position);
 
         if p >= self.position {

@@ -91,7 +91,7 @@ impl MobiHeader {
             },
         };
 
-        reader.set_position(start_position + m.header_length as u64)?;
+        reader.set_position(start_position + m.header_length as usize)?;
 
         Ok(m)
     }

@@ -58,7 +58,7 @@ impl MobiMetadata {
             ExtHeader::default()
         };
 
-        reader.set_position((records.records[0].0 + mobi.name_offset) as u64)?;
+        reader.set_position((records.records[0].0 + mobi.name_offset) as usize)?;
 
         Ok(MobiMetadata {
             name: reader.read_string_header(mobi.name_length as usize)?,
