@@ -12,7 +12,7 @@ pub use self::{
 };
 
 use crate::headers::records::Records;
-use crate::reader::Reader;
+use crate::reader::{Reader, Writer};
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::fs::File;
@@ -68,6 +68,21 @@ impl MobiMetadata {
             mobi,
             exth,
         })
+    }
+
+    pub(crate) fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        let mut w = Writer::new(writer);
+        self.header.write(&mut w)?;
+        self.records.write(&mut w)?;
+        self.palmdoc.write(&mut w)?;
+        self.mobi.write(&mut w)?;
+        if self.mobi.has_exth_header() {
+            self.exth.write(&mut w)?;
+        }
+
+        let fill = ((self.records.records[0].0 + self.mobi.name_offset) as usize).saturating_sub(w.bytes_written());
+        w.write_be(vec![0; fill])?;
+        w.write_string_be(&self.name, self.mobi.name_length as usize)
     }
 
     //################################################################################//
@@ -191,5 +206,21 @@ mod test {
     fn test_mobi_metadata() {
         let mut reader = book::u8_reader(book::full_book());
         assert!(MobiMetadata::from_reader(&mut reader).is_ok());
+    }
+
+    #[test]
+    fn test_mobi_write() {
+        let full_book = book::full_book();
+        let mut reader = book::u8_reader(full_book.clone());
+        let m = MobiMetadata::from_reader(&mut reader).unwrap();
+        let mut bytes = vec![];
+        assert!(m.write(&mut bytes).is_ok());
+        assert_eq!(bytes.len(), full_book.len());
+
+        for (i, (w1, w2)) in bytes.chunks(8).zip(full_book.chunks(8)).enumerate() {
+            assert_eq!(w1, w2, "{}", i * 8);
+        }
+
+        assert_eq!(bytes, book::full_book());
     }
 }
