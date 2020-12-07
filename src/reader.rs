@@ -4,7 +4,7 @@ use std::io::{self, Read};
 /// Helper struct for reading header values from content.
 /// Only allows forward reads.
 pub(crate) struct Reader<R> {
-    pub reader: R,
+    reader: R,
     position: usize,
 }
 
