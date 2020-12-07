@@ -79,6 +79,7 @@ impl<R: std::io::Read> Reader<R> {
     }
 
     #[inline]
+    #[allow(dead_code)]
     pub(crate) fn read_u8(&mut self) -> io::Result<u8> {
         let mut bytes = [0; 1];
         self.read_exact(&mut bytes)?;

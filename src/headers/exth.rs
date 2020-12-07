@@ -105,10 +105,9 @@ impl ExtHeader {
             let record_type = reader.read_u32_be()?;
             let record_len = reader.read_u32_be()?;
 
-            let mut record_data = Vec::with_capacity(record_len as usize - 8);
-            for _j in 0..record_len - 8 {
-                record_data.push(reader.read_u8()?);
-            }
+            let mut record_data = vec![0; (record_len - 8) as usize];
+            reader.read_exact(&mut record_data)?;
+
             self.records.insert(record_type, record_data);
         }
 
