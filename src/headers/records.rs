@@ -16,12 +16,15 @@ pub struct Records {
 }
 
 impl Records {
-    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Records> {
-        let mut records = Vec::with_capacity(reader.get_num_records() as usize);
+    /// Parse the records from a reader. Reader must be advanced to the starting position
+    /// of the records, at byte 78.
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>, num_records: u16) -> io::Result<Records> {
+        let mut records = Vec::with_capacity(num_records as usize);
 
-        for _ in 0..reader.get_num_records() {
+        for _ in 0..num_records {
             records.push((reader.read_u32_be()?, reader.read_u32_be()?));
         }
+
         let extra_bytes = reader.read_u16_be()?;
 
         Ok(Records {
@@ -39,8 +42,6 @@ mod test {
     #[test]
     fn parse() {
         let mut reader = book::u8_reader(book::RECORDS.to_vec());
-        reader.set_num_records(292);
-
-        assert!(Records::parse(&mut reader).is_ok());
+        assert!(Records::parse(&mut reader, 292).is_ok());
     }
 }

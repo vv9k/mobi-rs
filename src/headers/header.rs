@@ -23,7 +23,8 @@ pub struct Header {
 }
 
 impl Header {
-    /// Parse a header from the content
+    /// Parse a header from the content. The reader must be advanced to the starting position of the
+    /// header, at byte 0.
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Header> {
         Ok(Header {
             name: reader.read_string_header(32)?,

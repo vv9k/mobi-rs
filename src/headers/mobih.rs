@@ -20,7 +20,6 @@ pub struct MobiHeader {
     pub id: u32,
     pub gen_version: u32,
     pub first_non_book_index: u32,
-    pub name: String,
     pub name_offset: u32,
     pub name_length: u32,
     pub language_code: u16,
@@ -43,9 +42,10 @@ pub struct MobiHeader {
 }
 
 impl MobiHeader {
-    /// Partially parse a Mobi header from the content
-    pub(crate) fn partial_parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<MobiHeader> {
-        Ok(MobiHeader {
+    /// Parse a Mobi header from the content. The reader must be advanced to the starting
+    /// position of the Mobi header.
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<MobiHeader> {
+        let m = MobiHeader {
             identifier: reader.read_u32_be()?,
             header_length: reader.read_u32_be()?,
             mobi_type: reader.read_u32_be()?,
@@ -87,16 +87,12 @@ impl MobiHeader {
                 reader.read_u32_be()?;
                 reader.read_u32_be()?
             },
-            name: String::new(),
-        })
-    }
+        };
 
-    pub(crate) fn finish_parse<R: io::Read>(&mut self, reader: &mut Reader<R>) -> io::Result<()> {
-        // +80 is because Header is 78 bytes, records is position_after_records + 2 bytes,
-        // and the first record starts immediately.
-        reader.set_position(reader.position_after_records() + 80 + self.name_offset as u64)?;
-        self.name = reader.read_string_header(self.name_length as usize)?;
-        Ok(())
+        // We have read 196 bytes, and we need to eat the rest of the header.
+        reader.set_position(reader.get_position() + m.header_length as u64 - 196)?;
+
+        Ok(m)
     }
 
     /// Checks if there is a Exth Header and changes the parameter
@@ -249,8 +245,6 @@ mod tests {
             id: 3428045761,
             gen_version: 6,
             first_non_book_index: 284,
-            // name: String::from("Lord of the Rings - Fellowship of the Ring"),
-            name: String::new(),
             name_offset: 1360,
             name_length: 42,
             language_code: 9,
@@ -273,8 +267,7 @@ mod tests {
         };
 
         let mut reader = book::u8_reader(book::MOBIHEADER.to_vec());
-        let test_header = MobiHeader::partial_parse(&mut reader).unwrap();
-        // test_header.finish_parse(&mut reader).expect("Should find name");
+        let test_header = MobiHeader::parse(&mut reader).unwrap();
 
         assert_eq!(mobiheader, test_header);
     }
@@ -289,8 +282,6 @@ mod tests {
             id: 3428045761,
             gen_version: 6,
             first_non_book_index: 284,
-            // name: String::from("Lord of the Rings - Fellowship of the Ring"),
-            name: String::new(),
             name_offset: 1360,
             name_length: 42,
             language_code: 9,
@@ -325,8 +316,6 @@ mod tests {
             id: 3428045761,
             gen_version: 6,
             first_non_book_index: 284,
-            // name: String::from("Lord of the Rings - Fellowship of the Ring"),
-            name: String::new(),
             name_offset: 1360,
             name_length: 42,
             language_code: 9,

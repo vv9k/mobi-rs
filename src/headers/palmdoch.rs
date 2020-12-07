@@ -62,8 +62,8 @@ pub struct PalmDocHeader {
 }
 
 impl PalmDocHeader {
-    /// Parse a PalmDOC header from a reader. Reader must have num_of_records set
-    /// to value from header.num_of_records
+    /// Parse a PalmDOC header from a reader. Reader must be advanced to the starting position
+    /// of the PalmDocHeader, at byte 80 + 8 * num_records.
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<PalmDocHeader> {
         Ok(PalmDocHeader {
             compression: reader.read_u16_be()?,

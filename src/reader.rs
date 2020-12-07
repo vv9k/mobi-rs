@@ -1,10 +1,10 @@
 use std::io::{self, Read};
 
 #[derive(Debug, Default, Clone)]
-/// Helper struct for reading header values from content
+/// Helper struct for reading header values from content.
+/// Only allows forward reads.
 pub(crate) struct Reader<R> {
     pub reader: R,
-    pub num_records: u16,
     position: usize,
 }
 
@@ -12,16 +12,16 @@ impl<R: std::io::Read> Reader<R> {
     pub(crate) fn new(content: R) -> Reader<R> {
         Reader {
             reader: content,
-            num_records: 0,
             position: 0,
         }
     }
 
     pub(crate) fn read_to_end(&mut self) -> io::Result<Vec<u8>> {
+        // Zero-fill so that Records parsing works as expected.
         let mut first_buf = vec![0; self.position];
-        let mut second_buf = vec![];
-        self.reader.read_to_end(&mut second_buf)?;
-        first_buf.extend_from_slice(&second_buf);
+        // read_to_end appends to the end of the buffer.
+        self.reader.read_to_end(&mut first_buf)?;
+        self.position = first_buf.len();
         Ok(first_buf)
     }
 
@@ -29,19 +29,6 @@ impl<R: std::io::Read> Reader<R> {
         self.reader.read_exact(buf)?;
         self.position += buf.len();
         Ok(())
-    }
-
-    pub(crate) fn get_num_records(&self) -> u16 {
-        self.num_records
-    }
-
-    #[inline]
-    pub(crate) fn set_num_records(&mut self, n: u16) {
-        self.num_records = n;
-    }
-
-    pub(crate) fn position_after_records(&self) -> u64 {
-        self.num_records as u64 * 8
     }
 
     pub(crate) fn get_position(&self) -> u64 {

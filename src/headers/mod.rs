@@ -22,6 +22,7 @@ use std::path::Path;
 #[derive(Debug, Default)]
 /// Holds all headers containing low level metadata of a mobi book
 pub struct MobiMetadata {
+    pub name: String,
     pub header: Header,
     pub records: Records,
     pub palmdoc: PalmDocHeader,
@@ -47,26 +48,20 @@ impl MobiMetadata {
 
     pub(crate) fn from_reader<R: Read>(reader: &mut Reader<R>) -> io::Result<MobiMetadata> {
         let header = Header::parse(reader)?;
-        reader.set_num_records(header.num_records);
-        let records = Records::parse(reader)?;
+        let records = Records::parse(reader, header.num_records)?;
         let palmdoc = PalmDocHeader::parse(reader)?;
-        let mut mobi = MobiHeader::partial_parse(reader)?;
+        let mobi = MobiHeader::parse(reader)?;
 
-        let exth = {
-            if mobi.has_exth_header() {
-                ExtHeader::parse(reader, mobi.header_length)?
-            } else {
-                ExtHeader::default()
-            }
+        let exth = if mobi.has_exth_header() {
+            ExtHeader::parse(reader)?
+        } else {
+            ExtHeader::default()
         };
 
-        let offset1 = reader.position_after_records() + 80 + mobi.name_offset as u64;
-        let offset = records.records[0].0 + mobi.name_offset;
-
-        assert_eq!(offset as u64, offset1);
-        mobi.finish_parse(reader)?;
+        reader.set_position((records.records[0].0 + mobi.name_offset) as u64)?;
 
         Ok(MobiMetadata {
+            name: reader.read_string_header(mobi.name_length as usize)?,
             header,
             records,
             palmdoc,

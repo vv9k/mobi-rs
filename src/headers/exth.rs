@@ -84,10 +84,9 @@ pub struct ExtHeader {
 }
 
 impl ExtHeader {
-    /// Parse a EXTH header from the content
-    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>, header_length: u32) -> io::Result<ExtHeader> {
-        let header_length = header_length as u64;
-        reader.set_position(reader.position_after_records() + header_length + 96)?;
+    /// Parse a EXTH header from the content. Reader must be at starting
+    /// location of exth header.
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<ExtHeader> {
         let mut extheader = ExtHeader {
             identifier: reader.read_u32_be()?,
             header_length: reader.read_u32_be()?,
@@ -135,8 +134,6 @@ impl ExtHeader {
 mod tests {
     use super::*;
     use crate::book;
-    use crate::headers::records::Records;
-    use crate::headers::{Header, MobiHeader, PalmDocHeader};
 
     #[test]
     fn parse() {
@@ -164,14 +161,8 @@ mod tests {
             record_count: 11,
             records,
         };
-        let mut reader = book::u8_reader(book::full_book());
-        let h = Header::parse(&mut reader).unwrap();
-        reader.set_num_records(h.num_records);
-        let _ = Records::parse(&mut reader).unwrap();
-        let _ = PalmDocHeader::parse(&mut reader).unwrap();
-        let mut mobi = MobiHeader::partial_parse(&mut reader).unwrap();
-        let parsed_header = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
-        mobi.finish_parse(&mut reader).expect("Should find a name.");
+        let mut reader = book::u8_reader(book::BOOK.to_vec());
+        let parsed_header = ExtHeader::parse(&mut reader).unwrap();
         for (k, v) in &extheader.records {
             let record = parsed_header.get_record_position(*k);
             assert!(record.is_some());
@@ -186,14 +177,8 @@ mod tests {
 
         macro_rules! info {
             ($t: ident, $s: expr) => {
-                let mut reader = book::u8_reader(book::full_book());
-                let h = Header::parse(&mut reader).unwrap();
-                reader.set_num_records(h.num_records);
-                let _ = Records::parse(&mut reader).unwrap();
-                let _ = PalmDocHeader::parse(&mut reader).unwrap();
-                let mut mobi = MobiHeader::partial_parse(&mut reader).unwrap();
-                let exth = ExtHeader::parse(&mut reader, mobi.header_length).unwrap();
-                mobi.finish_parse(&mut reader).expect("Should find name");
+                let mut reader = book::u8_reader(book::BOOK.to_vec());
+                let exth = ExtHeader::parse(&mut reader).unwrap();
                 let data = exth.get_record_string_lossy(ExthRecord::$t);
                 assert_eq!(data, Some(String::from($s)));
             };
