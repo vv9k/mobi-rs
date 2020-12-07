@@ -183,7 +183,7 @@ impl Mobi {
     }
 
     fn readable_records_range(&self) -> Range<usize> {
-        1..self.last_index()
+        self.metadata.mobi.first_content_record as usize..self.last_index()
     }
 
     fn records(&self) -> io::Result<Vec<Record>> {
