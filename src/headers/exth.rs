@@ -87,7 +87,7 @@ impl ExtHeader {
     /// Parse a EXTH header from the content
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>, header_length: u32) -> io::Result<ExtHeader> {
         let header_length = header_length as u64;
-        reader.set_position(reader.position_after_records() + header_length + 96);
+        reader.set_position(reader.position_after_records() + header_length + 96)?;
         let mut extheader = ExtHeader {
             identifier: reader.read_u32_be()?,
             header_length: reader.read_u32_be()?,

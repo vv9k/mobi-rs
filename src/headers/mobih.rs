@@ -53,7 +53,7 @@ impl MobiHeader {
             id: reader.read_u32_be()?,
             gen_version: reader.read_u32_be()?,
             first_non_book_index: {
-                reader.set_position(reader.get_position() + 40);
+                reader.set_position(reader.get_position() + 40)?;
                 reader.read_u32_be()?
             },
             name_offset: reader.read_u32_be()?,
@@ -69,14 +69,14 @@ impl MobiHeader {
             data_record_count: reader.read_u32_be()?,
             exth_flags: reader.read_u32_be()?,
             drm_offset: {
-                reader.set_position(reader.get_position() + 36);
+                reader.set_position(reader.get_position() + 36)?;
                 reader.read_u32_be()?
             },
             drm_count: reader.read_u32_be()?,
             drm_size: reader.read_u32_be()?,
             drm_flags: reader.read_u32_be()?,
             last_image_record: {
-                reader.set_position(reader.get_position() + 10);
+                reader.set_position(reader.get_position() + 10)?;
                 reader.read_u16_be()?
             },
             fcis_record: {
@@ -92,9 +92,10 @@ impl MobiHeader {
     }
 
     pub(crate) fn finish_parse<R: io::Read>(&mut self, reader: &mut Reader<R>) -> io::Result<()> {
-        // TODO: figure out why is this exactly `+ 80` and it works?
-        let offset = reader.position_after_records() + 80 + self.name_offset as u64;
-        self.name = reader.read_string_header(offset, self.name_length as usize)?;
+        // +80 is because Header is 78 bytes, records is position_after_records + 2 bytes,
+        // and the first record starts immediately.
+        reader.set_position(reader.position_after_records() + 80 + self.name_offset as u64)?;
+        self.name = reader.read_string_header(self.name_length as usize)?;
         Ok(())
     }
 

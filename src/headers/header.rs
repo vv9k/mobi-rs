@@ -25,9 +25,8 @@ pub struct Header {
 impl Header {
     /// Parse a header from the content
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Header> {
-        reader.set_position(0);
         Ok(Header {
-            name: reader.read_string_header(0, 32)?,
+            name: reader.read_string_header(32)?,
             attributes: reader.read_u16_be()?,
             version: reader.read_u16_be()?,
             created: reader.read_u32_be()?,
@@ -36,8 +35,8 @@ impl Header {
             modnum: reader.read_u32_be()?,
             app_info_id: reader.read_u32_be()?,
             sort_info_id: reader.read_u32_be()?,
-            typ_e: reader.read_string_header(reader.get_position(), 4)?,
-            creator: reader.read_string_header(reader.get_position(), 4)?,
+            typ_e: reader.read_string_header(4)?,
+            creator: reader.read_string_header(4)?,
             unique_id_seed: reader.read_u32_be()?,
             next_record_list_id: reader.read_u32_be()?,
             num_records: reader.read_u16_be()?,

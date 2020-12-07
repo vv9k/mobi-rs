@@ -1,4 +1,3 @@
-use byteorder::ReadBytesExt;
 use std::io::{self, Read};
 
 #[derive(Debug, Default, Clone)]
@@ -16,21 +15,6 @@ impl<R: std::io::Read> Reader<R> {
             num_records: 0,
             position: 0,
         }
-    }
-
-    // Advances the internal position to p.
-    fn read_to_point(&mut self, p: usize) -> io::Result<()> {
-        debug_assert!(p >= self.position, "{}, {}", p, self.position);
-
-        if p > self.position {
-            std::io::copy(
-                &mut self.reader.by_ref().take((p - self.position) as u64),
-                &mut io::sink(),
-            )?;
-            self.position = p;
-        }
-
-        Ok(())
     }
 
     pub(crate) fn read_to_end(&mut self) -> io::Result<Vec<u8>> {
@@ -56,47 +40,54 @@ impl<R: std::io::Read> Reader<R> {
         self.num_records = n;
     }
 
+    pub(crate) fn position_after_records(&self) -> u64 {
+        self.num_records as u64 * 8
+    }
+
     pub(crate) fn get_position(&self) -> u64 {
         self.position as u64
     }
 
     #[inline]
-    pub(crate) fn set_position(&mut self, n: u64) {
-        self.read_to_point(n as usize).unwrap();
+    pub(crate) fn set_position(&mut self, n: u64) -> io::Result<()> {
+        let p = n as usize;
+        debug_assert!(p >= self.position, "{}, {}", p, self.position);
+
+        if p >= self.position {
+            std::io::copy(
+                &mut self.reader.by_ref().take((p - self.position) as u64),
+                &mut io::sink(),
+            )?;
+            self.position = p;
+        }
+
+        Ok(())
     }
 
     #[inline]
     pub(crate) fn read_u32_be(&mut self) -> io::Result<u32> {
         let mut bytes = [0; 4];
-        self.reader.read_exact(&mut bytes)?;
-        self.position += 4;
+        self.read_exact(&mut bytes)?;
         Ok(u32::from_be_bytes(bytes))
     }
 
     #[inline]
     pub(crate) fn read_u16_be(&mut self) -> io::Result<u16> {
         let mut bytes = [0; 2];
-        self.reader.read_exact(&mut bytes)?;
-        self.position += 2;
+        self.read_exact(&mut bytes)?;
         Ok(u16::from_be_bytes(bytes))
     }
 
     #[inline]
     pub(crate) fn read_u8(&mut self) -> io::Result<u8> {
-        self.position += 1;
-        self.reader.read_u8()
+        let mut bytes = [0; 1];
+        self.read_exact(&mut bytes)?;
+        Ok(u8::from_be_bytes(bytes))
     }
 
-    pub(crate) fn position_after_records(&self) -> u64 {
-        self.num_records as u64 * 8
-    }
-
-    pub(crate) fn read_string_header(&mut self, start: u64, len: usize) -> io::Result<String> {
-        self.read_to_point(start as usize)?;
+    pub(crate) fn read_string_header(&mut self, len: usize) -> io::Result<String> {
         let mut buf = vec![0; len];
-
-        self.reader.read_exact(&mut buf)?;
-        self.position += len;
+        self.read_exact(&mut buf)?;
 
         Ok(String::from_utf8_lossy(&buf).to_owned().to_string())
     }
