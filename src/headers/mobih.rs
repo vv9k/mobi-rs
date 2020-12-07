@@ -1,3 +1,4 @@
+use crate::reader::Writer;
 use crate::Reader;
 use std::io;
 
@@ -10,7 +11,54 @@ pub enum TextEncoding {
     UTF8,
 }
 
-#[derive(Debug, PartialEq, Default)]
+impl Default for MobiHeader {
+    fn default() -> Self {
+        MobiHeader {
+            identifier: 0,
+            header_length: 0,
+            mobi_type: 0,
+            text_encoding: 0,
+            id: 0,
+            gen_version: 0,
+            ortho_index: 0xFFFF_FFFF,
+            inflect_index: 0xFFFF_FFFF,
+            index_names: 0xFFFF_FFFF,
+            index_keys: 0xFFFF_FFFF,
+            extra_indices: [0xFFFF_FFFF; 6],
+            first_non_book_index: 0,
+            name_offset: 0,
+            name_length: 0,
+            unused: 0,
+            locale: 0,
+            language_code: 0,
+            input_language: 0,
+            output_language: 0,
+            format_version: 0,
+            first_image_index: 0,
+            first_huff_record: 0,
+            huff_record_count: 0,
+            huff_table_offset: 0,
+            huff_table_length: 0,
+            exth_flags: 0,
+            unused_0: Box::new([0; 32]),
+            unused_1: 0xFFFF_FFFF,
+            drm_offset: 0,
+            drm_count: 0,
+            drm_size: 0,
+            drm_flags: 0,
+            unused_2: Box::new([0; 8]),
+            first_content_record: 1,
+            last_content_record: 0,
+            unused_3: 1,
+            fcis_record: 0,
+            unused_4: 1,
+            flis_record: 0,
+            unused_5: vec![],
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 /// Strcture that holds Mobi header information
 pub struct MobiHeader {
     pub identifier: u32,
@@ -19,81 +67,157 @@ pub struct MobiHeader {
     pub text_encoding: u32,
     pub id: u32,
     pub gen_version: u32,
+    pub ortho_index: u32,
+    pub inflect_index: u32,
+    pub index_names: u32,
+    pub index_keys: u32,
+    pub extra_indices: [u32; 6],
     pub first_non_book_index: u32,
     pub name_offset: u32,
     pub name_length: u32,
-    pub language_code: u16,
+    unused: u16,
+    pub locale: u8,
+    pub language_code: u8,
     pub input_language: u32,
     pub output_language: u32,
     pub format_version: u32,
     pub first_image_index: u32,
     pub first_huff_record: u32,
     pub huff_record_count: u32,
-    pub first_data_record: u32,
-    pub data_record_count: u32,
+    pub huff_table_offset: u32,
+    pub huff_table_length: u32,
     pub exth_flags: u32,
+    unused_0: Box<[u8; 32]>,
+    unused_1: u32,
     pub drm_offset: u32,
     pub drm_count: u32,
     pub drm_size: u32,
     pub drm_flags: u32,
-    pub last_image_record: u16,
+    unused_2: Box<[u8; 8]>,
+    pub first_content_record: u16,
+    pub last_content_record: u16,
+    unused_3: u32,
     pub fcis_record: u32,
+    unused_4: u32,
     pub flis_record: u32,
+    unused_5: Vec<u8>,
 }
 
 impl MobiHeader {
     /// Parse a Mobi header from the content. The reader must be advanced to the starting
     /// position of the Mobi header.
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<MobiHeader> {
-        let start_position = reader.get_position();
+        let identifier = reader.read_u32_be()?;
+        let header_length = reader.read_u32_be()?;
 
-        let m = MobiHeader {
-            identifier: reader.read_u32_be()?,
-            header_length: reader.read_u32_be()?,
+        Ok(MobiHeader {
+            identifier,
+            header_length,
             mobi_type: reader.read_u32_be()?,
             text_encoding: reader.read_u32_be()?,
             id: reader.read_u32_be()?,
             gen_version: reader.read_u32_be()?,
-            first_non_book_index: {
-                reader.set_position(reader.get_position() + 40)?;
-                reader.read_u32_be()?
-            },
+            ortho_index: reader.read_u32_be()?,
+            inflect_index: reader.read_u32_be()?,
+            index_names: reader.read_u32_be()?,
+            index_keys: reader.read_u32_be()?,
+            extra_indices: [
+                reader.read_u32_be()?,
+                reader.read_u32_be()?,
+                reader.read_u32_be()?,
+                reader.read_u32_be()?,
+                reader.read_u32_be()?,
+                reader.read_u32_be()?,
+            ],
+            first_non_book_index: reader.read_u32_be()?,
             name_offset: reader.read_u32_be()?,
             name_length: reader.read_u32_be()?,
-            language_code: MobiHeader::lang_code(reader.read_u32_be()?),
+            unused: reader.read_u16_be()?,
+            locale: reader.read_u8()?,
+            language_code: reader.read_u8()?,
             input_language: reader.read_u32_be()?,
             output_language: reader.read_u32_be()?,
             format_version: reader.read_u32_be()?,
             first_image_index: reader.read_u32_be()?,
             first_huff_record: reader.read_u32_be()?,
             huff_record_count: reader.read_u32_be()?,
-            first_data_record: reader.read_u32_be()?,
-            data_record_count: reader.read_u32_be()?,
+            huff_table_offset: reader.read_u32_be()?,
+            huff_table_length: reader.read_u32_be()?,
             exth_flags: reader.read_u32_be()?,
-            drm_offset: {
-                reader.set_position(reader.get_position() + 36)?;
-                reader.read_u32_be()?
+            unused_0: {
+                let mut bytes = [0; 32];
+                reader.read_exact(&mut bytes)?;
+                Box::new(bytes)
             },
+            unused_1: reader.read_u32_be()?,
+            drm_offset: reader.read_u32_be()?,
             drm_count: reader.read_u32_be()?,
             drm_size: reader.read_u32_be()?,
             drm_flags: reader.read_u32_be()?,
-            last_image_record: {
-                reader.set_position(reader.get_position() + 10)?;
-                reader.read_u16_be()?
+            unused_2: {
+                let mut bytes = [0; 8];
+                reader.read_exact(&mut bytes)?;
+                Box::new(bytes)
             },
-            fcis_record: {
-                reader.read_u32_be()?;
-                reader.read_u32_be()?
+            first_content_record: reader.read_u16_be()?,
+            last_content_record: reader.read_u16_be()?,
+            unused_3: reader.read_u32_be()?,
+            fcis_record: reader.read_u32_be()?,
+            unused_4: reader.read_u32_be()?,
+            flis_record: reader.read_u32_be()?,
+            unused_5: {
+                let mut unused = vec![0; header_length as usize - 196];
+                reader.read_exact(&mut unused)?;
+                unused
             },
-            flis_record: {
-                reader.read_u32_be()?;
-                reader.read_u32_be()?
-            },
-        };
+        })
+    }
 
-        reader.set_position(start_position + m.header_length as usize)?;
-
-        Ok(m)
+    /// Parse a Mobi header from the content. The reader must be advanced to the starting
+    /// position of the Mobi header.
+    pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
+        w.write_be(self.identifier)?;
+        w.write_be(self.header_length)?;
+        w.write_be(self.mobi_type)?;
+        w.write_be(self.text_encoding)?;
+        w.write_be(self.id)?;
+        w.write_be(self.gen_version)?;
+        w.write_be(self.ortho_index)?;
+        w.write_be(self.inflect_index)?;
+        w.write_be(self.index_names)?;
+        w.write_be(self.index_keys)?;
+        for &i in &self.extra_indices {
+            w.write_be(i)?;
+        }
+        w.write_be(self.first_non_book_index)?;
+        w.write_be(self.name_offset)?;
+        w.write_be(self.name_length)?;
+        w.write_be(self.unused)?;
+        w.write_be(self.locale)?;
+        w.write_be(self.language_code)?;
+        w.write_be(self.input_language)?;
+        w.write_be(self.output_language)?;
+        w.write_be(self.format_version)?;
+        w.write_be(self.first_image_index)?;
+        w.write_be(self.first_huff_record)?;
+        w.write_be(self.huff_record_count)?;
+        w.write_be(self.huff_table_offset)?;
+        w.write_be(self.huff_table_length)?;
+        w.write_be(self.exth_flags)?;
+        w.write_be(self.unused_0.as_ref().as_ref())?;
+        w.write_be(self.unused_1)?;
+        w.write_be(self.drm_offset)?;
+        w.write_be(self.drm_count)?;
+        w.write_be(self.drm_size)?;
+        w.write_be(self.drm_flags)?;
+        w.write_be(self.unused_2.as_ref().as_ref())?;
+        w.write_be(self.first_content_record)?;
+        w.write_be(self.last_content_record)?;
+        w.write_be(self.unused_3)?;
+        w.write_be(self.fcis_record)?;
+        w.write_be(self.unused_4)?;
+        w.write_be(self.flis_record)?;
+        w.write_be(self.unused_5.as_slice())
     }
 
     /// Checks if there is a Exth Header and changes the parameter
@@ -138,10 +262,6 @@ impl MobiHeader {
             65001 => TextEncoding::UTF8,
             n => panic!("Unknown encoding {}", n),
         }
-    }
-
-    fn lang_code(code: u32) -> u16 {
-        (code & 0xFF) as u16
     }
 
     pub(crate) fn language(&self) -> Option<String> {
@@ -234,10 +354,12 @@ impl MobiHeader {
 #[cfg(test)]
 mod tests {
     use super::MobiHeader;
-    use crate::{book, TextEncoding};
+    use crate::book::MOBIHEADER;
+    use crate::reader::Writer;
+    use crate::{book, Mobi, TextEncoding};
 
     #[test]
-    fn parse() {
+    fn test_parse() {
         let mobiheader = MobiHeader {
             identifier: 1297039945,
             header_length: 232,
@@ -245,9 +367,16 @@ mod tests {
             text_encoding: 65001,
             id: 3428045761,
             gen_version: 6,
+            ortho_index: 0xFFFF_FFFF,
+            inflect_index: 0xFFFF_FFFF,
+            index_names: 0xFFFF_FFFF,
+            index_keys: 0xFFFF_FFFF,
+            extra_indices: [0xFFFF_FFFF; 6],
             first_non_book_index: 284,
             name_offset: 1360,
             name_length: 42,
+            unused: 0,
+            locale: 8,
             language_code: 9,
             input_language: 0,
             output_language: 0,
@@ -255,16 +384,26 @@ mod tests {
             first_image_index: 287,
             first_huff_record: 0,
             huff_record_count: 0,
-            first_data_record: 0,
-            data_record_count: 0,
+            huff_table_offset: 0,
+            huff_table_length: 0,
             exth_flags: 80,
             drm_offset: 4294967295,
             drm_count: 0,
             drm_size: 0,
             drm_flags: 0,
-            last_image_record: 288,
+            first_content_record: 1,
+            last_content_record: 288,
             fcis_record: 290,
             flis_record: 289,
+            unused_0: Box::new([0; 32]),
+            unused_1: 0xFFFF_FFFF,
+            unused_2: Box::new([0, 0, 0, 0, 0, 0, 0, 0]),
+            unused_3: 1,
+            unused_4: 1,
+            unused_5: vec![
+                0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255,
+                255, 0, 0, 0, 7, 0, 0, 1, 28,
+            ],
         };
 
         let mut reader = book::u8_reader(book::MOBIHEADER.to_vec());
@@ -274,85 +413,53 @@ mod tests {
     }
 
     #[test]
+    fn test_drm() {
+        let mobiheader = MobiHeader {
+            drm_offset: 1,
+            ..Default::default()
+        };
+
+        assert!(mobiheader.has_drm());
+    }
+
+    #[test]
     fn test_no_drm() {
         let mobiheader = MobiHeader {
-            identifier: 1297039945,
-            header_length: 232,
-            mobi_type: 2,
-            text_encoding: 65001,
-            id: 3428045761,
-            gen_version: 6,
-            first_non_book_index: 284,
-            name_offset: 1360,
-            name_length: 42,
-            language_code: 9,
-            input_language: 0,
-            output_language: 0,
-            format_version: 6,
-            first_image_index: 287,
-            first_huff_record: 0,
-            huff_record_count: 0,
-            first_data_record: 0,
-            data_record_count: 0,
-            exth_flags: 80,
-            drm_offset: 4294967295,
-            drm_count: 0,
-            drm_size: 0,
-            drm_flags: 0,
-            last_image_record: 288,
-            fcis_record: 290,
-            flis_record: 289,
+            drm_offset: 0xFFFF_FFFF,
+            ..Default::default()
         };
 
         assert!(!mobiheader.has_drm());
     }
 
     #[test]
-    fn test_drm() {
-        let mobiheader = MobiHeader {
-            identifier: 1297039945,
-            header_length: 232,
-            mobi_type: 2,
-            text_encoding: 65001,
-            id: 3428045761,
-            gen_version: 6,
-            first_non_book_index: 284,
-            name_offset: 1360,
-            name_length: 42,
-            language_code: 9,
-            input_language: 0,
-            output_language: 0,
-            format_version: 6,
-            first_image_index: 287,
-            first_huff_record: 0,
-            huff_record_count: 0,
-            first_data_record: 0,
-            data_record_count: 0,
-            exth_flags: 80,
-            drm_offset: 1,
-            drm_count: 0,
-            drm_size: 0,
-            drm_flags: 0,
-            last_image_record: 288,
-            fcis_record: 290,
-            flis_record: 289,
-        };
+    fn test_write() {
+        let input_bytes = book::MOBIHEADER.to_vec();
 
-        assert!(mobiheader.has_drm());
+        let mobiheader = MobiHeader::parse(&mut book::u8_reader(input_bytes.clone())).unwrap();
+
+        let mut output_bytes = vec![];
+        assert!(mobiheader.write(&mut Writer::new(&mut output_bytes)).is_ok());
+        assert_eq!(input_bytes.len(), output_bytes.len());
+        assert_eq!(input_bytes, output_bytes);
     }
 
     mod text_encoding {
         use super::*;
         #[test]
         fn utf_8() {
-            let mut m = MobiHeader::default();
-            m.text_encoding = 65001;
+            let m = MobiHeader {
+                text_encoding: 65001,
+                ..Default::default()
+            };
             assert_eq!(m.text_encoding(), TextEncoding::UTF8)
         }
         #[test]
         fn win_latin1() {
-            let mut m = MobiHeader::default();
-            m.text_encoding = 1252;
+            let m = MobiHeader {
+                text_encoding: 1252,
+                ..Default::default()
+            };
             assert_eq!(m.text_encoding(), TextEncoding::CP1252)
         }
     }
@@ -361,8 +468,10 @@ mod tests {
     fn parses_mobi_types() {
         macro_rules! mtype {
             ($mt: expr, $s: expr) => {
-                let mut m = MobiHeader::default();
-                m.mobi_type = $mt;
+                let m = MobiHeader {
+                    mobi_type: $mt,
+                    ..Default::default()
+                };
                 assert_eq!(m.mobi_type(), Some(String::from($s)))
             };
         }
@@ -384,8 +493,10 @@ mod tests {
     fn parses_languages() {
         macro_rules! lang {
             ($lc: expr, $s: expr) => {
-                let mut m = MobiHeader::default();
-                m.language_code = $lc;
+                let m = MobiHeader {
+                    language_code: $lc,
+                    ..Default::default()
+                };
                 assert_eq!(m.language(), Some(String::from($s)))
             };
         }
