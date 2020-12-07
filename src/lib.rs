@@ -188,7 +188,7 @@ impl Mobi {
         Record::parse_records(
             &self.content,
             &self.metadata.records.records,
-            self.metadata.records.extra_bytes,
+            self.metadata.records.extra_bytes(),
             self.metadata.palmdoc.compression_enum(),
         )
     }
