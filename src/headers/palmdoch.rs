@@ -1,4 +1,4 @@
-use crate::reader::Reader;
+use crate::reader::{Reader, Writer};
 use std::io;
 
 /// Compression types available in MOBI format.
@@ -56,9 +56,11 @@ impl ToString for Encryption {
 pub struct PalmDocHeader {
     pub compression: u16,
     pub text_length: u32,
+    unused0: u16,
     pub record_count: u16,
     pub record_size: u16,
     pub encryption_type: u16,
+    unused1: u16,
 }
 
 impl PalmDocHeader {
@@ -67,18 +69,23 @@ impl PalmDocHeader {
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<PalmDocHeader> {
         Ok(PalmDocHeader {
             compression: reader.read_u16_be()?,
-            text_length: {
-                reader.read_u16_be()?;
-                reader.read_u32_be()?
-            },
+            unused0: reader.read_u16_be()?,
+            text_length: reader.read_u32_be()?,
             record_count: reader.read_u16_be()?,
             record_size: reader.read_u16_be()?,
-            encryption_type: {
-                let b = reader.read_u16_be()?;
-                reader.read_u16_be()?;
-                b
-            },
+            encryption_type: reader.read_u16_be()?,
+            unused1: reader.read_u16_be()?,
         })
+    }
+
+    pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
+        w.write_be(self.compression)?;
+        w.write_be(self.unused0)?;
+        w.write_be(self.text_length)?;
+        w.write_be(self.record_count)?;
+        w.write_be(self.record_size)?;
+        w.write_be(self.encryption_type)?;
+        w.write_be(self.unused1)
     }
 
     pub(crate) fn compression(&self) -> String {
@@ -98,6 +105,7 @@ impl PalmDocHeader {
 mod tests {
     use super::*;
     use crate::book;
+    use crate::headers::palmdoch::Compression::PalmDoc;
 
     #[test]
     fn parse() {
@@ -107,11 +115,23 @@ mod tests {
             record_count: 282,
             record_size: 4096,
             encryption_type: 0,
+            ..Default::default()
         };
 
         let mut reader = book::u8_reader(book::PALMDOCHEADER.to_vec());
 
         assert_eq!(pdheader, PalmDocHeader::parse(&mut reader).unwrap());
+    }
+
+    #[test]
+    fn test_write() {
+        let mut input_bytes = book::PALMDOCHEADER.to_vec();
+
+        let palmdoc = PalmDocHeader::parse(&mut book::u8_reader(input_bytes.clone())).unwrap();
+
+        let mut output_bytes = vec![];
+        assert!(palmdoc.write(&mut Writer::new(&mut output_bytes)).is_ok());
+        assert_eq!(input_bytes, output_bytes);
     }
 
     mod compression_type {
