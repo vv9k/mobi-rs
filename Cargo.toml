@@ -12,7 +12,6 @@ description = "A library for handling .mobi format files"
 
 [features]
 default = []
-fmt = []
 time = ["chrono"]
 
 [lib]

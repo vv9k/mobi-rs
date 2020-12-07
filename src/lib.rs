@@ -49,8 +49,6 @@ pub use headers::MobiMetadata;
 pub use record::Record;
 
 pub(crate) mod book;
-#[cfg(feature = "fmt")]
-mod display;
 pub(crate) mod lz77;
 pub(crate) mod reader;
 pub(crate) mod record;
