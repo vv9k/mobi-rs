@@ -1,5 +1,7 @@
 #![allow(dead_code)]
-use crate::reader::Reader;
+use crate::reader::{Reader, Writer};
+use indexmap::IndexMap;
+use std::process::exit;
 use std::{collections::HashMap, io};
 
 // Records available in EXTH header
@@ -78,21 +80,23 @@ pub struct ExtHeader {
     pub identifier: u32,
     pub header_length: u32,
     pub record_count: u32,
-    pub records: HashMap<u32, Vec<u8>>,
+    pub records: IndexMap<u32, Vec<u8>>,
 }
 
 impl ExtHeader {
     /// Parse a EXTH header from the content. Reader must be at starting
     /// location of exth header.
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<ExtHeader> {
+        let start = reader.get_position();
         let mut extheader = ExtHeader {
             identifier: reader.read_u32_be()?,
             header_length: reader.read_u32_be()?,
             record_count: reader.read_u32_be()?,
-            records: HashMap::new(),
+            records: IndexMap::new(),
         };
 
         extheader.populate_records(reader)?;
+        assert_eq!(reader.get_position(), start + (extheader.header_length as usize));
         Ok(extheader)
     }
 
@@ -108,6 +112,19 @@ impl ExtHeader {
             self.records.insert(record_type, record_data);
         }
 
+        Ok(())
+    }
+
+    pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
+        w.write_be(self.identifier)?;
+        // 12 for first 12 bytes, 8 per record + len.
+        w.write_be(12u32 + self.records.iter().map(|(_, d)| 8 + d.len() as u32).sum::<u32>())?;
+        w.write_be(self.record_count)?;
+        for (&id, record_data) in self.records.iter() {
+            w.write_be(id)?;
+            w.write_be(record_data.len() as u32 + 8)?;
+            w.write_be(record_data)?;
+        }
         Ok(())
     }
 
@@ -132,10 +149,11 @@ impl ExtHeader {
 mod tests {
     use super::*;
     use crate::book;
+    use crate::reader::Writer;
 
     #[test]
-    fn parse() {
-        let mut records = HashMap::new();
+    fn test_parse() {
+        let mut records = IndexMap::new();
         #[rustfmt::skip]
         let _records = vec![
             (104, b"9780261102316".to_vec()),
@@ -159,6 +177,7 @@ mod tests {
             record_count: 11,
             records,
         };
+
         let mut reader = book::u8_reader(book::BOOK.to_vec());
         let parsed_header = ExtHeader::parse(&mut reader).unwrap();
         for (k, v) in &extheader.records {
@@ -167,6 +186,17 @@ mod tests {
             assert_eq!(v, record.unwrap());
         }
         assert_eq!(extheader, parsed_header);
+    }
+
+    #[test]
+    fn test_write() {
+        let bookx = book::BOOK[0..book::BOOK.len() - 44].to_vec();
+        let mut reader = book::u8_reader(bookx.clone());
+        let parsed_header = ExtHeader::parse(&mut reader).unwrap();
+        let mut buf = vec![];
+        parsed_header.write(&mut Writer::new(&mut buf)).unwrap();
+        // assert_eq!(bookx.len(), buf.len());
+        assert_eq!(bookx, buf);
     }
 
     mod records {
