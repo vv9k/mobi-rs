@@ -2,8 +2,6 @@
 use crate::reader::Reader;
 use std::{collections::HashMap, io};
 
-const RECORDS_OFFSET: u64 = 108;
-
 // Records available in EXTH header
 pub enum ExthRecord {
     // source - https://wiki.mobileread.com/wiki/MOBI#EXTH_Header
