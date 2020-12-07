@@ -45,6 +45,8 @@ impl MobiHeader {
     /// Parse a Mobi header from the content. The reader must be advanced to the starting
     /// position of the Mobi header.
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<MobiHeader> {
+        let start_position = reader.get_position();
+
         let m = MobiHeader {
             identifier: reader.read_u32_be()?,
             header_length: reader.read_u32_be()?,
@@ -89,8 +91,7 @@ impl MobiHeader {
             },
         };
 
-        // We have read 196 bytes, and we need to eat the rest of the header.
-        reader.set_position(reader.get_position() + m.header_length as u64 - 196)?;
+        reader.set_position(start_position + m.header_length as u64)?;
 
         Ok(m)
     }
