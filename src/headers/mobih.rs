@@ -99,12 +99,12 @@ impl MobiHeader {
     }
 
     /// Checks if there is a Exth Header and changes the parameter
-    pub(crate) fn has_exth_header(&self) -> bool {
+    pub fn has_exth_header(&self) -> bool {
         (self.exth_flags & EXTH_ON_FLAG) != 0
     }
 
     /// Checks if there is DRM on this book
-    pub(crate) fn has_drm(&self) -> bool {
+    pub fn has_drm(&self) -> bool {
         self.drm_offset != DRM_ON_FLAG
     }
 
@@ -276,6 +276,78 @@ mod tests {
         // test_header.finish_parse(&mut reader).expect("Should find name");
 
         assert_eq!(mobiheader, test_header);
+    }
+
+    #[test]
+    fn test_no_drm() {
+        let mobiheader = MobiHeader {
+            identifier: 1297039945,
+            header_length: 232,
+            mobi_type: 2,
+            text_encoding: 65001,
+            id: 3428045761,
+            gen_version: 6,
+            first_non_book_index: 284,
+            // name: String::from("Lord of the Rings - Fellowship of the Ring"),
+            name: String::new(),
+            name_offset: 1360,
+            name_length: 42,
+            language_code: 9,
+            input_language: 0,
+            output_language: 0,
+            format_version: 6,
+            first_image_index: 287,
+            first_huff_record: 0,
+            huff_record_count: 0,
+            first_data_record: 0,
+            data_record_count: 0,
+            exth_flags: 80,
+            drm_offset: 4294967295,
+            drm_count: 0,
+            drm_size: 0,
+            drm_flags: 0,
+            last_image_record: 288,
+            fcis_record: 290,
+            flis_record: 289,
+        };
+
+        assert!(!mobiheader.has_drm());
+    }
+
+    #[test]
+    fn test_drm() {
+        let mobiheader = MobiHeader {
+            identifier: 1297039945,
+            header_length: 232,
+            mobi_type: 2,
+            text_encoding: 65001,
+            id: 3428045761,
+            gen_version: 6,
+            first_non_book_index: 284,
+            // name: String::from("Lord of the Rings - Fellowship of the Ring"),
+            name: String::new(),
+            name_offset: 1360,
+            name_length: 42,
+            language_code: 9,
+            input_language: 0,
+            output_language: 0,
+            format_version: 6,
+            first_image_index: 287,
+            first_huff_record: 0,
+            huff_record_count: 0,
+            first_data_record: 0,
+            data_record_count: 0,
+            exth_flags: 80,
+            drm_offset: 1,
+            drm_count: 0,
+            drm_size: 0,
+            drm_flags: 0,
+            last_image_record: 288,
+            fcis_record: 290,
+            flis_record: 289,
+        };
+
+        assert!(mobiheader.has_drm());
     }
 
     mod text_encoding {
