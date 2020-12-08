@@ -52,6 +52,7 @@ pub(crate) mod book;
 pub(crate) mod lz77;
 pub(crate) mod reader;
 pub(crate) mod record;
+use crate::reader::Writer;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use headers::TextEncoding;
@@ -88,6 +89,18 @@ impl Mobi {
             content: reader.read_to_end()?,
             metadata,
         })
+    }
+
+    fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        let mut w = Writer::new(writer);
+
+        self.metadata.write_into(&mut w)?;
+
+        let first_offset = self.metadata.records.records[1].0 as usize;
+        let fill = first_offset - w.bytes_written();
+        w.write_be(vec![0; fill])?;
+        // TODO: Consider record compression and everything else.
+        w.write_be(&self.content[first_offset..])
     }
 
     /// Returns an author of this book

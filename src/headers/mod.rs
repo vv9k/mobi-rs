@@ -70,14 +70,17 @@ impl MobiMetadata {
         })
     }
 
-    pub(crate) fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        let mut w = Writer::new(writer);
-        self.header.write(&mut w, self.records.num_records())?;
-        self.records.write(&mut w)?;
-        self.palmdoc.write(&mut w)?;
-        self.mobi.write(&mut w)?;
+    fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.write_into(&mut Writer::new(writer))
+    }
+
+    pub(crate) fn write_into<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
+        self.header.write(w, self.records.num_records())?;
+        self.records.write(w)?;
+        self.palmdoc.write(w)?;
+        self.mobi.write(w)?;
         if self.mobi.has_exth_header() {
-            self.exth.write(&mut w)?;
+            self.exth.write(w)?;
         }
 
         let fill = ((self.records.records[0].0 + self.mobi.name_offset) as usize).saturating_sub(w.bytes_written());
