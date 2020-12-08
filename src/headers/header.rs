@@ -49,6 +49,9 @@ impl Header {
         w.write_be(self.attributes)?;
         w.write_be(self.version)?;
         w.write_be(self.created)?;
+        #[cfg(feature = "time")]
+        w.write_be(chrono::offset::Utc::now().timestamp() as u32);
+        #[cfg(not(feature = "time"))]
         w.write_be(self.modified)?;
         w.write_be(self.backup)?;
         w.write_be(self.modnum)?;
@@ -114,6 +117,7 @@ mod tests {
             next_record_list_id: 0,
             num_records: 292,
         };
+
         let mut reader = book::u8_reader(book::HEADER.to_vec());
         let parsed_header = Header::parse(&mut reader);
         assert_eq!(header, parsed_header.unwrap())
