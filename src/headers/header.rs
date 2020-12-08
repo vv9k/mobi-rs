@@ -49,9 +49,7 @@ impl Header {
         w.write_be(self.attributes)?;
         w.write_be(self.version)?;
         w.write_be(self.created)?;
-        #[cfg(feature = "time")]
-        w.write_be(chrono::offset::Utc::now().timestamp() as u32);
-        #[cfg(not(feature = "time"))]
+        // User should change this themselves?
         w.write_be(self.modified)?;
         w.write_be(self.backup)?;
         w.write_be(self.modnum)?;

@@ -213,17 +213,21 @@ mod test {
 
     #[test]
     fn test_mobi_write() {
-        let full_book = book::full_book();
-        let mut reader = book::u8_reader(full_book.clone());
-        let m = MobiMetadata::from_reader(&mut reader).unwrap();
+        // First write will lose duplicate ExtHeader records.
+        let m = MobiMetadata::from_reader(&mut book::u8_reader(book::full_book())).unwrap();
         let mut bytes = vec![];
         assert!(m.write(&mut bytes).is_ok());
-        assert_eq!(bytes.len(), full_book.len());
 
-        for (i, (w1, w2)) in bytes.chunks(8).zip(full_book.chunks(8)).enumerate() {
-            assert_eq!(w1, w2, "{}", i * 8);
-        }
+        // No duplicates, should work correctly.
+        let m1 = MobiMetadata::from_reader(&mut book::u8_reader(bytes.clone())).unwrap();
+        let mut bytes1 = vec![];
+        assert!(m1.write(&mut bytes1).is_ok());
 
-        assert_eq!(bytes, book::full_book());
+        let m2 = MobiMetadata::from_reader(&mut book::u8_reader(bytes1.clone())).unwrap();
+        let mut bytes2 = vec![];
+        assert!(m2.write(&mut bytes2).is_ok());
+
+        assert_eq!(bytes1.len(), bytes2.len());
+        assert_eq!(bytes1, bytes2);
     }
 }

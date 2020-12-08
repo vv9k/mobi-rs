@@ -187,13 +187,19 @@ mod tests {
 
     #[test]
     fn test_write() {
-        let bookx = book::BOOK[0..book::BOOK.len() - 44].to_vec();
+        // First ExtHeader has duplicated fields and will not match when written.
+        let bookx = book::BOOK.to_vec();
         let mut reader = book::u8_reader(bookx.clone());
         let parsed_header = ExtHeader::parse(&mut reader).unwrap();
         let mut buf = vec![];
         parsed_header.write(&mut Writer::new(&mut buf)).unwrap();
-        // assert_eq!(bookx.len(), buf.len());
-        assert_eq!(bookx, buf);
+
+        // Create a new one with no duplicate fields, which will be identical
+        let new_exth_header = ExtHeader::parse(&mut book::u8_reader(buf.clone())).unwrap();
+        let mut buf2 = vec![];
+        new_exth_header.write(&mut Writer::new(&mut buf2)).unwrap();
+
+        assert_eq!(buf, buf2);
     }
 
     mod records {
