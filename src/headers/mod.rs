@@ -72,7 +72,7 @@ impl MobiMetadata {
 
     pub(crate) fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
         let mut w = Writer::new(writer);
-        self.header.write(&mut w)?;
+        self.header.write(&mut w, self.records.num_records())?;
         self.records.write(&mut w)?;
         self.palmdoc.write(&mut w)?;
         self.mobi.write(&mut w)?;

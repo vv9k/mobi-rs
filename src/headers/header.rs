@@ -44,7 +44,7 @@ impl Header {
         })
     }
 
-    pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
+    pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>, num_records: u16) -> io::Result<()> {
         w.write_string_be(&self.name, 32)?;
         w.write_be(self.attributes)?;
         w.write_be(self.version)?;
@@ -58,7 +58,7 @@ impl Header {
         w.write_string_be(&self.creator, 4)?;
         w.write_be(self.unique_id_seed)?;
         w.write_be(self.next_record_list_id)?;
-        w.write_be(self.num_records)
+        w.write_be(num_records)
     }
 
     #[cfg(feature = "time")]
@@ -128,7 +128,7 @@ mod tests {
 
         let mut buf = vec![];
 
-        parsed_header.write(&mut Writer::new(&mut buf)).unwrap();
+        parsed_header.write(&mut Writer::new(&mut buf), 292).unwrap();
         assert_eq!(header.len(), buf.len());
         assert_eq!(header, buf);
     }

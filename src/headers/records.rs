@@ -35,6 +35,10 @@ impl Records {
         2 * (self.extra_bytes & EXTRA_BYTES_FLAG).count_ones() as u32
     }
 
+    pub fn num_records(&self) -> u16 {
+        self.records.len() as u16
+    }
+
     pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
         for &record in &self.records {
             w.write_be(record.0)?;
