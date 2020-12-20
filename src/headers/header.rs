@@ -1,4 +1,4 @@
-use crate::reader::Reader;
+use crate::reader::{Reader, Writer};
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::io;
@@ -44,6 +44,24 @@ impl Header {
         })
     }
 
+    pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>, num_records: u16) -> io::Result<()> {
+        w.write_string_be(&self.name, 32)?;
+        w.write_be(self.attributes)?;
+        w.write_be(self.version)?;
+        w.write_be(self.created)?;
+        // User should change this themselves?
+        w.write_be(self.modified)?;
+        w.write_be(self.backup)?;
+        w.write_be(self.modnum)?;
+        w.write_be(self.app_info_id)?;
+        w.write_be(self.sort_info_id)?;
+        w.write_string_be(&self.typ_e, 4)?;
+        w.write_string_be(&self.creator, 4)?;
+        w.write_be(self.unique_id_seed)?;
+        w.write_be(self.next_record_list_id)?;
+        w.write_be(num_records)
+    }
+
     #[cfg(feature = "time")]
     /// Returns a chrono::NaiveDateTime timestamp of file creation
     /// This field is only available using `time` feature
@@ -77,6 +95,7 @@ impl Header {
 mod tests {
     use super::Header;
     use crate::book;
+    use crate::reader::Writer;
 
     #[test]
     fn parse() {
@@ -96,8 +115,23 @@ mod tests {
             next_record_list_id: 0,
             num_records: 292,
         };
+
         let mut reader = book::u8_reader(book::HEADER.to_vec());
         let parsed_header = Header::parse(&mut reader);
         assert_eq!(header, parsed_header.unwrap())
+    }
+
+    #[test]
+    fn write() {
+        let header = book::HEADER.to_vec();
+
+        let mut reader = book::u8_reader(header.clone());
+        let parsed_header = Header::parse(&mut reader).unwrap();
+
+        let mut buf = vec![];
+
+        parsed_header.write(&mut Writer::new(&mut buf), 292).unwrap();
+        assert_eq!(header.len(), buf.len());
+        assert_eq!(header, buf);
     }
 }

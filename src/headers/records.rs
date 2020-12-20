@@ -1,4 +1,4 @@
-use crate::reader::Reader;
+use crate::reader::{Reader, Writer};
 use std::io;
 
 const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
@@ -12,7 +12,7 @@ const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
 #[derive(Debug, PartialEq, Default)]
 pub struct Records {
     pub records: Vec<(u32, u32)>,
-    pub extra_bytes: u32,
+    extra_bytes: u16,
 }
 
 impl Records {
@@ -25,12 +25,26 @@ impl Records {
             records.push((reader.read_u32_be()?, reader.read_u32_be()?));
         }
 
-        let extra_bytes = reader.read_u16_be()?;
-
         Ok(Records {
             records,
-            extra_bytes: 2 * (extra_bytes & EXTRA_BYTES_FLAG).count_ones(),
+            extra_bytes: reader.read_u16_be()?,
         })
+    }
+
+    pub fn extra_bytes(&self) -> u32 {
+        2 * (self.extra_bytes & EXTRA_BYTES_FLAG).count_ones() as u32
+    }
+
+    pub fn num_records(&self) -> u16 {
+        self.records.len() as u16
+    }
+
+    pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
+        for &record in &self.records {
+            w.write_be(record.0)?;
+            w.write_be(record.1)?;
+        }
+        w.write_be(self.extra_bytes)
     }
 }
 
@@ -43,5 +57,16 @@ mod test {
     fn parse() {
         let mut reader = book::u8_reader(book::RECORDS.to_vec());
         assert!(Records::parse(&mut reader, 292).is_ok());
+    }
+
+    #[test]
+    fn test_write() {
+        let records = book::RECORDS.to_vec();
+        let mut reader = book::u8_reader(records.clone());
+        let record = Records::parse(&mut reader, 292).unwrap();
+        let mut written = Vec::new();
+        record.write(&mut Writer::new(&mut written)).unwrap();
+        assert_eq!(records.len(), written.len());
+        assert_eq!(records, written);
     }
 }

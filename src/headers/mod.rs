@@ -12,7 +12,7 @@ pub use self::{
 };
 
 use crate::headers::records::Records;
-use crate::reader::Reader;
+use crate::reader::{Reader, Writer};
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::fs::File;
@@ -68,6 +68,24 @@ impl MobiMetadata {
             mobi,
             exth,
         })
+    }
+
+    fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.write_into(&mut Writer::new(writer))
+    }
+
+    pub(crate) fn write_into<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
+        self.header.write(w, self.records.num_records())?;
+        self.records.write(w)?;
+        self.palmdoc.write(w)?;
+        self.mobi.write(w)?;
+        if self.mobi.has_exth_header() {
+            self.exth.write(w)?;
+        }
+
+        let fill = ((self.records.records[0].0 + self.mobi.name_offset) as usize).saturating_sub(w.bytes_written());
+        w.write_be(vec![0; fill])?;
+        w.write_string_be(&self.name, self.mobi.name_length as usize)
     }
 
     //################################################################################//
@@ -191,5 +209,25 @@ mod test {
     fn test_mobi_metadata() {
         let mut reader = book::u8_reader(book::full_book());
         assert!(MobiMetadata::from_reader(&mut reader).is_ok());
+    }
+
+    #[test]
+    fn test_mobi_write() {
+        // First write will lose duplicate ExtHeader records.
+        let m = MobiMetadata::from_reader(&mut book::u8_reader(book::full_book())).unwrap();
+        let mut bytes = vec![];
+        assert!(m.write(&mut bytes).is_ok());
+
+        // No duplicates, should work correctly.
+        let m1 = MobiMetadata::from_reader(&mut book::u8_reader(bytes.clone())).unwrap();
+        let mut bytes1 = vec![];
+        assert!(m1.write(&mut bytes1).is_ok());
+
+        let m2 = MobiMetadata::from_reader(&mut book::u8_reader(bytes1.clone())).unwrap();
+        let mut bytes2 = vec![];
+        assert!(m2.write(&mut bytes2).is_ok());
+
+        assert_eq!(bytes1.len(), bytes2.len());
+        assert_eq!(bytes1, bytes2);
     }
 }
