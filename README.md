@@ -1,6 +1,5 @@
 # mobi-rs
-[![Build Status](https://travis-ci.com/wojciechkepka/mobi-rs.svg?branch=master)](https://travis-ci.com/wojciechkepka/mobi-rs)
-[![Build Status](https://github.com/wojciechkepka/mobi-rs/workflows/mobi-rs CI/badge.svg)](https://github.com/wojciechkepka/mobi-rs/actions?query=workflow%3A%22mobi-rs+CI%22)
+[![Build Status](https://github.com/wojciechkepka/mobi-rs/workflows/mobi-rs%20CI/badge.svg)](https://github.com/wojciechkepka/mobi-rs/actions?query=workflow%3A%22mobi-rs+CI%22)
 [![crates.io](https://img.shields.io/crates/v/mobi)](https://crates.io/crates/mobi)
 [![crates.io](https://img.shields.io/crates/l/mobi)](https://github.com/wojciechkepka/mobi-rs/blob/master/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-master-brightgreen)](https://docs.rs/mobi)  
