@@ -20,7 +20,7 @@
 //!     let m = Mobi::from_path("/some/path/to/book.mobi")?;
 //!
 //!     // Access metadata
-//!     let title = m.title().unwrap_or_default();
+//!     let title = m.title();
 //!     let author = m.author().unwrap_or_default();
 //!     let publisher = m.publisher().unwrap_or_default();
 //!     let desc = m.description().unwrap_or_default();
