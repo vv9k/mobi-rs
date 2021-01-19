@@ -1,5 +1,4 @@
-use crate::reader::Writer;
-use crate::Reader;
+use crate::{Reader, Writer};
 use std::io;
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
@@ -354,7 +353,7 @@ impl MobiHeader {
 #[cfg(test)]
 mod tests {
     use super::MobiHeader;
-    use crate::reader::Writer;
+    use crate::writer::Writer;
     use crate::{book, TextEncoding};
 
     #[test]

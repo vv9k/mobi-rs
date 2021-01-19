@@ -12,7 +12,7 @@ pub use self::{
 };
 
 use crate::headers::records::Records;
-use crate::reader::{Reader, Writer};
+use crate::{Reader, Writer};
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::fs::File;
@@ -70,6 +70,7 @@ impl MobiMetadata {
         })
     }
 
+    #[allow(dead_code)]
     fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.write_into(&mut Writer::new(writer))
     }

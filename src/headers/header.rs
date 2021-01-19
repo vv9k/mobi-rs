@@ -1,4 +1,4 @@
-use crate::reader::{Reader, Writer};
+use crate::{Reader, Writer};
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::io;
@@ -95,7 +95,7 @@ impl Header {
 mod tests {
     use super::Header;
     use crate::book;
-    use crate::reader::Writer;
+    use crate::writer::Writer;
 
     #[test]
     fn parse() {

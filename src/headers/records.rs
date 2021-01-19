@@ -1,4 +1,4 @@
-use crate::reader::{Reader, Writer};
+use crate::{Reader, Writer};
 use std::io;
 
 const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
@@ -39,6 +39,7 @@ impl Records {
         self.records.len() as u16
     }
 
+    #[allow(dead_code)]
     pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
         for &record in &self.records {
             w.write_be(record.0)?;

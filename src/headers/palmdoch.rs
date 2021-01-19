@@ -1,4 +1,4 @@
-use crate::reader::{Reader, Writer};
+use crate::{Reader, Writer};
 use std::io;
 
 /// Compression types available in MOBI format.

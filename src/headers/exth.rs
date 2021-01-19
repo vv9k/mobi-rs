@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::reader::{Reader, Writer};
+use crate::{Reader, Writer};
 use indexmap::IndexMap;
 use std::io;
 
@@ -146,7 +146,7 @@ impl ExtHeader {
 mod tests {
     use super::*;
     use crate::book;
-    use crate::reader::Writer;
+    use crate::writer::Writer;
 
     #[test]
     fn test_parse() {
