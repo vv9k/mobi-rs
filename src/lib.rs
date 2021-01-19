@@ -45,18 +45,18 @@
 /// Module with headers from book containg more extracted data not
 /// available through public API.
 pub mod headers;
-pub use headers::MobiMetadata;
-pub use record::Record;
-
+pub use crate::headers::MobiMetadata;
+pub use crate::record::Record;
 pub(crate) mod book;
 pub(crate) mod lz77;
 pub(crate) mod reader;
 pub(crate) mod record;
-use crate::reader::Writer;
+pub(crate) mod writer;
+use crate::headers::TextEncoding;
+pub(crate) use crate::reader::Reader;
+pub(crate) use crate::writer::Writer;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
-use headers::TextEncoding;
-pub(crate) use reader::Reader;
 use std::{fs::File, io, io::BufReader, ops::Range, path::Path};
 
 #[derive(Debug, Default)]
@@ -91,6 +91,7 @@ impl Mobi {
         })
     }
 
+    #[allow(dead_code)]
     fn write(&self, writer: &mut impl io::Write) -> io::Result<()> {
         let mut w = Writer::new(writer);
 
