@@ -143,9 +143,13 @@ impl MobiMetadata {
         self.exth.get_record_string_lossy(exth::ExthRecord::Contributor)
     }
 
-    /// Returns title record if such exists
-    pub fn title(&self) -> Option<String> {
-        self.exth.get_record_string_lossy(exth::ExthRecord::Title)
+    /// Returns title record read from EXTH header if it exists
+    /// or defaults to full book name read from location specified
+    /// in MOBI header.
+    pub fn title(&self) -> String {
+        self.exth
+            .get_record_string_lossy(exth::ExthRecord::Title)
+            .map_or(self.name, |v| v)
     }
 
     /// Returns text encoding used in ebook
