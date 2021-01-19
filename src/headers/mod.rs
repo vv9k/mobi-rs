@@ -149,7 +149,7 @@ impl MobiMetadata {
     pub fn title(&self) -> String {
         self.exth
             .get_record_string_lossy(exth::ExthRecord::Title)
-            .map_or(self.name, |v| v)
+            .map_or(self.name.clone(), |v| v)
     }
 
     /// Returns text encoding used in ebook

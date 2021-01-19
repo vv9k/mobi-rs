@@ -134,7 +134,7 @@ impl Mobi {
     }
 
     /// Returns title record if such exists
-    pub fn title(&self) -> Option<String> {
+    pub fn title(&self) -> String {
         self.metadata.title()
     }
 
