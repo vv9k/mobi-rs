@@ -1,14 +1,14 @@
 [package]
 name = "mobi"
 version = "0.5.1"
-authors = ["wojciechkepka <wojciech@wkepka.dev>"]
+authors = ["Wojciech Kępka <wojciech@wkepka.dev>"]
 edition = "2018"
 license = "MIT"
 repository = "https://github.com/wojciechkepka/mobi-rs"
 keywords = ["mobi", "ebook", "library", "e-book", "format"]
 readme = "README.md"
 categories = ["parsing"]
-description = "A library for handling .mobi format files"
+description = "A library for handling MOBI format files"
 
 [features]
 default = []
