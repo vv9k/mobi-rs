@@ -1,8 +1,8 @@
 //! An implementation of [MOBI](https://wiki.mobileread.com/wiki/MOBI) format data parsing and manipulation, written in Rust.
 //!
-//! The code is available on [GitHub](https://github.com/wojciechkepka/mobi-rs)
+//! The code is available on [GitHub](https://github.com/vv9k/mobi-rs)
 //!
-//! License: [*MIT*](https://github.com/wojciechkepka/mobi-rs/blob/master/license)
+//! License: [*MIT*](https://github.com/vv9k/mobi-rs/blob/master/license)
 //!
 //! ## Examples
 //! ### Access basic info
