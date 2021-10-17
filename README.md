@@ -1,7 +1,7 @@
 # mobi-rs
-[![Build Status](https://github.com/wojciechkepka/mobi-rs/workflows/mobi-rs%20CI/badge.svg)](https://github.com/wojciechkepka/mobi-rs/actions?query=workflow%3A%22mobi-rs+CI%22)
+[![Build Status](https://github.com/vv9k/mobi-rs/workflows/mobi-rs%20CI/badge.svg)](https://github.com/vv9k/mobi-rs/actions?query=workflow%3A%22mobi-rs+CI%22)
 [![crates.io](https://img.shields.io/crates/v/mobi)](https://crates.io/crates/mobi)
-[![crates.io](https://img.shields.io/crates/l/mobi)](https://github.com/wojciechkepka/mobi-rs/blob/master/LICENSE)
+[![crates.io](https://img.shields.io/crates/l/mobi)](https://github.com/vv9k/mobi-rs/blob/master/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-master-brightgreen)](https://docs.rs/mobi)  
 A crate to work with MOBI format ebooks.
 ## Usage
@@ -47,6 +47,6 @@ fn main() -> Result<(), std::io::Error> {
 }
 ```
 ## License
-[**The MIT License (MIT)**](https://github.com/wojciechkepka/mobi-rs/blob/master/LICENSE)
+[**The MIT License (MIT)**](https://github.com/vv9k/mobi-rs/blob/master/LICENSE)
 ## Thanks to
 [kroo](https://github.com/kroo/mobi-python) for inspiration and idea.
