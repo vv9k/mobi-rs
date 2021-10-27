@@ -75,10 +75,9 @@ impl<R: std::io::Read> Reader<R> {
         Ok(u8::from_be_bytes(bytes))
     }
 
-    pub(crate) fn read_string_header(&mut self, len: usize) -> io::Result<String> {
+    pub(crate) fn read_vec_header(&mut self, len: usize) -> io::Result<Vec<u8>> {
         let mut buf = vec![0; len];
         self.read_exact(&mut buf)?;
-
-        Ok(String::from_utf8_lossy(&buf).to_owned().to_string())
+        Ok(buf)
     }
 }

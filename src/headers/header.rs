@@ -6,7 +6,7 @@ use std::io;
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds header information
 pub struct Header {
-    pub name: String,
+    pub name: Vec<u8>,
     pub attributes: u16,
     pub version: u16,
     pub created: u32,
@@ -15,8 +15,8 @@ pub struct Header {
     pub modnum: u32,
     pub app_info_id: u32,
     pub sort_info_id: u32,
-    pub typ_e: String,
-    pub creator: String,
+    pub typ_e: Vec<u8>,
+    pub creator: Vec<u8>,
     pub unique_id_seed: u32,
     pub next_record_list_id: u32,
     pub num_records: u16,
@@ -27,7 +27,7 @@ impl Header {
     /// header, at byte 0.
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Header> {
         Ok(Header {
-            name: reader.read_string_header(32)?,
+            name: reader.read_vec_header(32)?,
             attributes: reader.read_u16_be()?,
             version: reader.read_u16_be()?,
             created: reader.read_u32_be()?,
@@ -36,8 +36,8 @@ impl Header {
             modnum: reader.read_u32_be()?,
             app_info_id: reader.read_u32_be()?,
             sort_info_id: reader.read_u32_be()?,
-            typ_e: reader.read_string_header(4)?,
-            creator: reader.read_string_header(4)?,
+            typ_e: reader.read_vec_header(4)?,
+            creator: reader.read_vec_header(4)?,
             unique_id_seed: reader.read_u32_be()?,
             next_record_list_id: reader.read_u32_be()?,
             num_records: reader.read_u16_be()?,
@@ -45,7 +45,7 @@ impl Header {
     }
 
     pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>, num_records: u16) -> io::Result<()> {
-        w.write_string_be(&self.name, 32)?;
+        w.write_be(&self.name)?;
         w.write_be(self.attributes)?;
         w.write_be(self.version)?;
         w.write_be(self.created)?;
@@ -55,8 +55,8 @@ impl Header {
         w.write_be(self.modnum)?;
         w.write_be(self.app_info_id)?;
         w.write_be(self.sort_info_id)?;
-        w.write_string_be(&self.typ_e, 4)?;
-        w.write_string_be(&self.creator, 4)?;
+        w.write_be(&self.typ_e)?;
+        w.write_be(&self.creator)?;
         w.write_be(self.unique_id_seed)?;
         w.write_be(self.next_record_list_id)?;
         w.write_be(num_records)
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn parse() {
         let header = Header {
-            name: String::from("Lord_of_the_Rings_-_Fellowship_\u{0}"),
+            name: b"Lord_of_the_Rings_-_Fellowship_\0".to_vec(),
             attributes: 0,
             version: 0,
             created: 1299709979,
@@ -109,8 +109,8 @@ mod tests {
             modnum: 0,
             app_info_id: 0,
             sort_info_id: 0,
-            typ_e: String::from("BOOK"),
-            creator: String::from("MOBI"),
+            typ_e: b"BOOK".to_vec(),
+            creator: b"MOBI".to_vec(),
             unique_id_seed: 292,
             next_record_list_id: 0,
             num_records: 292,

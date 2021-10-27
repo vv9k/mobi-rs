@@ -51,7 +51,6 @@ impl Record {
         compression_type: &Compression,
         content: &[u8],
     ) -> io::Result<Vec<u8>> {
-        // #TODO: reconsider using string here due to possible different encodings?
         match compression_type {
             Compression::No => Ok(content[record_data_offset as usize..next_record_data_offset as usize].to_vec()),
             Compression::PalmDoc => {

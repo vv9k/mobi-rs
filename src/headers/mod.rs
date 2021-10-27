@@ -22,7 +22,7 @@ use std::path::Path;
 #[derive(Debug, Default)]
 /// Holds all headers containing low level metadata of a mobi book
 pub struct MobiMetadata {
-    pub name: String,
+    pub name: Vec<u8>,
     pub header: Header,
     pub records: Records,
     pub palmdoc: PalmDocHeader,
@@ -61,7 +61,7 @@ impl MobiMetadata {
         reader.set_position((records.records[0].0 + mobi.name_offset) as usize)?;
 
         Ok(MobiMetadata {
-            name: reader.read_string_header(mobi.name_length as usize)?,
+            name: reader.read_vec_header(mobi.name_length as usize)?,
             header,
             records,
             palmdoc,
@@ -86,7 +86,7 @@ impl MobiMetadata {
 
         let fill = ((self.records.records[0].0 + self.mobi.name_offset) as usize).saturating_sub(w.bytes_written());
         w.write_be(vec![0; fill])?;
-        w.write_string_be(&self.name, self.mobi.name_length as usize)
+        w.write_be(&self.name)
     }
 
     //################################################################################//
@@ -150,7 +150,7 @@ impl MobiMetadata {
     pub fn title(&self) -> String {
         self.exth
             .get_record_string_lossy(exth::ExthRecord::Title)
-            .map_or(self.name.clone(), |v| v)
+            .map_or(String::from_utf8_lossy(&self.name).to_string(), |v| v)
     }
 
     /// Returns text encoding used in ebook

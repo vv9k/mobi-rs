@@ -71,11 +71,4 @@ impl<W: std::io::Write> Writer<W> {
         self.bytes_written += b.write_be_bytes(&mut self.writer)?;
         Ok(())
     }
-
-    #[inline]
-    pub(crate) fn write_string_be<S: AsRef<str>>(&mut self, s: S, pad: usize) -> io::Result<()> {
-        let mut s_bytes: Vec<_> = s.as_ref().bytes().collect();
-        s_bytes.extend(std::iter::repeat(0).take(pad.saturating_sub(s_bytes.len())));
-        self.write_be(s_bytes)
-    }
 }
