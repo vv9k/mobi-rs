@@ -47,6 +47,13 @@ impl<R: std::io::Read> Reader<R> {
     }
 
     #[inline]
+    pub(crate) fn read_u64_be(&mut self) -> io::Result<u64> {
+        let mut bytes = [0; 8];
+        self.read_exact(&mut bytes)?;
+        Ok(u64::from_be_bytes(bytes))
+    }
+
+    #[inline]
     pub(crate) fn read_u32_be(&mut self) -> io::Result<u32> {
         let mut bytes = [0; 4];
         self.read_exact(&mut bytes)?;

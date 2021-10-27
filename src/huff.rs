@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::Reader;
 
 type HuffmanResult<T> = Result<T, HuffmanError>;
@@ -17,6 +18,8 @@ impl From<std::io::Error> for HuffmanError {
     }
 }
 
+struct CodeDictionary([(u8, bool, u32); 256]);
+
 struct HuffmanDecoder {
     dictionary: Vec<Option<(Vec<u8>, bool)>>,
     code_dict: [(u8, bool, u32); 256],
@@ -24,7 +27,7 @@ struct HuffmanDecoder {
     max_codes: [u32; 33],
 }
 
-fn load_huff(huff: &[u8]) -> HuffmanResult<([(u8, bool, u32); 256], [u32; 32], [u32; 33])> {
+fn load_huff(huff: &[u8]) -> HuffmanResult<([(u8, bool, u32); 256], [u32; 33], [u32; 33])> {
     let mut r = Reader::new(std::io::Cursor::new(huff));
 
     if r.read_u32_be()? != u32::from_be_bytes(*b"HUFF") || r.read_u32_be()? != 0x18 {
