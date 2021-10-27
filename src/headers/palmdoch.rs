@@ -1,8 +1,9 @@
 use crate::{Reader, Writer};
+
 use std::io;
 
 /// Compression types available in MOBI format.
-pub(crate) enum Compression {
+pub enum Compression {
     No,
     PalmDoc,
     Huff,
@@ -16,37 +17,37 @@ impl From<u16> for Compression {
         }
     }
 }
-impl ToString for Compression {
-    fn to_string(&self) -> String {
+impl AsRef<str> for Compression {
+    fn as_ref(&self) -> &str {
         match self {
-            Compression::No => String::from("No Compression"),
-            Compression::PalmDoc => String::from("PalmDOC Compression"),
-            Compression::Huff => String::from("HUFF/CFIC Compression"),
+            Compression::No => "No Compression",
+            Compression::PalmDoc => "PalmDOC Compression",
+            Compression::Huff => "HUFF/CFIC Compression",
         }
     }
 }
 
 /// Encryption types available in MOBI format.
-pub(crate) enum Encryption {
+pub enum Encryption {
     No,
-    OldMobipocket,
-    Mobipocket,
+    OldMobiPocket,
+    MobiPocket,
 }
 impl From<u16> for Encryption {
     fn from(n: u16) -> Encryption {
         match n {
-            2 => Encryption::Mobipocket,
-            1 => Encryption::OldMobipocket,
+            2 => Encryption::MobiPocket,
+            1 => Encryption::OldMobiPocket,
             _ => Encryption::No,
         }
     }
 }
-impl ToString for Encryption {
-    fn to_string(&self) -> String {
+impl AsRef<str> for Encryption {
+    fn as_ref(&self) -> &str {
         match self {
-            Encryption::No => String::from("No Encryption"),
-            Encryption::OldMobipocket => String::from("Old Mobipocket Encryption"),
-            Encryption::Mobipocket => String::from("Mobipocket Encryption"),
+            Encryption::No => "No Encryption",
+            Encryption::OldMobiPocket => "Old MobiPocket Encryption",
+            Encryption::MobiPocket => "MobiPocket Encryption",
         }
     }
 }
@@ -59,7 +60,7 @@ pub struct PalmDocHeader {
     unused0: u16,
     pub record_count: u16,
     pub record_size: u16,
-    pub encryption_type: u16,
+    pub encryption: u16,
     unused1: u16,
 }
 
@@ -73,7 +74,7 @@ impl PalmDocHeader {
             text_length: reader.read_u32_be()?,
             record_count: reader.read_u16_be()?,
             record_size: reader.read_u16_be()?,
-            encryption_type: reader.read_u16_be()?,
+            encryption: reader.read_u16_be()?,
             unused1: reader.read_u16_be()?,
         })
     }
@@ -84,20 +85,16 @@ impl PalmDocHeader {
         w.write_be(self.text_length)?;
         w.write_be(self.record_count)?;
         w.write_be(self.record_size)?;
-        w.write_be(self.encryption_type)?;
+        w.write_be(self.encryption)?;
         w.write_be(self.unused1)
     }
 
-    pub(crate) fn compression(&self) -> String {
-        Compression::from(self.compression).to_string()
+    pub fn compression(&self) -> Compression {
+        self.compression.into()
     }
 
-    pub(crate) fn encryption(&self) -> String {
-        Encryption::from(self.encryption_type).to_string()
-    }
-
-    pub(crate) fn compression_enum(&self) -> Compression {
-        Compression::from(self.compression)
+    pub fn encryption(&self) -> Encryption {
+        self.encryption.into()
     }
 }
 
@@ -113,7 +110,7 @@ mod tests {
             text_length: 1151461,
             record_count: 282,
             record_size: 4096,
-            encryption_type: 0,
+            encryption: 0,
             ..Default::default()
         };
 
@@ -131,51 +128,5 @@ mod tests {
         let mut output_bytes = vec![];
         assert!(palmdoc.write(&mut Writer::new(&mut output_bytes)).is_ok());
         assert_eq!(input_bytes, output_bytes);
-    }
-
-    mod compression_type {
-        use super::*;
-        macro_rules! compression {
-            ($et: expr, $s: expr) => {
-                let mut pdheader = PalmDocHeader::default();
-                pdheader.compression = $et;
-                assert_eq!(pdheader.compression(), String::from($s))
-            };
-        }
-        #[test]
-        fn no_compression() {
-            compression!(1, "No Compression");
-        }
-        #[test]
-        fn palmdoc_compression() {
-            compression!(2, "PalmDOC Compression");
-        }
-        #[test]
-        fn huff_compression() {
-            compression!(17480, "HUFF/CFIC Compression");
-        }
-    }
-
-    mod encryption_type {
-        use super::*;
-        macro_rules! encryption {
-            ($et: expr, $s: expr) => {
-                let mut pdheader = PalmDocHeader::default();
-                pdheader.encryption_type = $et;
-                assert_eq!(pdheader.encryption(), String::from($s))
-            };
-        }
-        #[test]
-        fn no_encryption() {
-            encryption!(0, "No Encryption");
-        }
-        #[test]
-        fn old_mobipocket_encryption() {
-            encryption!(1, "Old Mobipocket Encryption");
-        }
-        #[test]
-        fn mobipocket_encryption() {
-            encryption!(2, "Mobipocket Encryption");
-        }
     }
 }

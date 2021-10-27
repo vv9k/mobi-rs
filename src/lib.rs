@@ -48,11 +48,13 @@ pub mod headers;
 pub use crate::headers::MobiMetadata;
 pub use crate::record::Record;
 pub(crate) mod book;
+pub(crate) mod huff;
 pub(crate) mod lz77;
 pub(crate) mod reader;
 pub(crate) mod record;
 pub(crate) mod writer;
-use crate::headers::TextEncoding;
+
+use crate::headers::{Compression, Encryption, Language, MobiType, TextEncoding};
 pub(crate) use crate::reader::Reader;
 pub(crate) use crate::writer::Writer;
 #[cfg(feature = "time")]
@@ -145,12 +147,12 @@ impl Mobi {
     }
 
     /// Returns type of this ebook
-    pub fn mobi_type(&self) -> Option<String> {
+    pub fn mobi_type(&self) -> MobiType {
         self.metadata.mobi_type()
     }
 
     /// Returns language of the ebook
-    pub fn language(&self) -> Option<String> {
+    pub fn language(&self) -> Language {
         self.metadata.language()
     }
 
@@ -181,11 +183,11 @@ impl Mobi {
     }
 
     /// Returns compression method used on this file
-    pub fn compression(&self) -> String {
+    pub fn compression(&self) -> Compression {
         self.metadata.compression()
     }
     /// Returns encryption method used on this file
-    pub fn encryption(&self) -> String {
+    pub fn encryption(&self) -> Encryption {
         self.metadata.encryption()
     }
 
@@ -203,7 +205,7 @@ impl Mobi {
             &self.content,
             &self.metadata.records.records,
             self.metadata.records.extra_bytes(),
-            self.metadata.palmdoc.compression_enum(),
+            self.metadata.palmdoc.compression(),
         )
     }
 

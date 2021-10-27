@@ -4,7 +4,211 @@ use std::io;
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
 const EXTH_ON_FLAG: u32 = 0x40;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub enum MobiType {
+    MobiPocketBook,
+    PalmDocBook,
+    Audio,
+    News,
+    NewsFeed,
+    NewsMagazine,
+    PICS,
+    WORD,
+    XLS,
+    PPT,
+    TEXT,
+    HTML,
+    Unknown,
+}
+
+impl From<u32> for MobiType {
+    fn from(ty: u32) -> Self {
+        use MobiType::*;
+        match ty {
+            2 => MobiPocketBook,
+            3 => PalmDocBook,
+            4 => Audio,
+            257 => News,
+            258 => NewsFeed,
+            259 => NewsMagazine,
+            513 => PICS,
+            514 => WORD,
+            515 => XLS,
+            516 => PPT,
+            517 => TEXT,
+            518 => HTML,
+            _ => Unknown,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub enum Language {
+    Neutral,
+    Afrikaans,
+    Albanian,
+    Arabic,
+    Armenian,
+    Assamese,
+    Azeri,
+    Basque,
+    Belarusian,
+    Bengali,
+    Bulgarian,
+    Catalan,
+    Chinese,
+    Czech,
+    Danish,
+    Dutch,
+    English,
+    Estonian,
+    Faeroese,
+    Farsi,
+    Finnish,
+    French,
+    Georgian,
+    German,
+    Greek,
+    Gujarati,
+    Hebrew,
+    Hindi,
+    Hungarian,
+    Icelandic,
+    Indonesian,
+    Italian,
+    Japanese,
+    Kannada,
+    Kazak,
+    Konkani,
+    Korean,
+    Latvian,
+    Lithuanian,
+    Macedonian,
+    Malay,
+    Malayalam,
+    Maltese,
+    Marathi,
+    Nepali,
+    Norwegian,
+    Oriya,
+    Polish,
+    Portuguese,
+    Punjabi,
+    Rhaetoromanic,
+    Romanian,
+    Russian,
+    Sami,
+    Sanskrit,
+    Serbian,
+    Slovak,
+    Slovenian,
+    Sorbian,
+    Spanish,
+    Sutu,
+    Swahili,
+    Swedish,
+    Tamil,
+    Tatar,
+    Telugu,
+    Thai,
+    Tsonga,
+    Tswana,
+    Turkish,
+    Ukrainian,
+    Urdu,
+    Uzbek,
+    Vietnamese,
+    Xhosa,
+    Zulu,
+    Unknown,
+}
+
+impl From<u8> for Language {
+    fn from(code: u8) -> Self {
+        use Language::*;
+        match code {
+            0 => Neutral,
+            54 => Afrikaans,
+            28 => Albanian,
+            1 => Arabic,
+            43 => Armenian,
+            77 => Assamese,
+            44 => Azeri,
+            45 => Basque,
+            35 => Belarusian,
+            69 => Bengali,
+            2 => Bulgarian,
+            3 => Catalan,
+            4 => Chinese,
+            5 => Czech,
+            6 => Danish,
+            19 => Dutch,
+            9 => English,
+            37 => Estonian,
+            56 => Faeroese,
+            41 => Farsi,
+            11 => Finnish,
+            12 => French,
+            55 => Georgian,
+            7 => German,
+            8 => Greek,
+            71 => Gujarati,
+            13 => Hebrew,
+            57 => Hindi,
+            14 => Hungarian,
+            15 => Icelandic,
+            33 => Indonesian,
+            16 => Italian,
+            17 => Japanese,
+            75 => Kannada,
+            63 => Kazak,
+            87 => Konkani,
+            18 => Korean,
+            38 => Latvian,
+            39 => Lithuanian,
+            47 => Macedonian,
+            62 => Malay,
+            76 => Malayalam,
+            58 => Maltese,
+            78 => Marathi,
+            97 => Nepali,
+            20 => Norwegian,
+            72 => Oriya,
+            21 => Polish,
+            22 => Portuguese,
+            70 => Punjabi,
+            23 => Rhaetoromanic,
+            24 => Romanian,
+            25 => Russian,
+            59 => Sami,
+            79 => Sanskrit,
+            26 => Serbian,
+            27 => Slovak,
+            36 => Slovenian,
+            46 => Sorbian,
+            10 => Spanish,
+            48 => Sutu,
+            65 => Swahili,
+            29 => Swedish,
+            73 => Tamil,
+            68 => Tatar,
+            74 => Telugu,
+            30 => Thai,
+            49 => Tsonga,
+            50 => Tswana,
+            31 => Turkish,
+            34 => Ukrainian,
+            32 => Urdu,
+            67 => Uzbek,
+            42 => Vietnamese,
+            52 => Xhosa,
+            53 => Zulu,
+            _ => Unknown,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum TextEncoding {
     CP1252,
     UTF8,
@@ -230,27 +434,8 @@ impl MobiHeader {
     }
 
     /// Converts numerical value into a type
-    pub(crate) fn mobi_type(&self) -> Option<String> {
-        macro_rules! mtype {
-            ($s:expr) => {
-                Some(String::from($s))
-            };
-        }
-        match self.mobi_type {
-            2 => mtype!("Mobipocket Book"),
-            3 => mtype!("PalmDoc Book"),
-            4 => mtype!("Audio"),
-            257 => mtype!("News"),
-            258 => mtype!("News Feed"),
-            259 => mtype!("News Magazine"),
-            513 => mtype!("PICS"),
-            514 => mtype!("WORD"),
-            515 => mtype!("XLS"),
-            516 => mtype!("PPT"),
-            517 => mtype!("TEXT"),
-            518 => mtype!("HTML"),
-            _ => None,
-        }
+    pub(crate) fn mobi_type(&self) -> MobiType {
+        self.mobi_type.into()
     }
 
     // Mobi format only specifies this two encodings so
@@ -263,91 +448,8 @@ impl MobiHeader {
         }
     }
 
-    pub(crate) fn language(&self) -> Option<String> {
-        macro_rules! lang {
-            ($s:expr) => {
-                Some(String::from($s))
-            };
-        }
-        match self.language_code {
-            0 => lang!("NEUTRAL"),
-            54 => lang!("AFRIKAANS"),
-            28 => lang!("ALBANIAN"),
-            1 => lang!("ARABIC"),
-            43 => lang!("ARMENIAN"),
-            77 => lang!("ASSAMESE"),
-            44 => lang!("AZERI"),
-            45 => lang!("BASQUE"),
-            35 => lang!("BELARUSIAN"),
-            69 => lang!("BENGALI"),
-            2 => lang!("BULGARIAN"),
-            3 => lang!("CATALAN"),
-            4 => lang!("CHINESE"),
-            5 => lang!("CZECH"),
-            6 => lang!("DANISH"),
-            19 => lang!("DUTCH"),
-            9 => lang!("ENGLISH"),
-            37 => lang!("ESTONIAN"),
-            56 => lang!("FAEROESE"),
-            41 => lang!("FARSI"),
-            11 => lang!("FINNISH"),
-            12 => lang!("FRENCH"),
-            55 => lang!("GEORGIAN"),
-            7 => lang!("GERMAN"),
-            8 => lang!("GREEK"),
-            71 => lang!("GUJARATI"),
-            13 => lang!("HEBREW"),
-            57 => lang!("HINDI"),
-            14 => lang!("HUNGARIAN"),
-            15 => lang!("ICELANDIC"),
-            33 => lang!("INDONESIAN"),
-            16 => lang!("ITALIAN"),
-            17 => lang!("JAPANESE"),
-            75 => lang!("KANNADA"),
-            63 => lang!("KAZAK"),
-            87 => lang!("KONKANI"),
-            18 => lang!("KOREAN"),
-            38 => lang!("LATVIAN"),
-            39 => lang!("LITHUANIAN"),
-            47 => lang!("MACEDONIAN"),
-            62 => lang!("MALAY"),
-            76 => lang!("MALAYALAM"),
-            58 => lang!("MALTESE"),
-            78 => lang!("MARATHI"),
-            97 => lang!("NEPALI"),
-            20 => lang!("NORWEGIAN"),
-            72 => lang!("ORIYA"),
-            21 => lang!("POLISH"),
-            22 => lang!("PORTUGUESE"),
-            70 => lang!("PUNJABI"),
-            23 => lang!("RHAETOROMANIC"),
-            24 => lang!("ROMANIAN"),
-            25 => lang!("RUSSIAN"),
-            59 => lang!("SAMI"),
-            79 => lang!("SANSKRIT"),
-            26 => lang!("SERBIAN"),
-            27 => lang!("SLOVAK"),
-            36 => lang!("SLOVENIAN"),
-            46 => lang!("SORBIAN"),
-            10 => lang!("SPANISH"),
-            48 => lang!("SUTU"),
-            65 => lang!("SWAHILI"),
-            29 => lang!("SWEDISH"),
-            73 => lang!("TAMIL"),
-            68 => lang!("TATAR"),
-            74 => lang!("TELUGU"),
-            30 => lang!("THAI"),
-            49 => lang!("TSONGA"),
-            50 => lang!("TSWANA"),
-            31 => lang!("TURKISH"),
-            34 => lang!("UKRAINIAN"),
-            32 => lang!("URDU"),
-            67 => lang!("UZBEK"),
-            42 => lang!("VIETNAMESE"),
-            52 => lang!("XHOSA"),
-            53 => lang!("ZULU"),
-            _ => None,
-        }
+    pub fn language(&self) -> Language {
+        self.language_code.into()
     }
 }
 #[cfg(test)]
@@ -440,140 +542,5 @@ mod tests {
         assert!(mobiheader.write(&mut Writer::new(&mut output_bytes)).is_ok());
         assert_eq!(input_bytes.len(), output_bytes.len());
         assert_eq!(input_bytes, output_bytes);
-    }
-
-    mod text_encoding {
-        use super::*;
-        #[test]
-        fn utf_8() {
-            let m = MobiHeader {
-                text_encoding: 65001,
-                ..Default::default()
-            };
-            assert_eq!(m.text_encoding(), TextEncoding::UTF8)
-        }
-        #[test]
-        fn win_latin1() {
-            let m = MobiHeader {
-                text_encoding: 1252,
-                ..Default::default()
-            };
-            assert_eq!(m.text_encoding(), TextEncoding::CP1252)
-        }
-    }
-
-    #[test]
-    fn parses_mobi_types() {
-        macro_rules! mtype {
-            ($mt: expr, $s: expr) => {
-                let m = MobiHeader {
-                    mobi_type: $mt,
-                    ..Default::default()
-                };
-                assert_eq!(m.mobi_type(), Some(String::from($s)))
-            };
-        }
-        mtype!(2, "Mobipocket Book");
-        mtype!(3, "PalmDoc Book");
-        mtype!(4, "Audio");
-        mtype!(257, "News");
-        mtype!(258, "News Feed");
-        mtype!(259, "News Magazine");
-        mtype!(513, "PICS");
-        mtype!(514, "WORD");
-        mtype!(515, "XLS");
-        mtype!(516, "PPT");
-        mtype!(517, "TEXT");
-        mtype!(518, "HTML");
-    }
-
-    #[test]
-    fn parses_languages() {
-        macro_rules! lang {
-            ($lc: expr, $s: expr) => {
-                let m = MobiHeader {
-                    language_code: $lc,
-                    ..Default::default()
-                };
-                assert_eq!(m.language(), Some(String::from($s)))
-            };
-        }
-
-        lang!(0, "NEUTRAL");
-        lang!(54, "AFRIKAANS");
-        lang!(28, "ALBANIAN");
-        lang!(1, "ARABIC");
-        lang!(43, "ARMENIAN");
-        lang!(77, "ASSAMESE");
-        lang!(44, "AZERI");
-        lang!(45, "BASQUE");
-        lang!(35, "BELARUSIAN");
-        lang!(69, "BENGALI");
-        lang!(2, "BULGARIAN");
-        lang!(3, "CATALAN");
-        lang!(4, "CHINESE");
-        lang!(5, "CZECH");
-        lang!(6, "DANISH");
-        lang!(19, "DUTCH");
-        lang!(9, "ENGLISH");
-        lang!(37, "ESTONIAN");
-        lang!(56, "FAEROESE");
-        lang!(41, "FARSI");
-        lang!(11, "FINNISH");
-        lang!(12, "FRENCH");
-        lang!(55, "GEORGIAN");
-        lang!(7, "GERMAN");
-        lang!(8, "GREEK");
-        lang!(71, "GUJARATI");
-        lang!(13, "HEBREW");
-        lang!(57, "HINDI");
-        lang!(14, "HUNGARIAN");
-        lang!(15, "ICELANDIC");
-        lang!(33, "INDONESIAN");
-        lang!(16, "ITALIAN");
-        lang!(17, "JAPANESE");
-        lang!(75, "KANNADA");
-        lang!(63, "KAZAK");
-        lang!(87, "KONKANI");
-        lang!(18, "KOREAN");
-        lang!(38, "LATVIAN");
-        lang!(39, "LITHUANIAN");
-        lang!(47, "MACEDONIAN");
-        lang!(62, "MALAY");
-        lang!(76, "MALAYALAM");
-        lang!(58, "MALTESE");
-        lang!(78, "MARATHI");
-        lang!(97, "NEPALI");
-        lang!(20, "NORWEGIAN");
-        lang!(72, "ORIYA");
-        lang!(21, "POLISH");
-        lang!(22, "PORTUGUESE");
-        lang!(70, "PUNJABI");
-        lang!(23, "RHAETOROMANIC");
-        lang!(24, "ROMANIAN");
-        lang!(25, "RUSSIAN");
-        lang!(59, "SAMI");
-        lang!(79, "SANSKRIT");
-        lang!(26, "SERBIAN");
-        lang!(27, "SLOVAK");
-        lang!(36, "SLOVENIAN");
-        lang!(46, "SORBIAN");
-        lang!(10, "SPANISH");
-        lang!(48, "SUTU");
-        lang!(65, "SWAHILI");
-        lang!(29, "SWEDISH");
-        lang!(73, "TAMIL");
-        lang!(68, "TATAR");
-        lang!(74, "TELUGU");
-        lang!(30, "THAI");
-        lang!(49, "TSONGA");
-        lang!(50, "TSWANA");
-        lang!(31, "TURKISH");
-        lang!(34, "UKRAINIAN");
-        lang!(32, "URDU");
-        lang!(67, "UZBEK");
-        lang!(42, "VIETNAMESE");
-        lang!(52, "XHOSA");
-        lang!(53, "ZULU");
     }
 }

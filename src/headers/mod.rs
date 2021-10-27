@@ -7,8 +7,8 @@ pub(crate) mod records;
 pub use self::{
     exth::{ExtHeader, ExthRecord},
     header::Header,
-    mobih::{MobiHeader, TextEncoding},
-    palmdoch::PalmDocHeader,
+    mobih::{Language, MobiHeader, MobiType, TextEncoding},
+    palmdoch::{Compression, Encryption, PalmDocHeader},
 };
 
 use crate::headers::records::Records;
@@ -159,12 +159,12 @@ impl MobiMetadata {
     }
 
     /// Returns type of this ebook
-    pub fn mobi_type(&self) -> Option<String> {
+    pub fn mobi_type(&self) -> MobiType {
         self.mobi.mobi_type()
     }
 
     /// Returns language of the ebook
-    pub fn language(&self) -> Option<String> {
+    pub fn language(&self) -> Language {
         self.mobi.language()
     }
 
@@ -195,12 +195,12 @@ impl MobiMetadata {
     }
 
     /// Returns compression method used on this file
-    pub fn compression(&self) -> String {
+    pub fn compression(&self) -> Compression {
         self.palmdoc.compression()
     }
 
     /// Returns encryption method used on this file
-    pub fn encryption(&self) -> String {
+    pub fn encryption(&self) -> Encryption {
         self.palmdoc.encryption()
     }
 }
