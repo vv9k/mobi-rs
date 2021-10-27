@@ -31,10 +31,10 @@ fn load_huff(huff: &[u8]) -> HuffmanResult<([(u8, bool, u32); 256], [u32; 32], [
         return Err(HuffmanError::InvalidHuffHeader);
     }
 
-    let off1 = r.read_u32_be()?;
-    let off2 = r.read_u32_be()?;
+    let cache_offset = r.read_u32_be()?;
+    let base_offset = r.read_u32_be()?;
 
-    r.set_position(off1 as usize)?;
+    r.set_position(cache_offset as usize)?;
 
     let mut code_dict = [(0, false, 0); 256];
     for code in code_dict.iter_mut() {
@@ -51,7 +51,7 @@ fn load_huff(huff: &[u8]) -> HuffmanResult<([(u8, bool, u32); 256], [u32; 32], [
         *code = (code_len, term, max_code);
     }
 
-    r.set_position(off2 as usize)?;
+    r.set_position(base_offset as usize)?;
 
     // First value is ignored, since code_len > 0.
     let mut min_codes = [0; 33];
