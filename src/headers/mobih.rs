@@ -434,13 +434,13 @@ impl MobiHeader {
     }
 
     /// Converts numerical value into a type
-    pub(crate) fn mobi_type(&self) -> MobiType {
+    pub fn mobi_type(&self) -> MobiType {
         self.mobi_type.into()
     }
 
     // Mobi format only specifies this two encodings so
     // this should never panic
-    pub(crate) fn text_encoding(&self) -> TextEncoding {
+    pub fn text_encoding(&self) -> TextEncoding {
         match self.text_encoding {
             1252 => TextEncoding::CP1252,
             65001 => TextEncoding::UTF8,

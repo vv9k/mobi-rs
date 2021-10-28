@@ -2,6 +2,7 @@ use crate::{Reader, Writer};
 
 use std::io;
 
+#[derive(Debug, Copy, Clone, PartialEq)]
 /// Compression types available in MOBI format.
 pub enum Compression {
     No,
@@ -27,6 +28,7 @@ impl AsRef<str> for Compression {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
 /// Encryption types available in MOBI format.
 pub enum Encryption {
     No,
