@@ -11,8 +11,9 @@ pub use self::{
     palmdoch::{Compression, Encryption, PalmDocHeader},
 };
 
-use crate::headers::records::Records;
+use crate::headers::records::PdbRecords;
 use crate::{Reader, Writer};
+
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::fs::File;
@@ -24,7 +25,7 @@ use std::path::Path;
 pub struct MobiMetadata {
     pub name: Vec<u8>,
     pub header: Header,
-    pub records: Records,
+    pub records: PdbRecords,
     pub palmdoc: PalmDocHeader,
     pub mobi: MobiHeader,
     pub exth: ExtHeader,
@@ -48,7 +49,7 @@ impl MobiMetadata {
 
     pub(crate) fn from_reader<R: Read>(reader: &mut Reader<R>) -> io::Result<MobiMetadata> {
         let header = Header::parse(reader)?;
-        let records = Records::parse(reader, header.num_records)?;
+        let records = PdbRecords::parse(reader, header.num_records)?;
         let palmdoc = PalmDocHeader::parse(reader)?;
         let mobi = MobiHeader::parse(reader)?;
 
@@ -58,10 +59,11 @@ impl MobiMetadata {
             ExtHeader::default()
         };
 
-        reader.set_position((records.records[0].0 + mobi.name_offset) as usize)?;
+        reader.set_position((records.records[0].offset + mobi.name_offset) as usize)?;
+        let name = reader.read_vec_header(mobi.name_length as usize)?;
 
         Ok(MobiMetadata {
-            name: reader.read_vec_header(mobi.name_length as usize)?,
+            name,
             header,
             records,
             palmdoc,
@@ -84,7 +86,8 @@ impl MobiMetadata {
             self.exth.write(w)?;
         }
 
-        let fill = ((self.records.records[0].0 + self.mobi.name_offset) as usize).saturating_sub(w.bytes_written());
+        let fill =
+            ((self.records.records[0].offset + self.mobi.name_offset) as usize).saturating_sub(w.bytes_written());
         w.write_be(vec![0; fill])?;
         w.write_be(&self.name)
     }

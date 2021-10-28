@@ -99,7 +99,7 @@ impl Mobi {
 
         self.metadata.write_into(&mut w)?;
 
-        let first_offset = self.metadata.records.records[1].0 as usize;
+        let first_offset = self.metadata.records.records[1].offset as usize;
         let fill = first_offset - w.bytes_written();
         w.write_be(vec![0; fill])?;
         // TODO: Consider record compression and everything else.

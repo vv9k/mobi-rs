@@ -1,5 +1,5 @@
-#![allow(dead_code)]
 use crate::{Reader, Writer};
+
 use indexmap::IndexMap;
 use std::io;
 
@@ -43,7 +43,7 @@ pub enum ExthRecord {
     /// Add to first image field in Mobi Header to find PDB record containing the thumbnail cover image
     ThumbOffset = 202,
     HasFakeCover = 203,
-    ///Known Values: 1=mobigen, 2=Mobipocket Creator, 200=kindlegen (Windows), 201=kindlegen (Linux), 202=kindlegen (Mac). Warning: Calibre creates fake creator entries, pretending to be a Linux kindlegen 1.2 (201, 1, 2, 33307) for normal ebooks and a non-public Linux kindlegen 2.0 (201, 2, 0, 101) for periodicals.
+    /// Known Values: 1=mobigen, 2=Mobipocket Creator, 200=kindlegen (Windows), 201=kindlegen (Linux), 202=kindlegen (Mac). Warning: Calibre creates fake creator entries, pretending to be a Linux kindlegen 1.2 (201, 1, 2, 33307) for normal ebooks and a non-public Linux kindlegen 2.0 (201, 2, 0, 101) for periodicals.
     CreatorSoftware = 204,
     CreatoreMajorVersion = 205,
     CreatorMinorVersion = 206,

@@ -1,15 +1,17 @@
 use super::{lz77, TextEncoding};
 use crate::headers::palmdoch::Compression;
+use crate::headers::records::PdbRecord;
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
 use std::borrow::Cow;
 use std::error::Error;
 use std::fmt;
 use std::io::{self, ErrorKind};
+use std::string::FromUtf8Error;
 
 #[derive(Debug, Clone)]
 /// A wrapper error type for unified error across multiple encodings.
 pub enum DecodeError {
-    UTF8(String),
+    UTF8(FromUtf8Error),
     CP1252(Cow<'static, str>),
 }
 
@@ -74,14 +76,15 @@ impl Record {
     /// Gets all records in the specified content
     pub(crate) fn parse_records(
         content: &[u8],
-        record_info: &[(u32, u32)],
+        record_info: &[PdbRecord],
         _extra_bytes: u32,
         compression_type: Compression,
     ) -> io::Result<Vec<Record>> {
         let mut new_records = vec![];
         for records in record_info.windows(2) {
-            let (curr_offset, id) = records[0];
-            let (next_offset, _) = records[1];
+            let curr_offset = records[0].offset;
+            let id = records[0].id;
+            let next_offset = records[1].offset;
             let record_data = if _extra_bytes < next_offset {
                 match Record::record_data(curr_offset, next_offset, _extra_bytes, &compression_type, content) {
                     Ok(record) => record,
@@ -101,10 +104,10 @@ impl Record {
             new_records.push(record);
         }
 
-        if let Some(&(record_data_offset, id)) = record_info.last() {
+        if let Some(PdbRecord { offset, id }) = record_info.last() {
             new_records.push(Record {
-                record_data_offset,
-                id,
+                record_data_offset: *offset,
+                id: *id,
                 record_data: vec![],
                 length: 0,
             });
@@ -122,9 +125,7 @@ impl Record {
 
     pub(crate) fn to_string(&self, encoding: TextEncoding) -> Result<String, DecodeError> {
         match encoding {
-            TextEncoding::UTF8 => {
-                String::from_utf8(self.record_data.clone()).map_err(|e| DecodeError::UTF8(e.to_string()))
-            }
+            TextEncoding::UTF8 => String::from_utf8(self.record_data.clone()).map_err(|e| DecodeError::UTF8(e)),
             TextEncoding::CP1252 => WINDOWS_1252
                 .decode(&self.record_data, DecoderTrap::Strict)
                 .map_err(DecodeError::CP1252),
