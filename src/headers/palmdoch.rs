@@ -1,3 +1,4 @@
+use crate::writer::WriteBeBytes;
 use crate::{Reader, Writer};
 
 use std::io;
@@ -9,6 +10,13 @@ pub enum Compression {
     PalmDoc,
     Huff,
 }
+
+impl Default for Compression {
+    fn default() -> Compression {
+        Compression::No
+    }
+}
+
 impl From<u16> for Compression {
     fn from(n: u16) -> Compression {
         match n {
@@ -18,6 +26,21 @@ impl From<u16> for Compression {
         }
     }
 }
+impl From<Compression> for u16 {
+    fn from(compression: Compression) -> u16 {
+        match compression {
+            Compression::No => 1,
+            Compression::PalmDoc => 2,
+            Compression::Huff => 17480,
+        }
+    }
+}
+
+impl WriteBeBytes for Compression {
+    fn write_be_bytes<W: io::Write>(&self, writer: &mut W) -> io::Result<usize> {
+        u16::from(*self).write_be_bytes(writer)
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 /// Encryption types available in MOBI format.
@@ -25,6 +48,12 @@ pub enum Encryption {
     No,
     OldMobiPocket,
     MobiPocket,
+}
+
+impl Default for Encryption {
+    fn default() -> Self {
+        Encryption::No
+    }
 }
 
 impl From<u16> for Encryption {
@@ -37,15 +66,31 @@ impl From<u16> for Encryption {
     }
 }
 
+impl From<Encryption> for u16 {
+    fn from(encryption: Encryption) -> u16 {
+        match encryption {
+            Encryption::No => 0,
+            Encryption::MobiPocket => 1,
+            Encryption::OldMobiPocket => 2,
+        }
+    }
+}
+
+impl WriteBeBytes for Encryption {
+    fn write_be_bytes<W: io::Write>(&self, writer: &mut W) -> io::Result<usize> {
+        u16::from(*self).write_be_bytes(writer)
+    }
+}
+
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds PalmDOC header information
 pub struct PalmDocHeader {
-    pub compression: u16,
+    pub compression: Compression,
     pub text_length: u32,
     unused0: u16,
     pub record_count: u16,
     pub record_size: u16,
-    pub encryption: u16,
+    pub encryption: Encryption,
     unused1: u16,
 }
 
@@ -54,12 +99,12 @@ impl PalmDocHeader {
     /// of the PalmDocHeader, at byte 80 + 8 * num_records.
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<PalmDocHeader> {
         Ok(PalmDocHeader {
-            compression: reader.read_u16_be()?,
+            compression: reader.read_u16_be()?.into(),
             unused0: reader.read_u16_be()?,
             text_length: reader.read_u32_be()?,
             record_count: reader.read_u16_be()?,
             record_size: reader.read_u16_be()?,
-            encryption: reader.read_u16_be()?,
+            encryption: reader.read_u16_be()?.into(),
             unused1: reader.read_u16_be()?,
         })
     }
@@ -75,11 +120,11 @@ impl PalmDocHeader {
     }
 
     pub fn compression(&self) -> Compression {
-        self.compression.into()
+        self.compression
     }
 
     pub fn encryption(&self) -> Encryption {
-        self.encryption.into()
+        self.encryption
     }
 }
 
@@ -91,11 +136,11 @@ mod tests {
     #[test]
     fn parse() {
         let pdheader = PalmDocHeader {
-            compression: 2,
+            compression: Compression::PalmDoc,
             text_length: 1151461,
             record_count: 282,
             record_size: 4096,
-            encryption: 0,
+            encryption: Encryption::No,
             ..Default::default()
         };
 

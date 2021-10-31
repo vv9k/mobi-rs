@@ -46,10 +46,10 @@ impl Header {
         if header.type_ == b"BOOK" && header.creator == b"MOBI" {
             Ok(header)
         } else {
-            return Err(io::Error::new(
+            Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "invalid header identifier",
-            ));
+            ))
         }
     }
 

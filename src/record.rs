@@ -127,9 +127,11 @@ impl Record {
 
     pub(crate) fn to_string_lossy(&self, encoding: TextEncoding) -> String {
         match encoding {
-            TextEncoding::UTF8 => String::from_utf8_lossy(&self.record_data)
-                .to_owned()
-                .to_string(),
+            TextEncoding::UTF8 | TextEncoding::Unknown(_) => {
+                String::from_utf8_lossy(&self.record_data)
+                    .to_owned()
+                    .to_string()
+            }
             TextEncoding::CP1252 => WINDOWS_1252
                 .decode(&self.record_data, DecoderTrap::Ignore)
                 .unwrap(),
@@ -138,7 +140,7 @@ impl Record {
 
     pub(crate) fn to_string(&self, encoding: TextEncoding) -> Result<String, DecodeError> {
         match encoding {
-            TextEncoding::UTF8 => {
+            TextEncoding::UTF8 | TextEncoding::Unknown(_) => {
                 String::from_utf8(self.record_data.clone()).map_err(DecodeError::UTF8)
             }
             TextEncoding::CP1252 => WINDOWS_1252
