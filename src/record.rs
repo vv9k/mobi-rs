@@ -54,13 +54,16 @@ impl Record {
         content: &[u8],
     ) -> io::Result<Vec<u8>> {
         match compression_type {
-            Compression::No => Ok(content[record_data_offset as usize..next_record_data_offset as usize].to_vec()),
+            Compression::No => {
+                Ok(content[record_data_offset as usize..next_record_data_offset as usize].to_vec())
+            }
             Compression::PalmDoc => {
                 if record_data_offset < content.len() as u32
                     && record_data_offset < next_record_data_offset - extra_bytes
                 {
                     Ok(lz77::decompress_lz77(
-                        &content[record_data_offset as usize..(next_record_data_offset - extra_bytes) as usize],
+                        &content[record_data_offset as usize
+                            ..(next_record_data_offset - extra_bytes) as usize],
                     ))
                 } else {
                     Err(io::Error::new(
@@ -86,7 +89,13 @@ impl Record {
             let id = records[0].id;
             let next_offset = records[1].offset;
             let record_data = if _extra_bytes < next_offset {
-                match Record::record_data(curr_offset, next_offset, _extra_bytes, &compression_type, content) {
+                match Record::record_data(
+                    curr_offset,
+                    next_offset,
+                    _extra_bytes,
+                    &compression_type,
+                    content,
+                ) {
                     Ok(record) => record,
                     Err(_) => Vec::new(),
                 }
@@ -118,14 +127,20 @@ impl Record {
 
     pub(crate) fn to_string_lossy(&self, encoding: TextEncoding) -> String {
         match encoding {
-            TextEncoding::UTF8 => String::from_utf8_lossy(&self.record_data).to_owned().to_string(),
-            TextEncoding::CP1252 => WINDOWS_1252.decode(&self.record_data, DecoderTrap::Ignore).unwrap(),
+            TextEncoding::UTF8 => String::from_utf8_lossy(&self.record_data)
+                .to_owned()
+                .to_string(),
+            TextEncoding::CP1252 => WINDOWS_1252
+                .decode(&self.record_data, DecoderTrap::Ignore)
+                .unwrap(),
         }
     }
 
     pub(crate) fn to_string(&self, encoding: TextEncoding) -> Result<String, DecodeError> {
         match encoding {
-            TextEncoding::UTF8 => String::from_utf8(self.record_data.clone()).map_err(DecodeError::UTF8),
+            TextEncoding::UTF8 => {
+                String::from_utf8(self.record_data.clone()).map_err(DecodeError::UTF8)
+            }
             TextEncoding::CP1252 => WINDOWS_1252
                 .decode(&self.record_data, DecoderTrap::Strict)
                 .map_err(DecodeError::CP1252),

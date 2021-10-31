@@ -154,8 +154,12 @@ fn unpack(
         }
 
         let index = ((max_code - code) >> (32 - code_len)) as usize;
-        let (mut slice, flag) = std::mem::take(dictionary.get_mut(index).ok_or(HuffmanError::InvalidDictionaryIndex)?)
-            .ok_or(HuffmanError::InvalidDictionaryIndex)?;
+        let (mut slice, flag) = std::mem::take(
+            dictionary
+                .get_mut(index)
+                .ok_or(HuffmanError::InvalidDictionaryIndex)?,
+        )
+        .ok_or(HuffmanError::InvalidDictionaryIndex)?;
         if !flag {
             slice = unpack(&slice, dictionary, code_dict, min_codes, max_codes)?;
         }
@@ -183,7 +187,13 @@ fn decompress(huffs: &[&[u8]], sections: &[&[u8]]) -> HuffmanResult<Vec<Vec<u8>>
 
     let mut output = Vec::new();
     for section in sections {
-        output.push(unpack(section, &mut dictionary, &dict1, &min_code, &max_code)?);
+        output.push(unpack(
+            section,
+            &mut dictionary,
+            &dict1,
+            &min_code,
+            &max_code,
+        )?);
     }
     Ok(output)
 }

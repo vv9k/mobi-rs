@@ -19,7 +19,10 @@ pub struct PdbRecords {
 impl PdbRecords {
     /// Parse the records from a reader. Reader must be advanced to the starting position
     /// of the records, at byte 78.
-    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>, num_records: u16) -> io::Result<PdbRecords> {
+    pub(crate) fn parse<R: io::Read>(
+        reader: &mut Reader<R>,
+        num_records: u16,
+    ) -> io::Result<PdbRecords> {
         let mut records = Vec::with_capacity(num_records as usize);
 
         for _ in 0..num_records {

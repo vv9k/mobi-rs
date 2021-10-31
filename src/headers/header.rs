@@ -44,7 +44,11 @@ impl Header {
         })
     }
 
-    pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>, num_records: u16) -> io::Result<()> {
+    pub(crate) fn write<W: io::Write>(
+        &self,
+        w: &mut Writer<W>,
+        num_records: u16,
+    ) -> io::Result<()> {
         w.write_be(&self.name)?;
         w.write_be(self.attributes)?;
         w.write_be(self.version)?;
@@ -130,7 +134,9 @@ mod tests {
 
         let mut buf = vec![];
 
-        parsed_header.write(&mut Writer::new(&mut buf), 292).unwrap();
+        parsed_header
+            .write(&mut Writer::new(&mut buf), 292)
+            .unwrap();
         assert_eq!(header.len(), buf.len());
         assert_eq!(header, buf);
     }

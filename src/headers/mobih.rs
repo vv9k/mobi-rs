@@ -502,8 +502,8 @@ mod tests {
             unused_3: 1,
             unused_4: 1,
             unused_5: vec![
-                0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255,
-                255, 0, 0, 0, 7, 0, 0, 1, 28,
+                0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255,
+                255, 255, 255, 255, 255, 0, 0, 0, 7, 0, 0, 1, 28,
             ],
         };
 
@@ -540,7 +540,9 @@ mod tests {
         let mobiheader = MobiHeader::parse(&mut book::u8_reader(input_bytes.clone())).unwrap();
 
         let mut output_bytes = vec![];
-        assert!(mobiheader.write(&mut Writer::new(&mut output_bytes)).is_ok());
+        assert!(mobiheader
+            .write(&mut Writer::new(&mut output_bytes))
+            .is_ok());
         assert_eq!(input_bytes.len(), output_bytes.len());
         assert_eq!(input_bytes, output_bytes);
     }

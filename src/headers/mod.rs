@@ -86,8 +86,8 @@ impl MobiMetadata {
             self.exth.write(w)?;
         }
 
-        let fill =
-            ((self.records.records[0].offset + self.mobi.name_offset) as usize).saturating_sub(w.bytes_written());
+        let fill = ((self.records.records[0].offset + self.mobi.name_offset) as usize)
+            .saturating_sub(w.bytes_written());
         w.write_be(vec![0; fill])?;
         w.write_be(&self.name)
     }
@@ -124,12 +124,14 @@ impl MobiMetadata {
 
     /// Returns this books publisher
     pub fn publisher(&self) -> Option<String> {
-        self.exth.get_record_string_lossy(exth::ExthRecord::Publisher)
+        self.exth
+            .get_record_string_lossy(exth::ExthRecord::Publisher)
     }
 
     /// Returns description record if such exists
     pub fn description(&self) -> Option<String> {
-        self.exth.get_record_string_lossy(exth::ExthRecord::Description)
+        self.exth
+            .get_record_string_lossy(exth::ExthRecord::Description)
     }
 
     /// Returns isbn record if such exists
@@ -139,12 +141,14 @@ impl MobiMetadata {
 
     /// Returns publish_date record if such exists
     pub fn publish_date(&self) -> Option<String> {
-        self.exth.get_record_string_lossy(exth::ExthRecord::PublishDate)
+        self.exth
+            .get_record_string_lossy(exth::ExthRecord::PublishDate)
     }
 
     /// Returns contributor record if such exists
     pub fn contributor(&self) -> Option<String> {
-        self.exth.get_record_string_lossy(exth::ExthRecord::Contributor)
+        self.exth
+            .get_record_string_lossy(exth::ExthRecord::Contributor)
     }
 
     /// Returns title record read from EXTH header if it exists

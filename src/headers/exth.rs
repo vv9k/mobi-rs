@@ -115,7 +115,14 @@ impl ExtHeader {
     pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
         w.write_be(self.identifier)?;
         // 12 for first 12 bytes, 8 per record + len.
-        w.write_be(12u32 + self.records.iter().map(|(_, d)| 8 + d.len() as u32).sum::<u32>())?;
+        w.write_be(
+            12u32
+                + self
+                    .records
+                    .iter()
+                    .map(|(_, d)| 8 + d.len() as u32)
+                    .sum::<u32>(),
+        )?;
         w.write_be(self.records.len() as u32)?;
         for (&id, record_data) in self.records.iter() {
             w.write_be(id)?;
@@ -138,7 +145,8 @@ impl ExtHeader {
     }
 
     pub(crate) fn get_record_string_lossy(&self, record: ExthRecord) -> Option<String> {
-        self.get_record(record).map(|r| String::from_utf8_lossy(r).to_string())
+        self.get_record(record)
+            .map(|r| String::from_utf8_lossy(r).to_string())
     }
 }
 

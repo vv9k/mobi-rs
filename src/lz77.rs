@@ -14,9 +14,11 @@ pub fn decompress_lz77(data: &[u8]) -> Vec<u8> {
             // next $byte bytes are also literal
             0x1..=0x8 => {
                 if offset + byte as usize <= length {
-                    data[offset..(offset + byte as usize)].iter().for_each(|ch| {
-                        text.push(*ch);
-                    });
+                    data[offset..(offset + byte as usize)]
+                        .iter()
+                        .for_each(|ch| {
+                            text.push(*ch);
+                        });
                     offset += byte as usize;
                 }
             }
