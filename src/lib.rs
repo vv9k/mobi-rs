@@ -191,9 +191,11 @@ impl Mobi {
         self.metadata.encryption()
     }
 
-    /// Returns last readable index of the book
-    fn last_index(&self) -> usize {
-        (self.metadata.palmdoc.record_count - 1) as usize
+    /// Returns the readable reacord range - from first content record to first
+    /// non book index.
+    pub fn readable_records_range(&self) -> Range<usize> {
+        self.metadata.mobi.first_content_record as usize
+            ..self.metadata.mobi.first_non_book_index as usize
     }
 
     fn readable_records_range(&self) -> Range<usize> {
