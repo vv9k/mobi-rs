@@ -45,20 +45,21 @@
 /// Module with headers from book containg more extracted data not
 /// available through public API.
 pub mod headers;
+pub mod record;
 pub use crate::headers::MobiMetadata;
 pub(crate) mod book;
 pub(crate) mod huff;
 pub(crate) mod lz77;
 pub(crate) mod reader;
-pub(crate) mod record;
 pub(crate) mod writer;
 
-use crate::headers::{Compression, Encryption, Language, MobiType, TextEncoding};
-pub(crate) use crate::reader::Reader;
-pub(crate) use crate::writer::Writer;
+use headers::{Compression, Encryption, Language, MobiType, TextEncoding};
+pub(crate) use reader::Reader;
+use record::RawRecords;
+pub(crate) use writer::Writer;
+
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
-use record::{DecodeError, RawRecords};
 use std::{fs::File, io, io::BufReader, ops::Range, path::Path};
 
 #[derive(Debug, Default)]
@@ -198,48 +199,75 @@ impl Mobi {
             ..self.metadata.mobi.first_non_book_index as usize
     }
 
-    fn readable_records_range(&self) -> Range<usize> {
-        1..self.last_index()
+    pub fn raw_records(&self) -> RawRecords {
+        self.metadata.records.parse(&self.content)
     }
 
-    fn records(&self) -> io::Result<Vec<Record>> {
-        Record::parse_records(
-            &self.content,
-            &self.metadata.records.records,
-            self.metadata.records.extra_bytes(),
-            self.metadata.palmdoc.compression(),
-        )
+    fn palmdoc_string_lossy(&self) -> String {
+        let encoding = self.text_encoding();
+        self.raw_records()
+            .0
+            .into_iter()
+            .map(|record| record.decompress_lz77().to_string_lossy(encoding))
+            .collect()
+    }
+
+    fn palmdoc_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
+        let encoding = self.text_encoding();
+        let mut s = String::new();
+        for record in self.raw_records().0 {
+            let content = record.decompress_lz77().to_string(encoding)?;
+            s.push_str(&content);
+        }
+        Ok(s)
+    }
+
+    fn no_compression_string_lossy(&self) -> String {
+        let encoding = self.text_encoding();
+        self.raw_records()
+            .0
+            .into_iter()
+            .map(|r| record::content_to_string_lossy(&r.content, encoding))
+            .collect()
+    }
+
+    fn no_compression_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
+        let encoding = self.text_encoding();
+        let mut s = String::new();
+        for r in self.raw_records().0 {
+            let content = record::content_to_string(&r.content, encoding)?;
+            s.push_str(&content);
+        }
+        Ok(s)
+    }
+
+    fn huff_string_lossy(&self) -> String {
+        todo!();
+    }
+
+    fn huff_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
+        todo!();
     }
 
     /// Returns all readable records content decompressed as a String.
     /// There are only two supported encodings in mobi format (UTF8, WIN1252)
     /// and both are losely converted by this function
-    pub fn content_as_string_lossy(&self) -> io::Result<String> {
-        Ok(self.records()?[self.readable_records_range()]
-            .iter()
-            .map(|record| record.to_string_lossy(self.text_encoding()))
-            .collect())
+    pub fn content_as_string_lossy(&self) -> String {
+        match self.compression() {
+            Compression::No => self.no_compression_string_lossy(),
+            Compression::PalmDoc => self.palmdoc_string_lossy(),
+            Compression::Huff => self.huff_string_lossy(),
+        }
     }
 
     /// Returns all readable records content decompressed as a String.
     /// This function is a strict version returning error on first encountered
     /// decoding error.
-    pub fn content_as_string(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let mut content = String::new();
-        for record in &self.records()?[self.readable_records_range()] {
-            content.push_str(&record.to_string(self.text_encoding())?);
+    pub fn content_as_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
+        match self.compression() {
+            Compression::No => self.no_compression_string(),
+            Compression::PalmDoc => self.palmdoc_string(),
+            Compression::Huff => self.huff_string(),
         }
-
-        Ok(content)
-    }
-
-    /// Returns all readable records content decompressed as a Vec
-    pub fn content(&self) -> io::Result<Vec<u8>> {
-        let records = &self.records()?[self.readable_records_range()];
-        let mut record_data = Vec::with_capacity(records.iter().map(|r| r.record_data.len()).sum());
-        for record in records {
-            record_data.extend_from_slice(&record.record_data);
-        }
-        Ok(record_data)
     }
 }
