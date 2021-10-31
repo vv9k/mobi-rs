@@ -456,8 +456,8 @@ impl MobiHeader {
 #[cfg(test)]
 mod tests {
     use super::MobiHeader;
+    use crate::book;
     use crate::writer::Writer;
-    use crate::{book, TextEncoding};
 
     #[test]
     fn test_parse() {

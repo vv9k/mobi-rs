@@ -152,7 +152,7 @@ pub(crate) fn full_book() -> Vec<u8> {
     res.extend_from_slice(&RECORDS);
     res.extend_from_slice(&PALMDOCHEADER);
     res.extend_from_slice(&MOBIHEADER);
-    res.extend_from_slice(&BOOK);
+    res.extend_from_slice(BOOK);
     res
 }
 

@@ -189,7 +189,7 @@ mod tests {
     fn test_write() {
         // First ExtHeader has duplicated fields and will not match when written.
         let bookx = book::BOOK.to_vec();
-        let mut reader = book::u8_reader(bookx.clone());
+        let mut reader = book::u8_reader(bookx);
         let parsed_header = ExtHeader::parse(&mut reader).unwrap();
         let mut buf = vec![];
         parsed_header.write(&mut Writer::new(&mut buf)).unwrap();

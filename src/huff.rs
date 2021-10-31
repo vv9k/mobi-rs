@@ -18,16 +18,18 @@ impl From<std::io::Error> for HuffmanError {
     }
 }
 
-struct CodeDictionary([(u8, bool, u32); 256]);
+type CodeDictionary = [(u8, bool, u32); 256];
+type MinCodesMapping = [u32; 32];
+type MaxCodesMapping = [u32; 32];
 
 struct HuffmanDecoder {
     dictionary: Vec<Option<(Vec<u8>, bool)>>,
-    code_dict: [(u8, bool, u32); 256],
-    min_codes: [u32; 33],
-    max_codes: [u32; 33],
+    code_dict: CodeDictionary,
+    min_codes: MinCodesMapping,
+    max_codes: MaxCodesMapping,
 }
 
-fn load_huff(huff: &[u8]) -> HuffmanResult<([(u8, bool, u32); 256], [u32; 33], [u32; 33])> {
+fn load_huff(huff: &[u8]) -> HuffmanResult<(CodeDictionary, MinCodesMapping, MaxCodesMapping)> {
     let mut r = Reader::new(std::io::Cursor::new(huff));
 
     if r.read_u32_be()? != u32::from_be_bytes(*b"HUFF") || r.read_u32_be()? != 0x18 {
@@ -57,8 +59,8 @@ fn load_huff(huff: &[u8]) -> HuffmanResult<([(u8, bool, u32); 256], [u32; 33], [
     r.set_position(base_offset as usize)?;
 
     // First value is ignored, since code_len > 0.
-    let mut min_codes = [0; 33];
-    let mut max_codes = [u32::max_value(); 33];
+    let mut min_codes = [0; 32];
+    let mut max_codes = [u32::max_value(); 32];
 
     // Fill all other values.
     for code_len in 1..=32 {
@@ -104,8 +106,8 @@ fn unpack(
     data: &[u8],
     dictionary: &mut [Option<(Vec<u8>, bool)>],
     code_dict: &[(u8, bool, u32); 256],
-    min_codes: &[u32; 33],
-    max_codes: &[u32; 33],
+    min_codes: &[u32; 32],
+    max_codes: &[u32; 32],
 ) -> HuffmanResult<Vec<u8>> {
     // Need len.
     let mut bits_left = data.len() * 8;
@@ -173,7 +175,7 @@ fn unpack(
 }
 
 fn decompress(huffs: &[&[u8]], sections: &[&[u8]]) -> HuffmanResult<Vec<Vec<u8>>> {
-    let (dict1, min_code, max_code) = load_huff(&huffs[0])?;
+    let (dict1, min_code, max_code) = load_huff(huffs[0])?;
     let mut dictionary = Vec::new();
     for huff in huffs[1..].iter() {
         load_cdic(huff, &mut dictionary)?;
