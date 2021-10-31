@@ -2,7 +2,6 @@ pub(crate) mod exth;
 pub(crate) mod header;
 pub(crate) mod mobih;
 pub(crate) mod palmdoch;
-pub(crate) mod records;
 
 pub use self::{
     exth::{ExtHeader, ExthRecord},
@@ -11,7 +10,7 @@ pub use self::{
     palmdoch::{Compression, Encryption, PalmDocHeader},
 };
 
-use crate::headers::records::PdbRecords;
+use crate::record::PdbRecords;
 use crate::{Reader, Writer};
 
 #[cfg(feature = "time")]
@@ -49,7 +48,7 @@ impl MobiMetadata {
 
     pub(crate) fn from_reader<R: Read>(reader: &mut Reader<R>) -> io::Result<MobiMetadata> {
         let header = Header::parse(reader)?;
-        let records = PdbRecords::parse(reader, header.num_records)?;
+        let records = PdbRecords::new(reader, header.num_records)?;
         let palmdoc = PalmDocHeader::parse(reader)?;
         let mobi = MobiHeader::parse(reader)?;
 

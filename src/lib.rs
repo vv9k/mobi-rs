@@ -46,7 +46,6 @@
 /// available through public API.
 pub mod headers;
 pub use crate::headers::MobiMetadata;
-pub use crate::record::Record;
 pub(crate) mod book;
 pub(crate) mod huff;
 pub(crate) mod lz77;
@@ -59,6 +58,7 @@ pub(crate) use crate::reader::Reader;
 pub(crate) use crate::writer::Writer;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
+use record::{DecodeError, RawRecords};
 use std::{fs::File, io, io::BufReader, ops::Range, path::Path};
 
 #[derive(Debug, Default)]

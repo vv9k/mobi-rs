@@ -1,12 +1,15 @@
-use super::{lz77, TextEncoding};
-use crate::headers::palmdoch::Compression;
-use crate::headers::records::PdbRecord;
+use crate::headers::TextEncoding;
+use crate::lz77;
+use crate::{Reader, Writer};
+
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
 use std::borrow::Cow;
 use std::error::Error;
 use std::fmt;
-use std::io::{self, ErrorKind};
+use std::io;
 use std::string::FromUtf8Error;
+
+const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
 
 #[derive(Debug, Clone)]
 /// A wrapper error type for unified error across multiple encodings.
@@ -26,126 +29,156 @@ impl fmt::Display for DecodeError {
 
 impl Error for DecodeError {}
 
-#[derive(Debug, Clone)]
-/// A "cell" in the whole books content
-pub struct Record {
-    record_data_offset: u32,
-    id: u32,
-    pub record_data: Vec<u8>,
-    pub length: usize,
+#[derive(Debug, Default)]
+pub struct RawRecord<'a> {
+    pub record: PdbRecord,
+    pub content: &'a [u8],
 }
-impl Record {
-    #[allow(dead_code)]
-    fn new() -> Record {
-        Record {
-            record_data_offset: 0,
-            id: 0,
-            record_data: Vec::new(),
-            length: 0,
-        }
+
+impl<'a> RawRecord<'a> {
+    pub(crate) fn decompress_lz77(&self) -> DecompressedRecord {
+        DecompressedRecord(lz77::decompress(&self.content))
     }
+}
 
-    /// Reads the content of a record at specified offset
-    fn record_data(
-        record_data_offset: u32,
-        next_record_data_offset: u32,
-        extra_bytes: u32,
-        compression_type: &Compression,
-        content: &[u8],
-    ) -> io::Result<Vec<u8>> {
-        match compression_type {
-            Compression::No => {
-                Ok(content[record_data_offset as usize..next_record_data_offset as usize].to_vec())
-            }
-            Compression::PalmDoc => {
-                if record_data_offset < content.len() as u32
-                    && record_data_offset < next_record_data_offset - extra_bytes
-                {
-                    Ok(lz77::decompress(
-                        &content[record_data_offset as usize
-                            ..(next_record_data_offset - extra_bytes) as usize],
-                    ))
-                } else {
-                    Err(io::Error::new(
-                        ErrorKind::NotFound,
-                        "record points to location out of bounds",
-                    ))
-                }
-            }
-            Compression::Huff => panic!("Huff compression is currently not supported"),
-        }
-    }
+#[derive(Debug, Default)]
+pub struct RawRecords<'a>(pub Vec<RawRecord<'a>>);
 
-    /// Gets all records in the specified content
-    pub(crate) fn parse_records(
-        content: &[u8],
-        record_info: &[PdbRecord],
-        _extra_bytes: u32,
-        compression_type: Compression,
-    ) -> io::Result<Vec<Record>> {
-        let mut new_records = vec![];
-        for records in record_info.windows(2) {
-            let curr_offset = records[0].offset;
-            let id = records[0].id;
-            let next_offset = records[1].offset;
-            let record_data = if _extra_bytes < next_offset {
-                match Record::record_data(
-                    curr_offset,
-                    next_offset,
-                    _extra_bytes,
-                    &compression_type,
-                    content,
-                ) {
-                    Ok(record) => record,
-                    Err(_) => Vec::new(),
-                }
-            } else {
-                Vec::new()
-            };
+#[derive(Debug, PartialEq, Default, Clone, Copy)]
+pub struct PdbRecord {
+    pub id: u32,
+    pub offset: u32,
+}
 
-            let record = Record {
-                record_data_offset: curr_offset,
-                id,
-                length: record_data.len(),
-                record_data,
-            };
+#[derive(Debug, PartialEq, Default)]
+pub struct PdbRecords {
+    pub records: Vec<PdbRecord>,
+    extra_bytes: u16,
+}
 
-            new_records.push(record);
-        }
+impl PdbRecords {
+    /// Parse the records from a reader. Reader must be advanced to the starting position
+    /// of the records, at byte 78.
+    pub(crate) fn new<R: io::Read>(
+        reader: &mut Reader<R>,
+        num_records: u16,
+    ) -> io::Result<PdbRecords> {
+        let mut records = Vec::with_capacity(num_records as usize);
 
-        if let Some(PdbRecord { offset, id }) = record_info.last() {
-            new_records.push(Record {
-                record_data_offset: *offset,
-                id: *id,
-                record_data: vec![],
-                length: 0,
+        for _ in 0..num_records {
+            records.push(PdbRecord {
+                offset: reader.read_u32_be()?,
+                id: reader.read_u32_be()?,
             });
         }
 
-        Ok(new_records)
+        Ok(PdbRecords {
+            records,
+            extra_bytes: reader.read_u16_be()?,
+        })
     }
 
-    pub(crate) fn to_string_lossy(&self, encoding: TextEncoding) -> String {
-        match encoding {
-            TextEncoding::UTF8 | TextEncoding::Unknown(_) => {
-                String::from_utf8_lossy(&self.record_data)
-                    .to_owned()
-                    .to_string()
-            }
-            TextEncoding::CP1252 => WINDOWS_1252
-                .decode(&self.record_data, DecoderTrap::Ignore)
-                .unwrap(),
+    /// Parses content returing raw records that contain slices of content based on their offset.
+    pub(crate) fn parse<'a>(&self, content: &'a [u8]) -> RawRecords<'a> {
+        let mut crecords = RawRecords::default();
+        let extra_bytes = self.extra_bytes as u32;
+        let mut records = self.records.iter().peekable();
+
+        while let Some(record) = records.next() {
+            let curr_offset = record.offset;
+
+            let content = if let Some(next) = records.peek() {
+                let next_offset = next.offset;
+                if extra_bytes < next_offset {
+                    &content[curr_offset as usize..(next_offset - extra_bytes) as usize]
+                } else {
+                    &[]
+                }
+            } else {
+                &content[curr_offset as usize..]
+            };
+
+            crecords.0.push(RawRecord {
+                record: *record,
+                content,
+            });
         }
+        crecords
+    }
+
+    pub fn extra_bytes(&self) -> u32 {
+        2 * (self.extra_bytes & EXTRA_BYTES_FLAG).count_ones() as u32
+    }
+
+    pub fn num_records(&self) -> u16 {
+        self.records.len() as u16
+    }
+
+    pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
+        for record in &self.records {
+            w.write_be(record.offset)?;
+            w.write_be(record.id)?;
+        }
+        w.write_be(self.extra_bytes)
+    }
+}
+
+pub(crate) fn content_to_string_lossy(content: &[u8], encoding: TextEncoding) -> String {
+    match encoding {
+        TextEncoding::UTF8 | TextEncoding::Unknown(_) => {
+            String::from_utf8_lossy(content).to_owned().to_string()
+        }
+        TextEncoding::CP1252 => WINDOWS_1252.decode(content, DecoderTrap::Ignore).unwrap(),
+    }
+}
+
+pub(crate) fn content_to_string(
+    content: &[u8],
+    encoding: TextEncoding,
+) -> Result<String, DecodeError> {
+    match encoding {
+        TextEncoding::UTF8 | TextEncoding::Unknown(_) => {
+            String::from_utf8(content.to_vec()).map_err(DecodeError::UTF8)
+        }
+        TextEncoding::CP1252 => WINDOWS_1252
+            .decode(content, DecoderTrap::Strict)
+            .map_err(DecodeError::CP1252),
+    }
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct DecompressedRecord(pub Vec<u8>);
+
+impl DecompressedRecord {
+    pub(crate) fn to_string_lossy(&self, encoding: TextEncoding) -> String {
+        content_to_string_lossy(&self.0, encoding)
     }
 
     pub(crate) fn to_string(&self, encoding: TextEncoding) -> Result<String, DecodeError> {
-        match encoding {
-            TextEncoding::UTF8 | TextEncoding::Unknown(_) => {
-                String::from_utf8(self.record_data.clone()).map_err(DecodeError::UTF8)
-            }
-            TextEncoding::CP1252 => WINDOWS_1252
-                .decode(&self.record_data, DecoderTrap::Strict)
-                .map_err(DecodeError::CP1252),
-        }
+        content_to_string(&self.0, encoding)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::book;
+
+    #[test]
+    fn parse() {
+        let mut reader = book::u8_reader(book::RECORDS.to_vec());
+        let records = PdbRecords::new(&mut reader, 292).unwrap();
+        println!("{:?}", records);
+    }
+
+    #[test]
+    fn test_write() {
+        let records = book::RECORDS.to_vec();
+        let mut reader = book::u8_reader(records.clone());
+        let record = PdbRecords::new(&mut reader, 292).unwrap();
+        let mut written = Vec::new();
+        record.write(&mut Writer::new(&mut written)).unwrap();
+        assert_eq!(records.len(), written.len());
+        assert_eq!(records, written);
     }
 }
