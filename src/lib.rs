@@ -227,7 +227,7 @@ impl Mobi {
         self.raw_records()
             .0
             .into_iter()
-            .map(|r| record::content_to_string_lossy(&r.content, encoding))
+            .map(|r| record::content_to_string_lossy(r.content, encoding))
             .collect()
     }
 
@@ -235,7 +235,7 @@ impl Mobi {
         let encoding = self.text_encoding();
         let mut s = String::new();
         for r in self.raw_records().0 {
-            let content = record::content_to_string(&r.content, encoding)?;
+            let content = record::content_to_string(r.content, encoding)?;
             s.push_str(&content);
         }
         Ok(s)

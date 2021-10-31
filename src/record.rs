@@ -37,7 +37,7 @@ pub struct RawRecord<'a> {
 
 impl<'a> RawRecord<'a> {
     pub(crate) fn decompress_lz77(&self) -> DecompressedRecord {
-        DecompressedRecord(lz77::decompress(&self.content))
+        DecompressedRecord(lz77::decompress(self.content))
     }
 }
 
