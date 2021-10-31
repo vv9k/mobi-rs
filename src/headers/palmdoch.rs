@@ -18,15 +18,6 @@ impl From<u16> for Compression {
         }
     }
 }
-impl AsRef<str> for Compression {
-    fn as_ref(&self) -> &str {
-        match self {
-            Compression::No => "No Compression",
-            Compression::PalmDoc => "PalmDOC Compression",
-            Compression::Huff => "HUFF/CFIC Compression",
-        }
-    }
-}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 /// Encryption types available in MOBI format.
@@ -35,21 +26,13 @@ pub enum Encryption {
     OldMobiPocket,
     MobiPocket,
 }
+
 impl From<u16> for Encryption {
     fn from(n: u16) -> Encryption {
         match n {
             2 => Encryption::MobiPocket,
             1 => Encryption::OldMobiPocket,
             _ => Encryption::No,
-        }
-    }
-}
-impl AsRef<str> for Encryption {
-    fn as_ref(&self) -> &str {
-        match self {
-            Encryption::No => "No Encryption",
-            Encryption::OldMobiPocket => "Old MobiPocket Encryption",
-            Encryption::MobiPocket => "MobiPocket Encryption",
         }
     }
 }
