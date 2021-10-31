@@ -312,6 +312,12 @@ impl MobiHeader {
     /// position of the Mobi header.
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<MobiHeader> {
         let identifier = reader.read_u32_be()?;
+        if &identifier.to_be_bytes() != b"MOBI" {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid header identifier",
+            ));
+        }
         let header_length = reader.read_u32_be()?;
 
         Ok(MobiHeader {

@@ -26,7 +26,7 @@ impl Header {
     /// Parse a header from the content. The reader must be advanced to the starting position of the
     /// header, at byte 0.
     pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Header> {
-        Ok(Header {
+        let header = Header {
             name: reader.read_vec_header(32)?,
             attributes: reader.read_u16_be()?,
             version: reader.read_u16_be()?,

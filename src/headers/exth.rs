@@ -93,8 +93,15 @@ impl ExtHeader {
             records: IndexMap::new(),
         };
 
-        extheader.populate_records(reader)?;
-        Ok(extheader)
+        if &extheader.identifier.to_be_bytes() == b"EXTH" {
+            extheader.populate_records(reader)?;
+            Ok(extheader)
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid header identifier",
+            ))
+        }
     }
 
     /// Gets header records
