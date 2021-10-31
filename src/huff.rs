@@ -3,6 +3,7 @@ use crate::Reader;
 
 type HuffmanResult<T> = Result<T, HuffmanError>;
 
+#[derive(Debug)]
 pub enum HuffmanError {
     IoError(std::io::Error),
     CodeLenOutOfBounds,
@@ -18,9 +19,10 @@ impl From<std::io::Error> for HuffmanError {
     }
 }
 
+type HuffmanDictionary = Vec<Option<(Vec<u8>, bool)>>;
 type CodeDictionary = [(u8, bool, u32); 256];
-type MinCodesMapping = [u32; 32];
-type MaxCodesMapping = [u32; 32];
+type MinCodesMapping = [u32; 33];
+type MaxCodesMapping = [u32; 33];
 
 struct HuffmanDecoder {
     dictionary: Vec<Option<(Vec<u8>, bool)>>,
@@ -32,7 +34,7 @@ struct HuffmanDecoder {
 fn load_huff(huff: &[u8]) -> HuffmanResult<(CodeDictionary, MinCodesMapping, MaxCodesMapping)> {
     let mut r = Reader::new(std::io::Cursor::new(huff));
 
-    if r.read_u32_be()? != u32::from_be_bytes(*b"HUFF") || r.read_u32_be()? != 0x18 {
+    if &r.read_u32_be()?.to_be_bytes() != b"HUFF" || r.read_u32_be()? != 0x18 {
         return Err(HuffmanError::InvalidHuffHeader);
     }
 
@@ -52,15 +54,15 @@ fn load_huff(huff: &[u8]) -> HuffmanResult<(CodeDictionary, MinCodesMapping, Max
         if code_len <= 8 && !term {
             return Err(HuffmanError::BadTerm);
         }
-        max_code = ((max_code + 1) << (32 - code_len)) - 1;
+        max_code = ((max_code + 1) << (32u8.saturating_sub(code_len))).saturating_sub(1);
         *code = (code_len, term, max_code);
     }
 
     r.set_position(base_offset as usize)?;
 
     // First value is ignored, since code_len > 0.
-    let mut min_codes = [0; 32];
-    let mut max_codes = [u32::max_value(); 32];
+    let mut min_codes = [0; 33];
+    let mut max_codes = [u32::max_value(); 33];
 
     // Fill all other values.
     for code_len in 1..=32 {
@@ -71,10 +73,10 @@ fn load_huff(huff: &[u8]) -> HuffmanResult<(CodeDictionary, MinCodesMapping, Max
     Ok((code_dict, min_codes, max_codes))
 }
 
-fn load_cdic(cdic: &[u8], dictionary: &mut Vec<Option<(Vec<u8>, bool)>>) -> HuffmanResult<()> {
+fn load_cdic(cdic: &[u8], dictionary: &mut HuffmanDictionary) -> HuffmanResult<()> {
     let mut r = Reader::new(std::io::Cursor::new(cdic));
 
-    if r.read_u32_be()? != u32::from_be_bytes(*b"CDIC") || r.read_u32_be()? != 0x10 {
+    if &r.read_u32_be()?.to_be_bytes() != b"CDIC" || r.read_u32_be()? != 0x10 {
         return Err(HuffmanError::InvalidCDICHeader);
     }
 
@@ -104,10 +106,10 @@ fn load_cdic(cdic: &[u8], dictionary: &mut Vec<Option<(Vec<u8>, bool)>>) -> Huff
 
 fn unpack(
     data: &[u8],
-    dictionary: &mut [Option<(Vec<u8>, bool)>],
-    code_dict: &[(u8, bool, u32); 256],
-    min_codes: &[u32; 32],
-    max_codes: &[u32; 32],
+    dictionary: &mut HuffmanDictionary,
+    code_dict: &CodeDictionary,
+    min_codes: &MinCodesMapping,
+    max_codes: &MaxCodesMapping,
 ) -> HuffmanResult<Vec<u8>> {
     // Need len.
     let mut bits_left = data.len() * 8;
