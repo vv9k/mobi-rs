@@ -1,4 +1,4 @@
-pub fn decompress_lz77(data: &[u8]) -> Vec<u8> {
+pub fn decompress(data: &[u8]) -> Vec<u8> {
     let length = data.len();
     let mut offset: usize = 0;
     let mut text: Vec<u8> = vec![];
