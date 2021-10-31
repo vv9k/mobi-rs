@@ -8,7 +8,7 @@ A crate to work with MOBI format ebooks.
 - add to `Cargo.toml`
 ```toml
 [dependencies]
-mobi = "0.5"
+mobi = "0.6"
 ```
 - `main.rs`
 ```rust
