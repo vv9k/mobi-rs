@@ -15,7 +15,7 @@ pub struct Header {
     pub modnum: u32,
     pub app_info_id: u32,
     pub sort_info_id: u32,
-    pub typ_e: Vec<u8>,
+    pub type_: Vec<u8>,
     pub creator: Vec<u8>,
     pub unique_id_seed: u32,
     pub next_record_list_id: u32,
@@ -36,12 +36,21 @@ impl Header {
             modnum: reader.read_u32_be()?,
             app_info_id: reader.read_u32_be()?,
             sort_info_id: reader.read_u32_be()?,
-            typ_e: reader.read_vec_header(4)?,
+            type_: reader.read_vec_header(4)?,
             creator: reader.read_vec_header(4)?,
             unique_id_seed: reader.read_u32_be()?,
             next_record_list_id: reader.read_u32_be()?,
             num_records: reader.read_u16_be()?,
-        })
+        };
+
+        if header.type_ == b"BOOK" && header.creator == b"MOBI" {
+            Ok(header)
+        } else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid header identifier",
+            ));
+        }
     }
 
     pub(crate) fn write<W: io::Write>(
@@ -59,7 +68,7 @@ impl Header {
         w.write_be(self.modnum)?;
         w.write_be(self.app_info_id)?;
         w.write_be(self.sort_info_id)?;
-        w.write_be(&self.typ_e)?;
+        w.write_be(&self.type_)?;
         w.write_be(&self.creator)?;
         w.write_be(self.unique_id_seed)?;
         w.write_be(self.next_record_list_id)?;
@@ -113,7 +122,7 @@ mod tests {
             modnum: 0,
             app_info_id: 0,
             sort_info_id: 0,
-            typ_e: b"BOOK".to_vec(),
+            type_: b"BOOK".to_vec(),
             creator: b"MOBI".to_vec(),
             unique_id_seed: 292,
             next_record_list_id: 0,
