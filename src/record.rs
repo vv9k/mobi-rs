@@ -96,21 +96,22 @@ impl PdbRecords {
     /// Parses content returing raw records that contain slices of content based on their offset.
     pub(crate) fn parse<'a>(&self, content: &'a [u8]) -> RawRecords<'a> {
         let mut crecords = RawRecords::default();
-        let extra_bytes = self.extra_bytes as u32;
+        let extra_bytes = self.extra_bytes as usize;
         let mut records = self.records.iter().peekable();
 
         while let Some(record) = records.next() {
-            let curr_offset = record.offset;
+            let curr_offset = record.offset as usize;
 
             let content = if let Some(next) = records.peek() {
-                let next_offset = next.offset;
+                let next_offset = next.offset as usize;
+
                 if extra_bytes < next_offset {
-                    &content[curr_offset as usize..(next_offset - extra_bytes) as usize]
+                    &content[curr_offset..(next_offset - extra_bytes)]
                 } else {
                     &[]
                 }
             } else {
-                &content[curr_offset as usize..]
+                &content[curr_offset..]
             };
 
             crecords.0.push(RawRecord {
@@ -183,7 +184,6 @@ mod test {
     fn parse() {
         let mut reader = book::u8_reader(book::RECORDS.to_vec());
         let records = PdbRecords::new(&mut reader, 292).unwrap();
-        println!("{:?}", records);
     }
 
     #[test]
