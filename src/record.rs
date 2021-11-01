@@ -30,7 +30,7 @@ impl fmt::Display for DecodeError {
 
 impl Error for DecodeError {}
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct RawRecord<'a> {
     pub record: PdbRecord,
     pub content: &'a [u8],
@@ -39,6 +39,24 @@ pub struct RawRecord<'a> {
 impl<'a> RawRecord<'a> {
     pub(crate) fn decompress_lz77(&self) -> DecompressedRecord {
         DecompressedRecord(lz77::decompress(self.content))
+    }
+
+    pub(crate) fn is_image_record(&self) -> bool {
+        if self.content.len() < 4 {
+            return false;
+        }
+        let bytes = &self.content[..4];
+
+        bytes != b"FLIS"
+            && bytes != b"FCIS"
+            && bytes != b"SRCS"
+            && bytes != b"RESC"
+            && bytes != b"BOUN"
+            && bytes != b"FDST"
+            && bytes != b"DATP"
+            && bytes != b"AUDI"
+            && bytes != b"VIDE"
+            && bytes != b"\xe9\x8e\r\n"
     }
 }
 

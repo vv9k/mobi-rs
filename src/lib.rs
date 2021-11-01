@@ -55,7 +55,7 @@ pub(crate) mod writer;
 
 use headers::{Compression, Encryption, Language, MobiType, TextEncoding};
 pub(crate) use reader::Reader;
-use record::RawRecords;
+use record::{RawRecord, RawRecords};
 pub(crate) use writer::Writer;
 
 #[cfg(feature = "time")]
@@ -202,6 +202,16 @@ impl Mobi {
     /// Returns raw records that contain compressed, encrypted and encoded content slices.
     pub fn raw_records(&self) -> RawRecords {
         self.metadata.records.parse(&self.content)
+    }
+
+    /// Returns all records classified as image records.
+    pub fn image_records(&self) -> Vec<RawRecord> {
+        self.raw_records()
+            .range(self.metadata.mobi.first_image_index as usize..)
+            .iter()
+            .copied()
+            .filter(|record| record.is_image_record())
+            .collect()
     }
 
     fn palmdoc_string_lossy(&self) -> String {
