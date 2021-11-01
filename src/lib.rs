@@ -207,6 +207,7 @@ impl Mobi {
     fn palmdoc_string_lossy(&self) -> String {
         let encoding = self.text_encoding();
         self.raw_records()
+            .range(self.readable_records_range())
             .into_iter()
             .map(|record| record.decompress_lz77().to_string_lossy(encoding))
             .collect()
@@ -215,7 +216,8 @@ impl Mobi {
     fn palmdoc_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
         let encoding = self.text_encoding();
         let mut s = String::new();
-        for record in self.raw_records().into_iter() {
+
+        for record in self.raw_records().range(self.readable_records_range()) {
             let content = record.decompress_lz77().to_string(encoding)?;
             s.push_str(&content);
         }
@@ -225,6 +227,7 @@ impl Mobi {
     fn no_compression_string_lossy(&self) -> String {
         let encoding = self.text_encoding();
         self.raw_records()
+            .range(self.readable_records_range())
             .into_iter()
             .map(|r| record::content_to_string_lossy(r.content, encoding))
             .collect()
@@ -233,8 +236,8 @@ impl Mobi {
     fn no_compression_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
         let encoding = self.text_encoding();
         let mut s = String::new();
-        for r in self.raw_records().into_iter() {
-            let content = record::content_to_string(r.content, encoding)?;
+        for record in self.raw_records().range(self.readable_records_range()) {
+            let content = record::content_to_string(record.content, encoding)?;
             s.push_str(&content);
         }
         Ok(s)

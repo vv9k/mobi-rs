@@ -7,6 +7,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::fmt;
 use std::io;
+use std::ops::Range;
 use std::string::FromUtf8Error;
 
 const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
@@ -56,6 +57,16 @@ impl<'a> IntoIterator for RawRecords<'a> {
 impl<'a> RawRecords<'a> {
     pub fn records(&self) -> &[RawRecord<'a>] {
         &self.0
+    }
+
+    pub fn range(&self, range: Range<usize>) -> &[RawRecord<'a>] {
+        let len = self.0.len();
+        if len == 0 {
+            return &[];
+        }
+        let start = range.start.min(len - 1);
+        let end = range.end.min(len - 1);
+        &self.0[start..end]
     }
 }
 
