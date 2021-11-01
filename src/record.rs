@@ -42,7 +42,7 @@ impl<'a> RawRecord<'a> {
 }
 
 #[derive(Debug, Default)]
-pub struct RawRecords<'a>(Vec<RawRecord<'a>>);
+pub struct RawRecords<'a>(pub(crate) Vec<RawRecord<'a>>);
 
 impl<'a> IntoIterator for RawRecords<'a> {
     type Item = RawRecord<'a>;
