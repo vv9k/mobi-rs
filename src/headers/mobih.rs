@@ -156,9 +156,17 @@ pub struct MobiHeader {
     pub last_content_record: u16,
     unused_3: u32,
     pub fcis_record: u32,
-    unused_4: u32,
+    unused_4: u32, // fcis record count?
     pub flis_record: u32,
-    unused_5: Vec<u8>,
+    unused_5: u32, // flis record count?
+    unused_6: u64,
+    unused_7: u32,
+    first_compilation_data_section_count: u32,
+    data_section_count: u32,
+    unused_8: u32,
+    extra_record_data_flags: u32,
+    pub first_index_record: u32,
+    unused_9: Vec<u8>,
 }
 
 impl Default for MobiHeader {
@@ -203,7 +211,15 @@ impl Default for MobiHeader {
             fcis_record: 0,
             unused_4: 1,
             flis_record: 0,
-            unused_5: vec![],
+            unused_5: 1,
+            unused_6: 0,
+            unused_7: 0xFFFF_FFFF,
+            first_compilation_data_section_count: 0,
+            data_section_count: 0xFFFF_FFFF,
+            unused_8: 0xFFFF_FFFF,
+            extra_record_data_flags: 0,
+            first_index_record: 0xFFFF_FFFF,
+            unused_9: vec![],
         }
     }
 }
@@ -276,8 +292,16 @@ impl MobiHeader {
             fcis_record: reader.read_u32_be()?,
             unused_4: reader.read_u32_be()?,
             flis_record: reader.read_u32_be()?,
-            unused_5: {
-                let mut unused = vec![0; header_length as usize - 196];
+            unused_5: reader.read_u32_be()?,
+            unused_6: reader.read_u64_be()?,
+            unused_7: reader.read_u32_be()?,
+            first_compilation_data_section_count: reader.read_u32_be()?,
+            data_section_count: reader.read_u32_be()?,
+            unused_8: reader.read_u32_be()?,
+            extra_record_data_flags: reader.read_u32_be()?,
+            first_index_record: reader.read_u32_be()?,
+            unused_9: {
+                let mut unused = vec![0; header_length as usize - 232];
                 reader.read_exact(&mut unused)?;
                 unused
             },
@@ -328,7 +352,15 @@ impl MobiHeader {
         w.write_be(self.fcis_record)?;
         w.write_be(self.unused_4)?;
         w.write_be(self.flis_record)?;
-        w.write_be(self.unused_5.as_slice())
+        w.write_be(self.unused_5)?;
+        w.write_be(self.unused_6)?;
+        w.write_be(self.unused_7)?;
+        w.write_be(self.first_compilation_data_section_count)?;
+        w.write_be(self.data_section_count)?;
+        w.write_be(self.unused_8)?;
+        w.write_be(self.extra_record_data_flags)?;
+        w.write_be(self.first_index_record)?;
+        w.write_be(self.unused_9.as_slice())
     }
 
     /// Checks if there is a Exth Header and changes the parameter
@@ -668,10 +700,15 @@ mod tests {
             unused_2: Box::new([0, 0, 0, 0, 0, 0, 0, 0]),
             unused_3: 1,
             unused_4: 1,
-            unused_5: vec![
-                0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255,
-                255, 255, 255, 255, 255, 0, 0, 0, 7, 0, 0, 1, 28,
-            ],
+            unused_5: 1,
+            unused_6: 0,
+            unused_7: 0xFFFF_FFFF,
+            first_compilation_data_section_count: 0,
+            data_section_count: 0xFFFF_FFFF,
+            unused_8: 0xFFFF_FFFF,
+            extra_record_data_flags: 7,
+            first_index_record: 284,
+            unused_9: vec![],
         };
 
         let mut reader = book::u8_reader(book::MOBIHEADER.to_vec());

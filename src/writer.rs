@@ -46,6 +46,13 @@ impl WriteBeBytes for u32 {
     }
 }
 
+impl WriteBeBytes for u64 {
+    fn write_be_bytes<W: io::Write>(&self, writer: &mut W) -> io::Result<usize> {
+        writer.write_all(&self.to_be_bytes())?;
+        Ok(self.to_be_bytes().len())
+    }
+}
+
 #[derive(Debug, Default, Clone)]
 /// Helper struct for reading header values from content.
 /// Only allows forward reads.

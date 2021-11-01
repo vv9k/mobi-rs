@@ -194,7 +194,7 @@ mod test {
     #[test]
     fn parse() {
         let mut reader = book::u8_reader(book::RECORDS.to_vec());
-        let records = PdbRecords::new(&mut reader, 292).unwrap();
+        let _records = PdbRecords::new(&mut reader, 292).unwrap();
     }
 
     #[test]
