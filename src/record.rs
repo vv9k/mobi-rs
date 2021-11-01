@@ -7,7 +7,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::fmt;
 use std::io;
-use std::ops::Range;
+use std::ops::{Bound, RangeBounds};
 use std::string::FromUtf8Error;
 
 const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
@@ -59,13 +59,20 @@ impl<'a> RawRecords<'a> {
         &self.0
     }
 
-    pub fn range(&self, range: Range<usize>) -> &[RawRecord<'a>] {
+    pub fn range(&self, range: impl RangeBounds<usize>) -> &[RawRecord<'a>] {
         let len = self.0.len();
         if len == 0 {
             return &[];
         }
-        let start = range.start.min(len - 1);
-        let end = range.end.min(len - 1);
+        let start = match range.start_bound() {
+            Bound::Excluded(b) | Bound::Included(b) => (*b).min(len - 1),
+            Bound::Unbounded => 0,
+        };
+        let end = match range.end_bound() {
+            Bound::Excluded(b) => (*b - 1).min(len - 1),
+            Bound::Included(b) => (*b).min(len - 1),
+            Bound::Unbounded => 0,
+        };
         &self.0[start..end]
     }
 }
