@@ -208,7 +208,7 @@ impl Mobi {
         let encoding = self.text_encoding();
         self.raw_records()
             .range(self.readable_records_range())
-            .into_iter()
+            .iter()
             .map(|record| record.decompress_lz77().to_string_lossy(encoding))
             .collect()
     }
@@ -228,7 +228,7 @@ impl Mobi {
         let encoding = self.text_encoding();
         self.raw_records()
             .range(self.readable_records_range())
-            .into_iter()
+            .iter()
             .map(|r| record::content_to_string_lossy(r.content, encoding))
             .collect()
     }
