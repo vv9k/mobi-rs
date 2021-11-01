@@ -42,7 +42,22 @@ impl<'a> RawRecord<'a> {
 }
 
 #[derive(Debug, Default)]
-pub struct RawRecords<'a>(pub Vec<RawRecord<'a>>);
+pub struct RawRecords<'a>(Vec<RawRecord<'a>>);
+
+impl<'a> IntoIterator for RawRecords<'a> {
+    type Item = RawRecord<'a>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl<'a> RawRecords<'a> {
+    pub fn records(&self) -> &[RawRecord<'a>] {
+        &self.0
+    }
+}
 
 #[derive(Debug, PartialEq, Default, Clone, Copy)]
 pub struct PdbRecord {

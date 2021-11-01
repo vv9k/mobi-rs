@@ -199,6 +199,7 @@ impl Mobi {
             ..self.metadata.mobi.first_non_book_index as usize
     }
 
+    /// Returns raw records that contain compressed, encrypted and encoded content slices.
     pub fn raw_records(&self) -> RawRecords {
         self.metadata.records.parse(&self.content)
     }
@@ -206,7 +207,6 @@ impl Mobi {
     fn palmdoc_string_lossy(&self) -> String {
         let encoding = self.text_encoding();
         self.raw_records()
-            .0
             .into_iter()
             .map(|record| record.decompress_lz77().to_string_lossy(encoding))
             .collect()
@@ -215,7 +215,7 @@ impl Mobi {
     fn palmdoc_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
         let encoding = self.text_encoding();
         let mut s = String::new();
-        for record in self.raw_records().0 {
+        for record in self.raw_records().into_iter() {
             let content = record.decompress_lz77().to_string(encoding)?;
             s.push_str(&content);
         }
@@ -225,7 +225,6 @@ impl Mobi {
     fn no_compression_string_lossy(&self) -> String {
         let encoding = self.text_encoding();
         self.raw_records()
-            .0
             .into_iter()
             .map(|r| record::content_to_string_lossy(r.content, encoding))
             .collect()
@@ -234,7 +233,7 @@ impl Mobi {
     fn no_compression_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
         let encoding = self.text_encoding();
         let mut s = String::new();
-        for r in self.raw_records().0 {
+        for r in self.raw_records().into_iter() {
             let content = record::content_to_string(r.content, encoding)?;
             s.push_str(&content);
         }
