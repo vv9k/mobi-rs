@@ -48,11 +48,11 @@ pub mod headers;
 pub mod record;
 pub use crate::headers::MobiMetadata;
 pub(crate) mod book;
-pub(crate) mod huff;
-pub(crate) mod lz77;
+pub(crate) mod compression;
 pub(crate) mod reader;
 pub(crate) mod writer;
 
+use compression::huff;
 use headers::{Compression, Encryption, Language, MobiType, TextEncoding};
 pub(crate) use reader::Reader;
 use record::{RawRecord, RawRecords};
@@ -219,7 +219,7 @@ impl Mobi {
         self.raw_records()
             .range(self.readable_records_range())
             .iter()
-            .map(|record| record.decompress_lz77().to_string_lossy(encoding))
+            .map(|record| record.decompress_palmdoc().to_string_lossy(encoding))
             .collect()
     }
 
@@ -228,7 +228,7 @@ impl Mobi {
         let mut s = String::new();
 
         for record in self.raw_records().range(self.readable_records_range()) {
-            let content = record.decompress_lz77().to_string(encoding)?;
+            let content = record.decompress_palmdoc().to_string(encoding)?;
             s.push_str(&content);
         }
         Ok(s)

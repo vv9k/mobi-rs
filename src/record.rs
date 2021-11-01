@@ -1,5 +1,5 @@
+use crate::compression::palmdoc;
 use crate::headers::TextEncoding;
-use crate::lz77;
 use crate::{Reader, Writer};
 
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
@@ -37,8 +37,8 @@ pub struct RawRecord<'a> {
 }
 
 impl<'a> RawRecord<'a> {
-    pub(crate) fn decompress_lz77(&self) -> DecompressedRecord {
-        DecompressedRecord(lz77::decompress(self.content))
+    pub(crate) fn decompress_palmdoc(&self) -> DecompressedRecord {
+        DecompressedRecord(palmdoc::decompress(self.content))
     }
 
     pub(crate) fn is_image_record(&self) -> bool {

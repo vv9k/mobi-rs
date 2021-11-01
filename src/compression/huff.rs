@@ -186,6 +186,14 @@ impl HuffmanDecoder {
             }
 
             let index = ((max_code - code) >> (32 - code_len)) as usize;
+            println!(
+                "max_code: {}, code: {}, code_len: {}, index: {}, dict_len: {}",
+                max_code,
+                code,
+                code_len,
+                index,
+                self.dictionary.len()
+            );
             let (mut slice, flag) = std::mem::take(
                 self.dictionary
                     .get_mut(index)
