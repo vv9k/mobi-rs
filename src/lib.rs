@@ -243,12 +243,47 @@ impl Mobi {
         Ok(s)
     }
 
-    fn huff_string_lossy(&self) -> String {
-        todo!();
+    fn huff_data(&self) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error + 'static>> {
+        let records = self.raw_records();
+        let huff_start = self.metadata.mobi.first_huff_record as usize;
+        let huff_count = self.metadata.mobi.huff_record_count as usize;
+        let huffs: Vec<_> = records
+            .range(huff_start..huff_start + huff_count)
+            .iter()
+            .map(|record| record.content)
+            .collect();
+
+        let sections: Vec<_> = records
+            .range(self.readable_records_range())
+            .iter()
+            .map(|record| record.content)
+            .collect();
+
+        Ok(huff::decompress(&huffs, &sections)?)
+    }
+
+    fn huff_string_lossy(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
+        let encoding = self.text_encoding();
+        let mut s = String::new();
+        let data = self.huff_data()?;
+
+        for section in data {
+            let content = record::content_to_string_lossy(&section, encoding);
+            s.push_str(&content);
+        }
+        Ok(s)
     }
 
     fn huff_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
-        todo!();
+        let encoding = self.text_encoding();
+        let mut s = String::new();
+        let data = self.huff_data()?;
+
+        for section in data {
+            let content = record::content_to_string(&section, encoding)?;
+            s.push_str(&content);
+        }
+        Ok(s)
     }
 
     /// Returns all readable records content decompressed as a String.
@@ -258,7 +293,7 @@ impl Mobi {
         match self.compression() {
             Compression::No => self.no_compression_string_lossy(),
             Compression::PalmDoc => self.palmdoc_string_lossy(),
-            Compression::Huff => self.huff_string_lossy(),
+            Compression::Huff => self.huff_string_lossy().unwrap_or_default(),
         }
     }
 

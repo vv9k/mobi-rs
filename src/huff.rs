@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 use crate::Reader;
 
+use std::fmt;
+
 type HuffmanResult<T> = Result<T, HuffmanError>;
 
 #[derive(Debug)]
@@ -11,6 +13,21 @@ pub enum HuffmanError {
     InvalidHuffHeader,
     InvalidCDICHeader,
     InvalidDictionaryIndex,
+}
+
+impl fmt::Display for HuffmanError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "todo...")
+    }
+}
+
+impl std::error::Error for HuffmanError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            HuffmanError::IoError(error) => error.source(),
+            _ => None,
+        }
+    }
 }
 
 impl From<std::io::Error> for HuffmanError {
@@ -24,6 +41,7 @@ type CodeDictionary = [(u8, bool, u32); 256];
 type MinCodesMapping = [u32; 33];
 type MaxCodesMapping = [u32; 33];
 
+#[derive(Debug)]
 struct HuffmanDecoder {
     dictionary: HuffmanDictionary,
     code_dict: CodeDictionary,
