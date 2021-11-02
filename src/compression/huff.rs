@@ -61,21 +61,15 @@ impl Default for HuffmanDecoder {
 }
 
 impl HuffmanDecoder {
-    // Loads the code dictionary, min and max code values from the HUFF record
-    fn load_huff(&mut self, huff: &[u8]) -> HuffmanResult<()> {
-        let mut r = Reader::new(std::io::Cursor::new(huff));
-
-        if &r.read_u32_be()?.to_be_bytes() != b"HUFF" || r.read_u32_be()? != 0x18 {
-            return Err(HuffmanError::InvalidHuffHeader);
-        }
-
-        let cache_offset = r.read_u32_be()?;
-        let base_offset = r.read_u32_be()?;
-
-        r.set_position(cache_offset as usize)?;
+    fn load_code_dictionary<R: std::io::Read>(
+        &mut self,
+        reader: &mut Reader<R>,
+        offset: usize,
+    ) -> HuffmanResult<()> {
+        reader.set_position(offset)?;
 
         for code in self.code_dict.iter_mut() {
-            let v = r.read_u32_be()?;
+            let v = reader.read_u32_be()?;
             // 0 < code_len <= 32, term is T or F, max_code is u24 pretending to be u32.
             let (code_len, term, mut max_code) = ((v & 0x1F) as u8, (v & 0x80) == 0x80, v >> 8);
             if code_len == 0 {
@@ -88,13 +82,37 @@ impl HuffmanDecoder {
             *code = (code_len, term, max_code);
         }
 
-        r.set_position(base_offset as usize)?;
+        Ok(())
+    }
 
-        // Fill all other values.
+    fn load_min_max_codes<R: std::io::Read>(
+        &mut self,
+        reader: &mut Reader<R>,
+        offset: usize,
+    ) -> HuffmanResult<()> {
+        reader.set_position(offset)?;
+
         for code_len in 1..=32 {
-            self.min_codes[code_len] = r.read_u32_be()? << (32 - code_len);
-            self.max_codes[code_len] = ((r.read_u32_be()? + 1) << (32 - code_len)).wrapping_sub(1);
+            self.min_codes[code_len] = reader.read_u32_be()? << (32 - code_len);
+            self.max_codes[code_len] =
+                ((reader.read_u32_be()? + 1) << (32 - code_len)).saturating_sub(1);
         }
+        Ok(())
+    }
+
+    // Loads the code dictionary, min and max code values from the HUFF record
+    fn load_huff(&mut self, huff: &[u8]) -> HuffmanResult<()> {
+        let mut r = Reader::new(std::io::Cursor::new(huff));
+
+        if &r.read_u32_be()?.to_be_bytes() != b"HUFF" || r.read_u32_be()? != 0x18 {
+            return Err(HuffmanError::InvalidHuffHeader);
+        }
+
+        let cache_offset = r.read_u32_be()?;
+        let base_offset = r.read_u32_be()?;
+
+        self.load_code_dictionary(&mut r, cache_offset as usize)?;
+        self.load_min_max_codes(&mut r, base_offset as usize)?;
 
         Ok(())
     }
@@ -215,6 +233,8 @@ impl HuffmanDecoder {
             };
         }
 
+        println!("unpacked: {:?}", unpacked);
+
         Ok(unpacked)
     }
 
@@ -230,6 +250,7 @@ impl HuffmanDecoder {
         let mut decoder = Self::default();
         decoder.load_huff(huffs[0])?;
         decoder.load_cdic_records(&huffs[1..])?;
+        eprintln!("{:#?}", decoder);
         Ok(decoder)
     }
 }
