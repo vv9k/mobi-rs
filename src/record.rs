@@ -89,7 +89,7 @@ impl<'a> RawRecords<'a> {
         let end = match range.end_bound() {
             Bound::Excluded(b) => (*b - 1).min(len - 1),
             Bound::Included(b) => (*b).min(len - 1),
-            Bound::Unbounded => 0,
+            Bound::Unbounded => len,
         };
         &self.0[start..end]
     }
