@@ -1,7 +1,23 @@
 use crate::{Reader, Writer};
+
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::io;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum HeaderParseError {
+    #[error("this book is an Amazon Topaz book and it cannot be processed")]
+    IsTopazError,
+    #[error("this book is an Amazon KFX book and it cannot be processed")]
+    IsKfxError,
+    #[error("expected type header identifier BOOK or TEXT")]
+    InvalidTypeIdentifier,
+    #[error("expected creator header identifier MOBI or READ")]
+    InvalidCreatorIdentifier,
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
+}
 
 #[derive(Debug, PartialEq, Default)]
 /// Strcture that holds header information
@@ -25,9 +41,17 @@ pub struct Header {
 impl Header {
     /// Parse a header from the content. The reader must be advanced to the starting position of the
     /// header, at byte 0.
-    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Header> {
-        let header = Header {
-            name: reader.read_vec_header(32)?,
+    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> Result<Header, HeaderParseError> {
+        Ok(Header {
+            name: {
+                let bytes = reader.read_vec_header(32)?;
+                if bytes.starts_with(b"TPZ") {
+                    return Err(HeaderParseError::IsTopazError);
+                } else if bytes.starts_with(b"\xeaDRMION\xee") {
+                    return Err(HeaderParseError::IsKfxError);
+                }
+                bytes
+            },
             attributes: reader.read_u16_be()?,
             version: reader.read_u16_be()?,
             created: reader.read_u32_be()?,
@@ -36,21 +60,24 @@ impl Header {
             modnum: reader.read_u32_be()?,
             app_info_id: reader.read_u32_be()?,
             sort_info_id: reader.read_u32_be()?,
-            type_: reader.read_vec_header(4)?,
-            creator: reader.read_vec_header(4)?,
+            type_: {
+                let ty = reader.read_vec_header(4)?;
+                if ty != b"BOOK" && ty != b"TEXT" {
+                    return Err(HeaderParseError::InvalidTypeIdentifier);
+                }
+                ty
+            },
+            creator: {
+                let creator = reader.read_vec_header(4)?;
+                if creator != b"MOBI" && creator != b"READ" {
+                    return Err(HeaderParseError::InvalidCreatorIdentifier);
+                }
+                creator
+            },
             unique_id_seed: reader.read_u32_be()?,
             next_record_list_id: reader.read_u32_be()?,
             num_records: reader.read_u16_be()?,
-        };
-
-        if header.type_ == b"BOOK" && header.creator == b"MOBI" {
-            Ok(header)
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "invalid header identifier",
-            ))
-        }
+        })
     }
 
     pub(crate) fn write<W: io::Write>(
@@ -106,7 +133,7 @@ impl Header {
 
 #[cfg(test)]
 mod tests {
-    use super::Header;
+    use super::*;
     use crate::book;
     use crate::writer::Writer;
 
@@ -131,7 +158,7 @@ mod tests {
 
         let mut reader = book::u8_reader(book::HEADER.to_vec());
         let parsed_header = Header::parse(&mut reader);
-        assert_eq!(header, parsed_header.unwrap())
+        assert_eq!(header, parsed_header.unwrap());
     }
 
     #[test]

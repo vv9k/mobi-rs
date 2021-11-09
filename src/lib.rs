@@ -7,8 +7,8 @@
 //! ## Examples
 //! ### Access basic info
 //! ```no_run
-//! use mobi::Mobi;
-//! fn main() -> Result<(), std::io::Error> {
+//! use mobi::{Mobi, MobiError};
+//! fn main() -> Result<(), MobiError> {
 //!     let book = vec![0, 0, 0];
 //!     // You can either create a Mobi struct from a slice
 //!     let m = Mobi::new(&book)?;
@@ -61,6 +61,21 @@ pub(crate) use writer::Writer;
 #[cfg(feature = "time")]
 use chrono::NaiveDateTime;
 use std::{fs::File, io, io::BufReader, ops::Range, path::Path};
+use thiserror::Error;
+
+pub type MobiResult<T> = std::result::Result<T, MobiError>;
+
+#[derive(Debug, Error)]
+pub enum MobiError {
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
+    #[error(transparent)]
+    MetadataParseError(#[from] headers::MetadataParseError),
+    #[error(transparent)]
+    DecodeError(#[from] record::DecodeError),
+    #[error(transparent)]
+    HuffmanError(#[from] huff::HuffmanError),
+}
 
 #[derive(Debug, Default)]
 /// Structure that holds parsed ebook information and contents
@@ -71,22 +86,22 @@ pub struct Mobi {
 
 impl Mobi {
     /// Construct a Mobi object from a slice of bytes
-    pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<Mobi> {
+    pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> MobiResult<Mobi> {
         Mobi::from_reader(&mut Reader::new(std::io::Cursor::new(bytes.as_ref())))
     }
 
     /// Construct a Mobi object from passed file path
-    pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<Mobi> {
+    pub fn from_path<P: AsRef<Path>>(file_path: P) -> MobiResult<Mobi> {
         let mut reader = Reader::new(BufReader::new(File::open(file_path)?));
         Mobi::from_reader(&mut reader)
     }
 
     /// Construct a Mobi object from an object that implements a Read trait
-    pub fn from_read<R: io::Read>(reader: R) -> io::Result<Mobi> {
+    pub fn from_read<R: io::Read>(reader: R) -> MobiResult<Mobi> {
         Mobi::from_reader(&mut Reader::new(reader))
     }
 
-    fn from_reader<R: io::Read>(reader: &mut Reader<R>) -> io::Result<Mobi> {
+    fn from_reader<R: io::Read>(reader: &mut Reader<R>) -> MobiResult<Mobi> {
         let metadata = MobiMetadata::from_reader(reader)?;
         Ok(Mobi {
             content: reader.read_to_end()?,
@@ -223,7 +238,7 @@ impl Mobi {
             .collect()
     }
 
-    fn palmdoc_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
+    fn palmdoc_string(&self) -> MobiResult<String> {
         let encoding = self.text_encoding();
         let mut s = String::new();
 
@@ -243,7 +258,7 @@ impl Mobi {
             .collect()
     }
 
-    fn no_compression_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
+    fn no_compression_string(&self) -> MobiResult<String> {
         let encoding = self.text_encoding();
         let mut s = String::new();
         for record in self.raw_records().range(self.readable_records_range()) {
@@ -253,7 +268,7 @@ impl Mobi {
         Ok(s)
     }
 
-    fn huff_data(&self) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error + 'static>> {
+    fn huff_data(&self) -> MobiResult<Vec<Vec<u8>>> {
         let records = self.raw_records();
         let huff_start = self.metadata.mobi.first_huff_record as usize;
         let huff_count = self.metadata.mobi.huff_record_count as usize;
@@ -272,7 +287,7 @@ impl Mobi {
         Ok(huff::decompress(&huffs, &sections)?)
     }
 
-    fn huff_string_lossy(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
+    fn huff_string_lossy(&self) -> MobiResult<String> {
         let encoding = self.text_encoding();
         let mut s = String::new();
         let data = self.huff_data()?;
@@ -284,7 +299,7 @@ impl Mobi {
         Ok(s)
     }
 
-    fn huff_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
+    fn huff_string(&self) -> MobiResult<String> {
         let encoding = self.text_encoding();
         let mut s = String::new();
         let data = self.huff_data()?;
@@ -310,7 +325,7 @@ impl Mobi {
     /// Returns all readable records content decompressed as a String.
     /// This function is a strict version returning error on first encountered
     /// decoding error.
-    pub fn content_as_string(&self) -> Result<String, Box<dyn std::error::Error + 'static>> {
+    pub fn content_as_string(&self) -> MobiResult<String> {
         match self.compression() {
             Compression::No => self.no_compression_string(),
             Compression::PalmDoc => self.palmdoc_string(),

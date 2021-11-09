@@ -12,8 +12,8 @@ mobi = "0.6"
 ```
 - `main.rs`
 ```rust
-use mobi::Mobi;
-fn main() -> Result<(), std::io::Error> {
+use mobi::{Mobi, MobiError};
+fn main() -> Result<(), MobiError> {
     let book = vec![0, 0, 0];
     // You can either create a Mobi struct from a slice
     let m = Mobi::new(&book)?;

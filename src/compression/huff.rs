@@ -1,39 +1,23 @@
-#![allow(dead_code)]
 use crate::Reader;
 
-use std::fmt;
+use thiserror::Error;
 
 type HuffmanResult<T> = Result<T, HuffmanError>;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum HuffmanError {
-    IoError(std::io::Error),
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
+    #[error("code len out of bounds")]
     CodeLenOutOfBounds,
+    #[error("bad termination code")]
     BadTerm,
+    #[error("expected HUFF magic header")]
     InvalidHuffHeader,
+    #[error("expected CDIC magic header")]
     InvalidCDICHeader,
+    #[error("the provided index to huffman dictionary was out of bounds")]
     InvalidDictionaryIndex,
-}
-
-impl fmt::Display for HuffmanError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "todo...")
-    }
-}
-
-impl std::error::Error for HuffmanError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self {
-            HuffmanError::IoError(error) => error.source(),
-            _ => None,
-        }
-    }
-}
-
-impl From<std::io::Error> for HuffmanError {
-    fn from(e: std::io::Error) -> Self {
-        Self::IoError(e)
-    }
 }
 
 type HuffmanDictionary = Vec<Option<(Vec<u8>, bool)>>;

@@ -4,31 +4,21 @@ use crate::{Reader, Writer};
 
 use encoding::{all::WINDOWS_1252, DecoderTrap, Encoding};
 use std::borrow::Cow;
-use std::error::Error;
-use std::fmt;
 use std::io;
 use std::ops::{Bound, RangeBounds};
 use std::string::FromUtf8Error;
+use thiserror::Error;
 
 const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Error)]
 /// A wrapper error type for unified error across multiple encodings.
 pub enum DecodeError {
+    #[error("utf8 decode failed - {0}")]
     UTF8(FromUtf8Error),
+    #[error("win-cp1252 decode failed - {0}")]
     CP1252(Cow<'static, str>),
 }
-
-impl fmt::Display for DecodeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            DecodeError::UTF8(e) => write!(f, "Failed decoding utf8 content - {}", e),
-            DecodeError::CP1252(e) => write!(f, "Failed decoding win-cp1252 content - {}", e),
-        }
-    }
-}
-
-impl Error for DecodeError {}
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct RawRecord<'a> {

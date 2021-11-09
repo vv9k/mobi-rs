@@ -5,7 +5,7 @@ pub(crate) mod palmdoch;
 
 pub use self::{
     exth::{ExtHeader, ExthRecord},
-    header::Header,
+    header::{Header, HeaderParseError},
     mobih::{Language, MobiHeader, MobiType, TextEncoding},
     palmdoch::{Compression, Encryption, PalmDocHeader},
 };
@@ -18,6 +18,15 @@ use chrono::NaiveDateTime;
 use std::fs::File;
 use std::io::{self, BufReader, Read};
 use std::path::Path;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum MetadataParseError {
+    #[error(transparent)]
+    HeaderParseError(#[from] HeaderParseError),
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
+}
 
 #[derive(Debug, Default)]
 /// Holds all headers containing low level metadata of a mobi book
@@ -31,22 +40,24 @@ pub struct MobiMetadata {
 }
 impl MobiMetadata {
     /// Construct a Metadata object from a slice of bytes
-    pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> io::Result<MobiMetadata> {
+    pub fn new<B: AsRef<Vec<u8>>>(bytes: B) -> Result<MobiMetadata, MetadataParseError> {
         MobiMetadata::from_reader(&mut Reader::new(std::io::Cursor::new(bytes.as_ref())))
     }
 
     /// Construct a Metadata object from passed file path
-    pub fn from_path<P: AsRef<Path>>(file_path: P) -> io::Result<MobiMetadata> {
+    pub fn from_path<P: AsRef<Path>>(file_path: P) -> Result<MobiMetadata, MetadataParseError> {
         let mut reader = Reader::new(BufReader::new(File::open(file_path)?));
         MobiMetadata::from_reader(&mut reader)
     }
 
     /// Construct a Metadata object from an object that implements a Read trait
-    pub fn from_read<R: Read>(reader: R) -> io::Result<MobiMetadata> {
+    pub fn from_read<R: Read>(reader: R) -> Result<MobiMetadata, MetadataParseError> {
         MobiMetadata::from_reader(&mut Reader::new(reader))
     }
 
-    pub(crate) fn from_reader<R: Read>(reader: &mut Reader<R>) -> io::Result<MobiMetadata> {
+    pub(crate) fn from_reader<R: Read>(
+        reader: &mut Reader<R>,
+    ) -> Result<MobiMetadata, MetadataParseError> {
         let header = Header::parse(reader)?;
         let records = PdbRecords::new(reader, header.num_records)?;
         let palmdoc = PalmDocHeader::parse(reader)?;
