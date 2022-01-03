@@ -160,7 +160,7 @@ impl ExtHeader {
     pub(crate) fn get_record_string_lossy(&self, record: ExthRecord) -> Option<String> {
         self.get_record(record)
             .and_then(|r| r.first())
-            .map(|r| String::from_utf8_lossy(&r).to_string())
+            .map(|r| String::from_utf8_lossy(r).to_string())
     }
 }
 
