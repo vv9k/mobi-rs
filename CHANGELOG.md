@@ -5,3 +5,4 @@
 - Make Palmdoc lz77 decompression work
 - Add `first_index_record` field to `MobiHeader`
 - `Mobi::exth_record`, `Mobi::exth_record_at`, `ExthHeader::get_record` now return a `Option<&Vec<Vec<u8>>>` instead of `Option<&Vec<u8>>` because some records like subject can occur multiple times. 
+- Add `MobiMetadata::subjects` that returns a list of subjects.

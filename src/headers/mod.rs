@@ -224,6 +224,15 @@ impl MobiMetadata {
     pub fn encryption(&self) -> Encryption {
         self.palmdoc.encryption()
     }
+
+    /// Returns a list of subject records as a string if such records exist
+    pub fn subjects(&self) -> Option<Vec<String>> {
+        self.exth_record(ExthRecord::Subject).map(|s| {
+            s.iter()
+                .map(|s| String::from_utf8_lossy(s).to_string())
+                .collect()
+        })
+    }
 }
 
 #[cfg(test)]
