@@ -99,7 +99,7 @@ impl ExtHeader {
         } else {
             Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                "invalid header identifier",
+                "invalid header identifier (expected EXTH)",
             ))
         }
     }

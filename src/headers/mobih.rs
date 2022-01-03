@@ -232,7 +232,7 @@ impl MobiHeader {
         if &identifier.to_be_bytes() != b"MOBI" {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                "invalid header identifier",
+                "invalid header identifier (expected MOBI)",
             ));
         }
         let header_length = reader.read_u32_be()?;
