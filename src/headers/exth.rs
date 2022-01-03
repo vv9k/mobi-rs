@@ -79,7 +79,7 @@ pub struct ExtHeader {
     pub identifier: u32,
     pub header_length: u32,
     pub record_count: u32,
-    pub records: IndexMap<u32, Vec<u8>>,
+    pub records: IndexMap<u32, Vec<Vec<u8>>>,
 }
 
 impl ExtHeader {
@@ -113,7 +113,11 @@ impl ExtHeader {
             let mut record_data = vec![0; (record_len - 8) as usize];
             reader.read_exact(&mut record_data)?;
 
-            self.records.insert(record_type, record_data);
+            if let Some(record) = self.records.get_mut(&record_type) {
+                record.push(record_data);
+            } else {
+                self.records.insert(record_type, vec![record_data]);
+            }
         }
 
         Ok(())
@@ -131,29 +135,32 @@ impl ExtHeader {
                     .sum::<u32>(),
         )?;
         w.write_be(self.records.len() as u32)?;
-        for (&id, record_data) in self.records.iter() {
-            w.write_be(id)?;
-            w.write_be(record_data.len() as u32 + 8)?;
-            w.write_be(record_data)?;
+        for (&id, records) in self.records.iter() {
+            for record_data in records {
+                w.write_be(id)?;
+                w.write_be(record_data.len() as u32 + 8)?;
+                w.write_be(record_data)?;
+            }
         }
         Ok(())
     }
 
     /// Returns exth record data located at position. This is a low level function intended
     /// to use with wrapper get_record, but exposed for convienience.
-    pub fn get_record_position(&self, position: u32) -> Option<&Vec<u8>> {
+    pub fn get_record_position(&self, position: u32) -> Option<&Vec<Vec<u8>>> {
         self.records.get(&position)
     }
 
     /// Returns exth record data. This function limits possible queried records to only those
     /// commonly available among mobi ebooks.
-    pub fn get_record(&self, record: ExthRecord) -> Option<&Vec<u8>> {
+    pub fn get_record(&self, record: ExthRecord) -> Option<&Vec<Vec<u8>>> {
         self.get_record_position(record as u32)
     }
 
     pub(crate) fn get_record_string_lossy(&self, record: ExthRecord) -> Option<String> {
         self.get_record(record)
-            .map(|r| String::from_utf8_lossy(r).to_string())
+            .and_then(|r| r.first())
+            .map(|r| String::from_utf8_lossy(&r).to_string())
     }
 }
 
@@ -168,16 +175,16 @@ mod tests {
         let mut records = IndexMap::new();
         #[rustfmt::skip]
         let _records = vec![
-            (104, b"9780261102316".to_vec()),
-            (503, b"Lord of the Rings - Fellowship of the Ring".to_vec()),
-            (203, b"\0\0\0\0".to_vec()),
-            (103, b"<h3>From Library Journal</h3><p>New Line Cinema will be releasing \"The Lord of the Rings\" trilogy in three separate installments, and Houghton Mifflin Tolkien's U.S. publisher since the release of The Hobbit in 1938 will be re-releasing each volume of the trilogy separately and in a boxed set (ISBN 0-618-15397-7. $22; pap. ISBN 0-618-15396-9. $12). <br />Copyright 2001 Reed Business Information, Inc. </p><h3>Review</h3><p>'An extraordinary book. It deals with a stupendous theme. It leads us through a succession of strange and astonishing episodes, some of them magnificent, in a region where everything is invented, forest, moor, river, wilderness, town and the races which inhabit them.' The Observer 'Among the greatest works of imaginative fiction of the twentieth century.' Sunday Telegraph </p>".to_vec()),
-            (201, b"\0\0\0\0".to_vec()),
-            (101, b"HarperCollins Publishers Ltd".to_vec()),
-            (106, b"2010-12-21T00:00:00+00:00".to_vec()),
-            (100, b"J. R. R. Tolkien".to_vec()),
-            (202, b"\0\0\0\x01".to_vec()),
-            (108, b"calibre (0.7.31) [http://calibre-ebook.com]".to_vec()),
+            (104, vec![b"9780261102316".to_vec()]),
+            (503, vec![b"Lord of the Rings - Fellowship of the Ring".to_vec()]),
+            (203, vec![b"\0\0\0\0".to_vec()]),
+            (103, vec![b"<h3>From Library Journal</h3><p>New Line Cinema will be releasing \"The Lord of the Rings\" trilogy in three separate installments, and Houghton Mifflin Tolkien's U.S. publisher since the release of The Hobbit in 1938 will be re-releasing each volume of the trilogy separately and in a boxed set (ISBN 0-618-15397-7. $22; pap. ISBN 0-618-15396-9. $12). <br />Copyright 2001 Reed Business Information, Inc. </p><h3>Review</h3><p>'An extraordinary book. It deals with a stupendous theme. It leads us through a succession of strange and astonishing episodes, some of them magnificent, in a region where everything is invented, forest, moor, river, wilderness, town and the races which inhabit them.' The Observer 'Among the greatest works of imaginative fiction of the twentieth century.' Sunday Telegraph </p>".to_vec()]),
+            (201, vec![b"\0\0\0\0".to_vec()]),
+            (101, vec![b"HarperCollins Publishers Ltd".to_vec()]),
+            (106, vec![b"2010-12-21T00:00:00+00:00".to_vec()]),
+            (100, vec![b"J. R. R. Tolkien".to_vec()]),
+            (202, vec![b"\0\0\0\x01".to_vec()]),
+            (108, vec![b"calibre (0.7.31) [http://calibre-ebook.com]".to_vec()]),
         ];
         _records.into_iter().for_each(|(k, v)| {
             records.insert(k, v);
