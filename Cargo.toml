@@ -23,5 +23,8 @@ encoding = "0.2.0"
 indexmap = "1.6.0"
 thiserror = "1"
 
+[dev-dependencies]
+pretty_assertions = "1"
+
 [package.metadata.docs.rs]
 all-features = true

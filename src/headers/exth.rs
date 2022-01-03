@@ -125,7 +125,6 @@ impl ExtHeader {
 
     pub(crate) fn write<W: io::Write>(&self, w: &mut Writer<W>) -> io::Result<()> {
         w.write_be(self.identifier)?;
-        // 12 for first 12 bytes, 8 per record + len.
         w.write_be(
             12u32
                 + self
@@ -168,7 +167,7 @@ impl ExtHeader {
 mod tests {
     use super::*;
     use crate::book;
-    use crate::writer::Writer;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_parse() {
@@ -181,7 +180,7 @@ mod tests {
             (103, vec![b"<h3>From Library Journal</h3><p>New Line Cinema will be releasing \"The Lord of the Rings\" trilogy in three separate installments, and Houghton Mifflin Tolkien's U.S. publisher since the release of The Hobbit in 1938 will be re-releasing each volume of the trilogy separately and in a boxed set (ISBN 0-618-15397-7. $22; pap. ISBN 0-618-15396-9. $12). <br />Copyright 2001 Reed Business Information, Inc. </p><h3>Review</h3><p>'An extraordinary book. It deals with a stupendous theme. It leads us through a succession of strange and astonishing episodes, some of them magnificent, in a region where everything is invented, forest, moor, river, wilderness, town and the races which inhabit them.' The Observer 'Among the greatest works of imaginative fiction of the twentieth century.' Sunday Telegraph </p>".to_vec()]),
             (201, vec![b"\0\0\0\0".to_vec()]),
             (101, vec![b"HarperCollins Publishers Ltd".to_vec()]),
-            (106, vec![b"2010-12-21T00:00:00+00:00".to_vec()]),
+            (106, vec![b"2010-12-21T00:00:00+00:00".to_vec(), b"2010-12-21T00:00:00+00:00".to_vec()]),
             (100, vec![b"J. R. R. Tolkien".to_vec()]),
             (202, vec![b"\0\0\0\x01".to_vec()]),
             (108, vec![b"calibre (0.7.31) [http://calibre-ebook.com]".to_vec()]),
@@ -207,26 +206,10 @@ mod tests {
         assert_eq!(extheader, parsed_header);
     }
 
-    #[test]
-    fn test_write() {
-        // First ExtHeader has duplicated fields and will not match when written.
-        let bookx = book::BOOK.to_vec();
-        let mut reader = book::u8_reader(bookx);
-        let parsed_header = ExtHeader::parse(&mut reader).unwrap();
-        let mut buf = vec![];
-        parsed_header.write(&mut Writer::new(&mut buf)).unwrap();
-
-        // Create a new one with no duplicate fields, which will be identical
-        let new_exth_header = ExtHeader::parse(&mut book::u8_reader(buf.clone())).unwrap();
-        let mut buf2 = vec![];
-        new_exth_header.write(&mut Writer::new(&mut buf2)).unwrap();
-
-        assert_eq!(buf, buf2);
-    }
-
     mod records {
-        use super::*;
         use crate::book;
+        use crate::headers::{ExtHeader, ExthRecord};
+        use pretty_assertions::assert_eq;
 
         macro_rules! info {
             ($t: ident, $s: expr) => {

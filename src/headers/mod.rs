@@ -252,17 +252,6 @@ mod test {
         let m = MobiMetadata::from_reader(&mut book::u8_reader(book::full_book())).unwrap();
         let mut bytes = vec![];
         assert!(m.write(&mut bytes).is_ok());
-
-        // No duplicates, should work correctly.
-        let m1 = MobiMetadata::from_reader(&mut book::u8_reader(bytes.clone())).unwrap();
-        let mut bytes1 = vec![];
-        assert!(m1.write(&mut bytes1).is_ok());
-
-        let m2 = MobiMetadata::from_reader(&mut book::u8_reader(bytes1.clone())).unwrap();
-        let mut bytes2 = vec![];
-        assert!(m2.write(&mut bytes2).is_ok());
-
-        assert_eq!(bytes1.len(), bytes2.len());
-        assert_eq!(bytes1, bytes2);
+        assert_eq!(bytes, book::MOBI_METADATA);
     }
 }
