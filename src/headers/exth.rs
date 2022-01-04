@@ -285,8 +285,8 @@ impl ExtHeader {
         self.records.iter().map(|(r, data)| {
             (
                 r,
-                data.into_iter()
-                    .map(|d| String::from_utf8_lossy(&d).to_string())
+                data.iter()
+                    .map(|d| String::from_utf8_lossy(d).to_string())
                     .collect(),
             )
         })
