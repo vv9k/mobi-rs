@@ -35,8 +35,6 @@ impl<R: Read> Reader<R> {
 
     #[inline]
     pub(crate) fn set_position(&mut self, p: usize) -> io::Result<()> {
-        debug_assert!(p >= self.position, "{}, {}", p, self.position);
-
         if p >= self.position {
             let bytes_to_copy = (p - self.position) as u64;
             let copied_bytes = std::io::copy(
@@ -45,15 +43,20 @@ impl<R: Read> Reader<R> {
             )?;
 
             if copied_bytes != bytes_to_copy {
-                return Err(io::Error::new(
+                Err(io::Error::new(
                     io::ErrorKind::UnexpectedEof,
                     "Tried to set cursor position past EOF",
-                ));
+                ))
+            } else {
+                self.position = p;
+                Ok(())
             }
-            self.position = p;
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                "name seeked backwards",
+            ))
         }
-
-        Ok(())
     }
 
     #[inline]

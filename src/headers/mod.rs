@@ -94,6 +94,8 @@ impl MobiMetadata {
             Some(offset) => offset,
         };
 
+        // NOTE: The name should appear in the first record, and the first record should
+        // begin AFTER the EXTHeader
         reader.set_position(name_offset as usize)?;
         let name = reader.read_vec_header(mobi.name_length as usize)?;
 
