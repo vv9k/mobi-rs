@@ -75,9 +75,25 @@ impl<R: std::io::Read> Reader<R> {
         Ok(u8::from_be_bytes(bytes))
     }
 
+    /// Reads a header as u8 bytes. Designed to avoid OOM if len exceeds the length
+    /// the underlying file.
     pub(crate) fn read_vec_header(&mut self, len: usize) -> io::Result<Vec<u8>> {
-        let mut buf = vec![0; len];
-        self.read_exact(&mut buf)?;
-        Ok(buf)
+        let mut buf = Vec::new();
+        let r = self.reader.by_ref();
+        r.take(len as u64).read_to_end(&mut buf)?;
+        if buf.len() != len {
+            Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                format!(
+                    "Tried to read {} byte header, only {} bytes available",
+                    len,
+                    buf.len()
+                )
+                .as_str(),
+            ))
+        } else {
+            self.position += buf.len();
+            Ok(buf)
+        }
     }
 }

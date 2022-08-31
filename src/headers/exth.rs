@@ -2,6 +2,17 @@ use crate::{Reader, Writer};
 
 use indexmap::IndexMap;
 use std::io;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ExthRecordParseError {
+    #[error("Record length is less than 8 bytes")]
+    RecordTooSmall,
+    #[error("Expected header to be identifier as EXTH")]
+    InvalidIdentifier,
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 // Records available in EXTH header
@@ -203,7 +214,9 @@ pub struct ExtHeader {
 impl ExtHeader {
     /// Parse a EXTH header from the content. Reader must be at starting
     /// location of exth header.
-    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<ExtHeader> {
+    pub(crate) fn parse<R: io::Read>(
+        reader: &mut Reader<R>,
+    ) -> Result<ExtHeader, ExthRecordParseError> {
         let mut extheader = ExtHeader {
             identifier: reader.read_u32_be()?,
             header_length: reader.read_u32_be()?,
@@ -215,21 +228,25 @@ impl ExtHeader {
             extheader.populate_records(reader)?;
             Ok(extheader)
         } else {
-            Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "invalid header identifier (expected EXTH)",
-            ))
+            Err(ExthRecordParseError::InvalidIdentifier)
         }
     }
 
     /// Gets header records
-    fn populate_records<R: io::Read>(&mut self, reader: &mut Reader<R>) -> io::Result<()> {
+    fn populate_records<R: io::Read>(
+        &mut self,
+        reader: &mut Reader<R>,
+    ) -> Result<(), ExthRecordParseError> {
         for _i in 0..self.record_count {
             let record_type = ExthRecord::from(reader.read_u32_be()?);
             let record_len = reader.read_u32_be()?;
 
-            let mut record_data = vec![0; (record_len - 8) as usize];
-            reader.read_exact(&mut record_data)?;
+            let num_bytes = match record_len.checked_sub(8) {
+                None => return Err(ExthRecordParseError::RecordTooSmall),
+                Some(num_bytes) => num_bytes,
+            };
+
+            let record_data = reader.read_vec_header(num_bytes as usize)?;
 
             if let Some(record) = self.records.get_mut(&record_type) {
                 record.push(record_data);
