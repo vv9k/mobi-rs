@@ -36,10 +36,18 @@ impl<R: std::io::Read> Reader<R> {
         debug_assert!(p >= self.position, "{}, {}", p, self.position);
 
         if p >= self.position {
-            std::io::copy(
-                &mut self.reader.by_ref().take((p - self.position) as u64),
+            let bytes_to_copy = (p - self.position) as u64;
+            let copied_bytes = std::io::copy(
+                &mut self.reader.by_ref().take(bytes_to_copy),
                 &mut io::sink(),
             )?;
+
+            if copied_bytes != bytes_to_copy {
+                return Err(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    format!("Tried to set cursor position past EOF",).as_str(),
+                ));
+            }
             self.position = p;
         }
 
