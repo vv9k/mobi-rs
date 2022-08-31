@@ -12,7 +12,7 @@ pub use self::{
 
 use crate::headers::exth::ExthRecordParseError;
 use crate::headers::mobih::MobiHeaderParseError;
-use crate::record::PdbRecords;
+use crate::record::{PdbRecordParseError, PdbRecords};
 use crate::{Reader, Writer};
 
 #[cfg(feature = "time")]
@@ -30,6 +30,8 @@ pub enum MetadataParseError {
     MobiHeaderParseError(#[from] MobiHeaderParseError),
     #[error(transparent)]
     ExthRecordParseError(#[from] ExthRecordParseError),
+    #[error(transparent)]
+    PdbRecordParseError(#[from] PdbRecordParseError),
     #[error(transparent)]
     IoError(#[from] io::Error),
     #[error("No records present in file")]
@@ -91,6 +93,7 @@ impl MobiMetadata {
             }
             Some(offset) => offset,
         };
+
         reader.set_position(name_offset as usize)?;
         let name = reader.read_vec_header(mobi.name_length as usize)?;
 
