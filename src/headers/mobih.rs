@@ -246,9 +246,10 @@ impl MobiHeader {
             return Err(MobiHeaderParseError::InvalidIdentifier);
         }
         let header_length = reader.read_u32_be()?;
-        if header_length < 232 {
-            return Err(MobiHeaderParseError::MobiHeaderTooSmall);
-        }
+        let num_trailing_bytes = match header_length.checked_sub(232) {
+            None => return Err(MobiHeaderParseError::MobiHeaderTooSmall),
+            Some(num_trailing_bytes) => num_trailing_bytes,
+        };
         Ok(MobiHeader {
             identifier,
             header_length,
@@ -312,7 +313,7 @@ impl MobiHeader {
             unused_8: reader.read_u32_be()?,
             extra_record_data_flags: reader.read_u32_be()?,
             first_index_record: reader.read_u32_be()?,
-            unused_9: { reader.read_vec_header(header_length as usize - 232)? },
+            unused_9: reader.read_vec_header(num_trailing_bytes as usize)?,
         })
     }
 
