@@ -5,10 +5,12 @@ use std::io::{self, Read};
 /// Only allows forward reads.
 pub(crate) struct Reader<R> {
     reader: R,
+    /// Invariant: position will be no larger than the number of bytes
+    /// produced by the reader
     position: usize,
 }
 
-impl<R: std::io::Read> Reader<R> {
+impl<R: Read> Reader<R> {
     pub(crate) fn new(content: R) -> Reader<R> {
         Reader {
             reader: content,
@@ -45,7 +47,7 @@ impl<R: std::io::Read> Reader<R> {
             if copied_bytes != bytes_to_copy {
                 return Err(io::Error::new(
                     io::ErrorKind::UnexpectedEof,
-                    format!("Tried to set cursor position past EOF",).as_str(),
+                    "Tried to set cursor position past EOF",
                 ));
             }
             self.position = p;

@@ -85,13 +85,13 @@ impl<'a> RawRecords<'a> {
     }
 }
 
-#[derive(Debug, PartialEq, Default, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Default, Clone, Copy)]
 pub struct PdbRecord {
     pub id: u32,
     pub offset: u32,
 }
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct PdbRecords {
     pub records: Vec<PdbRecord>,
     extra_bytes: u16,

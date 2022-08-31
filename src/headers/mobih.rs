@@ -17,7 +17,7 @@ pub enum MobiHeaderParseError {
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
 const EXTH_ON_FLAG: u32 = 0x40;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum MobiType {
     MobiPocketBook,
     PalmDocBook,
@@ -88,7 +88,7 @@ impl WriteBeBytes for MobiType {
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum TextEncoding {
     CP1252,
     UTF8,
@@ -127,7 +127,7 @@ impl WriteBeBytes for TextEncoding {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 /// Strcture that holds Mobi header information
 pub struct MobiHeader {
     pub identifier: u32,
@@ -397,7 +397,7 @@ impl MobiHeader {
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Language {
     Neutral,
     Afrikaans,

@@ -16,10 +16,10 @@ pub enum HeaderParseError {
     #[error("expected creator header identifier MOBI or READ")]
     InvalidCreatorIdentifier,
     #[error(transparent)]
-    IoError(#[from] std::io::Error),
+    IoError(#[from] io::Error),
 }
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 /// Structure that holds header information
 pub struct Header {
     pub name: Vec<u8>,

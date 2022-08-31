@@ -200,7 +200,7 @@ impl From<u32> for ExthRecord {
     }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 /// Optional header containing extended information. If the MOBI header
 /// indicates that there's an EXTH header, it follows immediately after
 /// the MOBI header.
