@@ -104,7 +104,11 @@ impl Mobi {
     fn from_reader<R: io::Read>(reader: &mut Reader<R>) -> MobiResult<Mobi> {
         let metadata = MobiMetadata::from_reader(reader)?;
         Ok(Mobi {
-            content: reader.read_to_end()?,
+            content: {
+                let mut buf = vec![0; reader.position()];
+                reader.read_to_end(&mut buf)?;
+                buf
+            },
             metadata,
         })
     }

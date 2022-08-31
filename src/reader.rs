@@ -18,13 +18,15 @@ impl<R: Read> Reader<R> {
         }
     }
 
-    pub(crate) fn read_to_end(&mut self) -> io::Result<Vec<u8>> {
+    pub(crate) fn position(&self) -> usize {
+        self.position
+    }
+
+    pub(crate) fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<()> {
         // Zero-fill so that Records parsing works as expected.
-        let mut first_buf = vec![0; self.position];
         // read_to_end appends to the end of the buffer.
-        self.reader.read_to_end(&mut first_buf)?;
-        self.position = first_buf.len();
-        Ok(first_buf)
+        self.position += self.reader.read_to_end(buf)?;
+        Ok(())
     }
 
     pub(crate) fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
@@ -33,7 +35,6 @@ impl<R: Read> Reader<R> {
         Ok(())
     }
 
-    #[inline]
     pub(crate) fn set_position(&mut self, p: usize) -> io::Result<()> {
         if p >= self.position {
             let bytes_to_copy = (p - self.position) as u64;
@@ -54,7 +55,7 @@ impl<R: Read> Reader<R> {
         } else {
             Err(io::Error::new(
                 io::ErrorKind::Other,
-                "name seeked backwards",
+                "can only seek position forwards",
             ))
         }
     }

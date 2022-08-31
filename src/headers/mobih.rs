@@ -2,6 +2,7 @@ use crate::writer::WriteBeBytes;
 use crate::{Reader, Writer};
 
 use std::io;
+use std::io::Cursor;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -246,10 +247,12 @@ impl MobiHeader {
             return Err(MobiHeaderParseError::InvalidIdentifier);
         }
         let header_length = reader.read_u32_be()?;
-        let num_trailing_bytes = match header_length.checked_sub(232) {
+        let remaining_header_bytes = match header_length.checked_sub(8) {
             None => return Err(MobiHeaderParseError::MobiHeaderTooSmall),
-            Some(num_trailing_bytes) => num_trailing_bytes,
+            Some(remaining_header_bytes) => remaining_header_bytes,
         };
+        let header = reader.read_vec_header(remaining_header_bytes as usize)?;
+        let mut reader = Reader::new(Cursor::new(header));
         Ok(MobiHeader {
             identifier,
             header_length,
@@ -312,8 +315,14 @@ impl MobiHeader {
             data_section_count: reader.read_u32_be()?,
             unused_8: reader.read_u32_be()?,
             extra_record_data_flags: reader.read_u32_be()?,
+            // Check that this is not 0xFF_FF_FF_FF
             first_index_record: reader.read_u32_be()?,
-            unused_9: reader.read_vec_header(num_trailing_bytes as usize)?,
+            // Read remainder of header
+            unused_9: {
+                let mut buf = Vec::new();
+                reader.read_to_end(&mut buf)?;
+                buf
+            },
         })
     }
 
