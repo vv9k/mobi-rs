@@ -3,7 +3,7 @@ use crate::{Reader, Writer};
 
 use std::io;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 /// Compression types available in MOBI format.
 pub enum Compression {
     No,
@@ -42,7 +42,7 @@ impl WriteBeBytes for Compression {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 /// Encryption types available in MOBI format.
 pub enum Encryption {
     No,
@@ -82,7 +82,7 @@ impl WriteBeBytes for Encryption {
     }
 }
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 /// Strcture that holds PalmDOC header information
 pub struct PalmDocHeader {
     pub compression: Compression,

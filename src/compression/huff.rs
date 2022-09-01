@@ -122,11 +122,7 @@ impl HuffmanDecoder {
         for offset in offsets {
             r.set_position(16 + offset as usize)?;
             let num_bytes = r.read_u16_be()?;
-            let bytes = {
-                let mut slice = vec![0; (num_bytes as usize) & 0x7FFF];
-                r.read_exact(&mut slice)?;
-                slice
-            };
+            let bytes = r.read_vec_header((num_bytes & 0x7FFF) as usize)?;
             self.dictionary
                 .push(Some((bytes, (num_bytes & 0x8000) == 0x8000)));
         }

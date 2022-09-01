@@ -11,6 +11,14 @@ use thiserror::Error;
 
 const EXTRA_BYTES_FLAG: u16 = 0xFFFE;
 
+#[derive(Debug, Error)]
+pub enum PdbRecordParseError {
+    #[error("PDBRecords contained non-ascending offsets")]
+    NonAscendingOffsets,
+    #[error(transparent)]
+    IoError(#[from] io::Error),
+}
+
 #[derive(Debug, Clone, Error)]
 /// A wrapper error type for unified error across multiple encodings.
 pub enum DecodeError {
@@ -85,13 +93,13 @@ impl<'a> RawRecords<'a> {
     }
 }
 
-#[derive(Debug, PartialEq, Default, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Default, Clone, Copy)]
 pub struct PdbRecord {
     pub id: u32,
     pub offset: u32,
 }
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct PdbRecords {
     pub records: Vec<PdbRecord>,
     extra_bytes: u16,
@@ -103,12 +111,24 @@ impl PdbRecords {
     pub(crate) fn new<R: io::Read>(
         reader: &mut Reader<R>,
         num_records: u16,
-    ) -> io::Result<PdbRecords> {
+    ) -> Result<PdbRecords, PdbRecordParseError> {
         let mut records = Vec::with_capacity(num_records as usize);
+
+        let mut prev_offset = 0;
 
         for _ in 0..num_records {
             records.push(PdbRecord {
-                offset: reader.read_u32_be()?,
+                //  the offset of record n from the start of the PDB of this record
+                // NOTE: Check that all offsets are in strictly ascending order
+                offset: {
+                    let offset = reader.read_u32_be()?;
+                    if prev_offset > offset {
+                        // Going backwards - size will be negative
+                        return Err(PdbRecordParseError::NonAscendingOffsets);
+                    }
+                    prev_offset = offset;
+                    offset
+                },
                 id: reader.read_u32_be()?,
             });
         }
@@ -127,7 +147,6 @@ impl PdbRecords {
 
         while let Some(record) = records.next() {
             let curr_offset = record.offset as usize;
-
             let content = if let Some(next) = records.peek() {
                 let next_offset = next.offset as usize;
 

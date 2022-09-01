@@ -86,3 +86,22 @@ jobs:
         with:
           command: test
 
+  fuzz:
+    needs: [ check, fmt, clippy, docs, test ]
+    name: Fuzz
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - uses: actions-rs/cargo@v1
+      - run: cargo install cargo-fuzz
+      - name: Run cargo fuzz for five minutes
+        run: cargo +nightly fuzz run mobi_new -- -max_total_time=300

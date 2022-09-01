@@ -10,7 +10,9 @@ pub use self::{
     palmdoch::{Compression, Encryption, PalmDocHeader},
 };
 
-use crate::record::PdbRecords;
+use crate::headers::exth::ExthRecordParseError;
+use crate::headers::mobih::MobiHeaderParseError;
+use crate::record::{PdbRecordParseError, PdbRecords};
 use crate::{Reader, Writer};
 
 #[cfg(feature = "time")]
@@ -25,7 +27,15 @@ pub enum MetadataParseError {
     #[error(transparent)]
     HeaderParseError(#[from] HeaderParseError),
     #[error(transparent)]
-    IoError(#[from] std::io::Error),
+    MobiHeaderParseError(#[from] MobiHeaderParseError),
+    #[error(transparent)]
+    ExthRecordParseError(#[from] ExthRecordParseError),
+    #[error(transparent)]
+    PdbRecordParseError(#[from] PdbRecordParseError),
+    #[error(transparent)]
+    IoError(#[from] io::Error),
+    #[error("No records present in file")]
+    NoRecords,
 }
 
 #[derive(Debug, Default)]
@@ -59,7 +69,12 @@ impl MobiMetadata {
         reader: &mut Reader<R>,
     ) -> Result<MobiMetadata, MetadataParseError> {
         let header = Header::parse(reader)?;
+
         let records = PdbRecords::new(reader, header.num_records)?;
+        if records.records.is_empty() {
+            return Err(MetadataParseError::NoRecords);
+        }
+
         let palmdoc = PalmDocHeader::parse(reader)?;
         let mobi = MobiHeader::parse(reader)?;
 
@@ -69,7 +84,19 @@ impl MobiMetadata {
             ExtHeader::default()
         };
 
-        reader.set_position((records.records[0].offset + mobi.name_offset) as usize)?;
+        let name_offset = match records.records[0].offset.checked_add(mobi.name_offset) {
+            None => {
+                return Err(MetadataParseError::IoError(io::Error::new(
+                    io::ErrorKind::Other,
+                    "attempted to seek with overflow",
+                )))
+            }
+            Some(offset) => offset,
+        };
+
+        // NOTE: The name should appear in the first record, and the first record should
+        // begin AFTER the EXTHeader
+        reader.set_position(name_offset as usize)?;
         let name = reader.read_vec_header(mobi.name_length as usize)?;
 
         Ok(MobiMetadata {
@@ -99,7 +126,7 @@ impl MobiMetadata {
         let fill = ((self.records.records[0].offset + self.mobi.name_offset) as usize)
             .saturating_sub(w.bytes_written());
         w.write_be(vec![0; fill])?;
-        w.write_be(&self.name)
+        w.write_be(self.name.as_slice())
     }
 
     //################################################################################//

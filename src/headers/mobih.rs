@@ -2,11 +2,23 @@ use crate::writer::WriteBeBytes;
 use crate::{Reader, Writer};
 
 use std::io;
+use std::io::Cursor;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum MobiHeaderParseError {
+    #[error("MobiHeader length is less than 232 bytes")]
+    MobiHeaderTooSmall,
+    #[error("Expected header to be identifier as MOBI")]
+    InvalidIdentifier,
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
+}
 
 const DRM_ON_FLAG: u32 = 0xFFFF_FFFF;
 const EXTH_ON_FLAG: u32 = 0x40;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum MobiType {
     MobiPocketBook,
     PalmDocBook,
@@ -77,7 +89,7 @@ impl WriteBeBytes for MobiType {
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum TextEncoding {
     CP1252,
     UTF8,
@@ -116,7 +128,7 @@ impl WriteBeBytes for TextEncoding {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 /// Strcture that holds Mobi header information
 pub struct MobiHeader {
     pub identifier: u32,
@@ -227,16 +239,20 @@ impl Default for MobiHeader {
 impl MobiHeader {
     /// Parse a Mobi header from the content. The reader must be advanced to the starting
     /// position of the Mobi header.
-    pub(crate) fn parse<R: io::Read>(reader: &mut Reader<R>) -> io::Result<MobiHeader> {
+    pub(crate) fn parse<R: io::Read>(
+        reader: &mut Reader<R>,
+    ) -> Result<MobiHeader, MobiHeaderParseError> {
         let identifier = reader.read_u32_be()?;
         if &identifier.to_be_bytes() != b"MOBI" {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "invalid header identifier (expected MOBI)",
-            ));
+            return Err(MobiHeaderParseError::InvalidIdentifier);
         }
         let header_length = reader.read_u32_be()?;
-
+        let remaining_header_bytes = match header_length.checked_sub(8) {
+            None => return Err(MobiHeaderParseError::MobiHeaderTooSmall),
+            Some(remaining_header_bytes) => remaining_header_bytes,
+        };
+        let header = reader.read_vec_header(remaining_header_bytes as usize)?;
+        let mut reader = Reader::new(Cursor::new(header));
         Ok(MobiHeader {
             identifier,
             header_length,
@@ -299,11 +315,13 @@ impl MobiHeader {
             data_section_count: reader.read_u32_be()?,
             unused_8: reader.read_u32_be()?,
             extra_record_data_flags: reader.read_u32_be()?,
+            // Check that this is not 0xFF_FF_FF_FF
             first_index_record: reader.read_u32_be()?,
+            // Read remainder of header
             unused_9: {
-                let mut unused = vec![0; header_length as usize - 232];
-                reader.read_exact(&mut unused)?;
-                unused
+                let mut buf = Vec::new();
+                reader.read_to_end(&mut buf)?;
+                buf
             },
         })
     }
@@ -389,7 +407,7 @@ impl MobiHeader {
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Language {
     Neutral,
     Afrikaans,

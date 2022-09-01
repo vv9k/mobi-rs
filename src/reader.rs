@@ -5,10 +5,12 @@ use std::io::{self, Read};
 /// Only allows forward reads.
 pub(crate) struct Reader<R> {
     reader: R,
+    /// Invariant: position will be no larger than the number of bytes
+    /// produced by the reader
     position: usize,
 }
 
-impl<R: std::io::Read> Reader<R> {
+impl<R: Read> Reader<R> {
     pub(crate) fn new(content: R) -> Reader<R> {
         Reader {
             reader: content,
@@ -16,13 +18,15 @@ impl<R: std::io::Read> Reader<R> {
         }
     }
 
-    pub(crate) fn read_to_end(&mut self) -> io::Result<Vec<u8>> {
+    pub(crate) fn position(&self) -> usize {
+        self.position
+    }
+
+    pub(crate) fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<()> {
         // Zero-fill so that Records parsing works as expected.
-        let mut first_buf = vec![0; self.position];
         // read_to_end appends to the end of the buffer.
-        self.reader.read_to_end(&mut first_buf)?;
-        self.position = first_buf.len();
-        Ok(first_buf)
+        self.position += self.reader.read_to_end(buf)?;
+        Ok(())
     }
 
     pub(crate) fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
@@ -31,19 +35,29 @@ impl<R: std::io::Read> Reader<R> {
         Ok(())
     }
 
-    #[inline]
     pub(crate) fn set_position(&mut self, p: usize) -> io::Result<()> {
-        debug_assert!(p >= self.position, "{}, {}", p, self.position);
-
         if p >= self.position {
-            std::io::copy(
-                &mut self.reader.by_ref().take((p - self.position) as u64),
+            let bytes_to_copy = (p - self.position) as u64;
+            let copied_bytes = std::io::copy(
+                &mut self.reader.by_ref().take(bytes_to_copy),
                 &mut io::sink(),
             )?;
-            self.position = p;
-        }
 
-        Ok(())
+            if copied_bytes != bytes_to_copy {
+                Err(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "Tried to set cursor position past EOF",
+                ))
+            } else {
+                self.position = p;
+                Ok(())
+            }
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                "can only seek position forwards",
+            ))
+        }
     }
 
     #[inline]
@@ -75,9 +89,25 @@ impl<R: std::io::Read> Reader<R> {
         Ok(u8::from_be_bytes(bytes))
     }
 
+    /// Reads a header as u8 bytes. Designed to avoid OOM if len exceeds the length
+    /// the underlying file.
     pub(crate) fn read_vec_header(&mut self, len: usize) -> io::Result<Vec<u8>> {
-        let mut buf = vec![0; len];
-        self.read_exact(&mut buf)?;
-        Ok(buf)
+        let mut buf = Vec::new();
+        let r = self.reader.by_ref();
+        r.take(len as u64).read_to_end(&mut buf)?;
+        if buf.len() != len {
+            Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                format!(
+                    "Tried to read {} byte header, only {} bytes available",
+                    len,
+                    buf.len()
+                )
+                .as_str(),
+            ))
+        } else {
+            self.position += buf.len();
+            Ok(buf)
+        }
     }
 }
