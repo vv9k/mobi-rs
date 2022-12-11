@@ -187,7 +187,7 @@ impl PdbRecords {
 pub(crate) fn content_to_string_lossy(content: &[u8], encoding: TextEncoding) -> String {
     match encoding {
         TextEncoding::UTF8 | TextEncoding::Unknown(_) => {
-            String::from_utf8_lossy(content).to_owned().to_string()
+            String::from_utf8_lossy(content).into_owned()
         }
         TextEncoding::CP1252 => WINDOWS_1252.decode(content, DecoderTrap::Ignore).unwrap(),
     }
