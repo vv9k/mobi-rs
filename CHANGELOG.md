@@ -1,4 +1,4 @@
-#
+# 0.8.0
 - Fix potential OOM issues and add fuzzing [#40](https://github.com/vv9k/mobi-rs/pull/40)
 
 # 0.7.0
