@@ -106,14 +106,14 @@ impl Header {
     /// Returns a chrono::NaiveDateTime timestamp of file creation
     /// This field is only available using `time` feature
     pub(crate) fn created_datetime(&self) -> NaiveDateTime {
-        NaiveDateTime::from_timestamp(i64::from(self.created), 0)
+        NaiveDateTime::from_timestamp_opt(i64::from(self.created), 0).unwrap_or_default()
     }
 
     #[cfg(feature = "time")]
     /// Returns a chrono::NaiveDateTime timestamp of file modification
     /// This field is only available using `time` feature
     pub(crate) fn mod_datetime(&self) -> NaiveDateTime {
-        NaiveDateTime::from_timestamp(i64::from(self.modified), 0)
+        NaiveDateTime::from_timestamp_opt(i64::from(self.modified), 0).unwrap_or_default()
     }
 
     #[cfg(not(feature = "time"))]
